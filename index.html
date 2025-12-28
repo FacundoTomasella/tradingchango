@@ -54,370 +54,110 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
 
     <style>
-      /* Controles de cantidad en el Chango */
-.qty-control {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--bg-card);
-    padding: 6px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    margin-right: 10px;
-}
-.qty-btn {
-    background: none;
-    border: none;
-    color: var(--text-main);
-    font-size: 18px;
-    font-weight: 800;
-    cursor: pointer;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.2s;
-}
-.qty-btn:active { transform: scale(0.8); }
-.qty-num {
-    font-family: 'Roboto Mono', monospace;
-    font-weight: 700;
-    font-size: 14px;
-    min-width: 20px;
-    text-align: center;
-}
-      
-        /* Si la app ya está en modo "standalone" (instalada), escondemos el banner siempre */
-@media (display-mode: standalone) {
-    #pwaInstallBanner {
-        display: none !important;
+      <style>
+    /* 1. VARIABLES Y ROOT */
+    :root {
+        --bg-app: #ffffff; --bg-card: #f9f9f9; --bg-nav: #ffffff;
+        --text-main: #131722; --text-muted: #787b86; --border: #e0e3eb;
+        --accent: #131722; --color-good: #00a650; --color-bad: #f23645; --star-gold: #f2a900;
+        --badge-bg: #131722; --badge-text: #ffffff;
     }
-}
-        .pv-chart-label {
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin-top: 20px;   /* Espacio respecto a los botones */
-            margin-bottom: 5px;  /* Espacio pegado al porcentaje */
-            display: block;
-            letter-spacing: 0.5px;
-        }
-        
-        /* Ajuste opcional para el porcentaje para que no quede tan separado del gráfico */
-        .chart-performance {
-            font-size: 13px; /* Un poquito más grande para que se note */
-            margin-bottom: 10px;
-            display: block;
-        }
+    .dark-mode {
+        --bg-app: #000000; --bg-card: #121212; --bg-nav: #121212;
+        --text-main: #ffffff; --text-muted: #888888; --border: #2a2a2a;
+        --accent: #ffffff;
+        --badge-bg: #ffffff; --badge-text: #000000;
+    }
 
-        /* El cartel que tapa el canvas cuando no hay datos */
-            .no-data-overlay {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: var(--bg-app); /* Fondo dinámico */
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10;
-            }
-            /* El texto del cartel */
-            .no-data-text {
-                color: var(--text-muted);
-                font-size: 11px;
-                font-weight: 800;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-        
-        :root {
-            --bg-app: #ffffff; --bg-card: #f9f9f9; --bg-nav: #ffffff;
-            --text-main: #131722; --text-muted: #787b86; --border: #e0e3eb;
-            --accent: #131722; --color-good: #00a650; --color-bad: #f23645; --star-gold: #f2a900;
-            --badge-bg: #131722; --badge-text: #ffffff;
-        }
-        .dark-mode {
-            --bg-app: #000000; --bg-card: #121212; --bg-nav: #121212;
-            --text-main: #ffffff; --text-muted: #888888; --border: #2a2a2a;
-            --accent: #ffffff;
-            --badge-bg: #ffffff; --badge-text: #000000;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-app); color: var(--text-main); font-family: '-apple-system', 'BlinkMacSystemFont', 'Inter', sans-serif; padding-bottom: 80px; transition: background 0.3s, color 0.3s; display: flex; flex-direction: column; align-items: center; overflow-x: hidden; width: 100%; }
-        .app-container { width: 100%; max-width: 600px; min-height: 100vh; background: var(--bg-app); border-left: 1px solid var(--border); border-right: 1px solid var(--border); position: relative; }
-        
-        header { position: sticky; top: 0; z-index: 100; background: var(--bg-app); border-bottom: 1px solid var(--border); padding: 15px 20px; }
-        .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .logo-link { text-decoration: none; color: inherit; cursor: pointer; }
-        /* Buscá .logo y dejalo así: */ .logo { font-weight: 800; /* Antes 600 */ font-size: 22px; /* Subimos un puntito el tamaño */ letter-spacing: -1px; /* Letras más juntas para un look más moderno y bold */ display: flex; align-items: center; gap: 8px; color: var(--text-main); }
-        .logo-icon-wrapper { position: relative; display: flex; align-items: center; justify-content: center; height: 24px; width: 30px; }
-        .logo-icon-wrapper .fa-cart-shopping { font-size: 18px; color: var(--text-main); }
-        .logo-icon-wrapper .fa-arrow-trend-up { font-size: 12px; color: var(--color-good); position: absolute; top: -4px; right: -2px; background: var(--bg-app); padding: 1px; border-radius: 50%; }
-        
-        .header-actions { display: flex; align-items: center; gap: 15px; }
-        .theme-btn, .user-btn, .pv-back-btn, .pv-fav-btn, .pv-share-btn { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; }
-        
-        .search-container { position: relative; }
-        #searchInput { width: 100%; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 12px 42px 12px 42px; border-radius: 8px; font-size: 15px; font-family: 'Inter', sans-serif; }
-        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px; }
-        .clear-search { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); cursor: pointer; display: none; font-size: 18px; z-index: 5; }
+    /* 2. GENERAL Y RESET */
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg-app); color: var(--text-main); font-family: '-apple-system', 'BlinkMacSystemFont', 'Inter', sans-serif; padding-bottom: 80px; transition: background 0.3s, color 0.3s; display: flex; flex-direction: column; align-items: center; overflow-x: hidden; width: 100%; }
+    .app-container { width: 100%; max-width: 600px; min-height: 100vh; background: var(--bg-app); border-left: 1px solid var(--border); border-right: 1px solid var(--border); position: relative; }
 
-        .trend-filters { display: flex; gap: 10px; margin-top: 12px; }
-        .trend-btn { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-app); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }
-        #btnDown { color: var(--color-good); }
-        #btnUp { color: var(--color-bad); }
-        .trend-btn.active-down { background: var(--color-good) !important; color: white !important; border-color: var(--color-good); }
-        .trend-btn.active-up { background: var(--color-bad) !important; color: white !important; border-color: var(--color-bad); }
+    /* 3. HEADER Y LOGO */
+    header { position: sticky; top: 0; z-index: 100; background: var(--bg-app); border-bottom: 1px solid var(--border); padding: 15px 20px; }
+    .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .logo-link { text-decoration: none; color: inherit; cursor: pointer; }
+    .logo { font-weight: 800; font-size: 22px; letter-spacing: -1px; display: flex; align-items: center; gap: 8px; color: var(--text-main); }
+    .logo-icon-wrapper { position: relative; display: flex; align-items: center; justify-content: center; height: 24px; width: 30px; }
+    .logo-icon-wrapper .fa-cart-shopping { font-size: 18px; color: var(--text-main); }
+    .logo-icon-wrapper .fa-arrow-trend-up { font-size: 12px; color: var(--color-good); position: absolute; top: -4px; right: -2px; background: var(--bg-app); padding: 1px; border-radius: 50%; }
+    .header-actions { display: flex; align-items: center; gap: 15px; }
+    .theme-btn, .user-btn, .pv-back-btn, .pv-fav-btn, .pv-share-btn { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; }
 
-        .hero-section { text-align: center; padding: 25px 20px 0px 20px; display: none; }
-        /* Buscá .hero-title y dejalo así: */ .hero-title { font-size: 22px; font-weight: 800; /* Antes 600 */ color: var(--text-main); margin-bottom: 8px; letter-spacing: -0.5px; /* Ajuste sutil de espacio */ line-height: 1.2; /* Asegura que si se quiebra en dos líneas no se encime */ }
-        .hero-subtitle { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    /* 4. BUSCADOR Y FILTROS */
+    .search-container { position: relative; }
+    #searchInput { width: 100%; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 12px 42px 12px 42px; border-radius: 8px; font-size: 15px; font-family: 'Inter', sans-serif; }
+    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px; }
+    .clear-search { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); cursor: pointer; display: none; font-size: 18px; z-index: 5; }
+    .trend-filters { display: flex; gap: 10px; margin-top: 12px; }
+    .trend-btn { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-app); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }
+    #btnDown { color: var(--color-good); }
+    #btnUp { color: var(--color-bad); }
+    .trend-btn.active-down { background: var(--color-good) !important; color: white !important; border-color: var(--color-good); }
+    .trend-btn.active-up { background: var(--color-bad) !important; color: white !important; border-color: var(--color-bad); }
 
-        /* PRODUCT VIEW */
-        #productFullView { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-app); z-index: 500; overflow-y: auto; }
-        .pv-container { width: 100%; max-width: 600px; margin: 0 auto; min-height: 100vh; background: var(--bg-app); border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
-        .pv-header { position: sticky; top: 0; background: var(--bg-app); padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .pv-content { padding: 25px 20px; }
-        
-        /* MODIFICADO: Layout de imagen a la izquierda */
-        .pv-top-info { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 10px; }
-        .pv-title-box { flex: 1; }
-        .pv-title-box h1 { font-size: 24px; font-weight: 600; letter-spacing: -1px; line-height: 1.1; }
-        .pv-img-container { width: 110px; height: 110px; border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid var(--border); display: none; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        #pv-img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+    /* 5. PRODUCT CARDS (CORREGIDO: Evita que el carrito se desplace) */
+    .ticker-card { border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: var(--bg-app); gap: 10px; }
+    .ticker-info { flex: 1; display: flex; align-items: center; justify-content: space-between; min-width: 0; } /* min-width evita que el texto empuje */
+    .t-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow: hidden; }
+    .t-symbol { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
+    .t-name { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .t-right { text-align: right; flex-shrink: 0; margin-left: 5px; }
+    .t-price { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; }
+    .t-change { font-family: 'Roboto Mono'; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; white-space: nowrap; }
+    .trend-up { color: white; background: var(--color-bad); } .trend-down { color: white; background: var(--color-good); }
 
-        .pv-best-store { font-size: 13px; color: var(--text-muted); margin-top: 8px; font-weight: 600; text-transform: uppercase; }
-        .pv-price-big { font-family: 'Roboto Mono'; font-size: 32px; font-weight: 600; margin-top: 5px; color: var(--text-main); }
-        /* NUEVO: Estilo para precio promedio */
-        /* Estilo del contenedor de Precio Promedio */
-.pv-avg-price {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 600;
-    margin-top: 12px;
+    /* CONTROLES CANTIDAD */
+    .qty-control { display: flex; align-items: center; gap: 12px; background: var(--bg-card); padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border); margin-right: 5px; flex-shrink: 0; }
+    .qty-btn { background: none; border: none; color: var(--text-main); font-size: 18px; font-weight: 800; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+    .qty-num { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 14px; min-width: 20px; text-align: center; }
+    .fav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: flex-end; font-size: 18px; color: var(--border); flex-shrink: 0; }
+    .fav-btn.active { color: var(--star-gold); }
+
+    /* 6. PRODUCT FULL VIEW (MODAL) */
+    #productFullView { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-app); z-index: 500; overflow-y: auto; }
+    .pv-container { width: 100%; max-width: 600px; margin: 0 auto; min-height: 100vh; background: var(--bg-app); border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    .pv-header { position: sticky; top: 0; background: var(--bg-app); padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+    .pv-content { padding: 25px 20px; }
+    .pv-top-info { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 10px; }
+    .pv-title-box h1 { font-size: 24px; font-weight: 600; letter-spacing: -1px; }
+    .pv-img-container { width: 110px; height: 110px; border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid var(--border); display: none; flex-shrink: 0; }
+    .pv-price-big { font-family: 'Roboto Mono'; font-size: 32px; font-weight: 600; margin-top: 5px; }
+
+    /* ETIQUETAS EN NEGRITA */
+    .pv-chart-label, .pv-market-title { font-size: 11px; font-weight: 800 !important; text-transform: uppercase; color: var(--text-main) !important; margin-bottom: 10px; display: block; letter-spacing: 0.5px; }
     
-    /* Fondo gris y bordes */
-    background: #f1f3f6; 
-    padding: 8px 12px;
-    border-radius: 8px;
-    
-    /* Para que no ocupe todo el ancho, solo lo necesario */
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid rgba(0,0,0,0.03);
-}
+    .chart-performance { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: block; }
+    .chart-wrapper { width: 100%; height: 260px; position: relative; }
 
-/* Ajuste para Modo Oscuro */
-.dark-mode .pv-avg-price {
-    background: #1e222d; /* Gris oscuro tipo TradingView */
-    color: #b2b5be;
-    border-color: #2a2e39;
-}
+    /* 7. PWA PILL (CORREGIDO: Colores dinámicos) */
+    #pwaPill { 
+        display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); 
+        background: var(--accent); color: #fff; padding: 10px 16px; border-radius: 50px; 
+        font-size: 12px; font-weight: 700; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+        align-items: center; gap: 12px; width: max-content; animation: slideUp 0.4s ease-out; 
+    }
+    .dark-mode #pwaPill { color: #000000 !important; }
+    .dark-mode #pwaPill span { color: #000000 !important; }
 
-/* El número adentro del promedio */
-.pv-avg-price span {
-    color: var(--text-main);
-    font-weight: 700;
-    font-family: 'Roboto Mono', monospace;
-    font-size: 13px;
-}
+    @keyframes slideUp { from { bottom: -50px; opacity: 0; } to { bottom: 85px; opacity: 1; } }
+
+    /* 8. MEDIA QUERIES (ESCRITORIO) */
+    @media (min-width: 1024px) {
+        .app-container, .bottom-nav { max-width: 900px !important; }
+        .desktop-links { display: flex; gap: 20px; margin-right: 10px; }
+        .desktop-links a { text-decoration: none; color: var(--text-main); font-size: 12px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
+        #info-celular { display: none !important; }
         
-        .pv-chart-section { margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px; }
-        .range-filters { display: flex; gap: 4px; justify-content: flex-end; margin-bottom: 10px; }
-        .range-btn {
-            background: #fff;
-            border: 1px solid #e0e3eb;
-            color: #787b86;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-            }
-            
-            .range-btn.active {
-                background: #131722; /* Fondo oscuro para el activo */
-                color: #fff;
-                border-color: #131722;
-            }
-            
-            .dark-mode .range-btn {
-                background: #1e222d;
-                border-color: #363a45;
-                color: #b2b5be;
-            }
-
-            /* Activo en Modo Oscuro (Blanco con texto negro) */
-            .dark-mode .range-btn.active {
-                background: #ffffff !important;
-                color: #000000 !important;
-                border-color: #ffffff !important;
-            }        
-        .pv-market-section { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 25px; }
-        .pv-market-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 15px; letter-spacing: 1px; }
-
-        .ob-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
-        .ob-store { font-weight: 600; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
-        .dot { width: 8px; height: 8px; border-radius: 50%; }
-        .price-link { text-decoration: none; color: var(--text-main); font-family: 'Roboto Mono'; font-size: 15px; padding: 6px 10px; border-radius: 6px; background: rgba(0,0,0,0.03); }
-        .best-val { color: var(--color-good); font-weight: 700; background: rgba(0, 230, 118, 0.1); } 
-
-        .ticker-list { padding: 0; }
-        .ticker-card { border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; position: relative; background: var(--bg-app); transition: background 0.2s; }
-        .ticker-info { flex-grow: 1; display: flex; align-items: center; justify-content: space-between; padding-right: 15px; }
-        .t-left { display: flex; flex-direction: column; gap: 3px; }
-        .t-symbol { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
-        .t-name { font-size: 13px; color: var(--text-muted); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .t-right { text-align: right; }
-        .t-price { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; }
-        .t-change { font-family: 'Roboto Mono'; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
-        .trend-up { color: white; background: var(--color-bad); } .trend-down { color: white; background: var(--color-good); } .trend-neutral { color: var(--text-muted); background: rgba(128,128,128,0.1); }
-        
-        .fav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: flex-end; font-size: 18px; color: var(--border); transition: 0.2s; }
-        .fav-btn.active { color: var(--star-gold); }
-        
-        .app-footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 600px; background: var(--bg-nav); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
-        .nav-item { background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; font-size: 10px; gap: 5px; cursor: pointer; width: 20%; font-weight: 500; transition: 0.2s; position: relative; }
-        .nav-item.active { color: var(--text-main); font-weight: 600; }
-        .nav-item i { font-size: 18px; }
-        
-        .cart-badge { position: absolute; top: 8px; right: 25%; background: var(--badge-bg); color: var(--badge-text); font-size: 9px; font-weight: 600; min-width: 15px; height: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 4px; display: none; }
-
-        .loader { text-align: center; padding: 50px; color: var(--text-muted); font-family: 'Roboto Mono'; font-size: 12px; }
-        .chart-wrapper { width: 100%; height: 260px; padding-top: 5px; position: relative; }
-        .chart-performance { font-size: 11px; font-weight: 700; margin-bottom: 10px; display: block; }
-
-        .chango-summary { padding: 20px; background: var(--bg-card); margin: 10px 20px; border-radius: 12px; border: 1px solid var(--border); }
-        .chango-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-family: 'Roboto Mono'; font-size: 14px; }
-        .chango-row.best { color: var(--color-good); font-weight: 600; }
-        
-        .page-view { display: none; padding: 25px 20px; line-height: 1.6; font-size: 14px; }
-        .page-view.active { display: block; }
-        .legal-dropdown { position: absolute; top: 50px; right: 20px; background: var(--bg-app); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none; flex-direction: column; z-index: 200; width: 180px; }
-        .legal-dropdown a { padding: 12px 15px; font-size: 12px; font-weight: 700; color: var(--text-main); text-decoration: none; border-bottom: 1px solid var(--border); text-transform: uppercase; cursor: pointer; }
-    
-/* --- ESTILOS PARA MÓVIL (Por defecto) --- */
-
-/* Escondemos los links de PC en el celular */
-.desktop-links {
-    display: none;
-}
-
-/* Mostramos el botón de información (el círculo con la 'i') en el celular */
-#info-celular {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* El desplegable legal en el celular */
-.legal-dropdown {
-    position: absolute;
-    top: 50px;
-    right: 20px;
-    background: var(--bg-app);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    display: none; /* Se activa con JS */
-    flex-direction: column;
-    z-index: 200;
-    width: 180px;
-}
-
-/* --- AJUSTE INTEGRAL PARA ESCRITORIO (Pantallas mayores a 1024px) --- */
-@media (min-width: 1024px) {
-    .app-container, .bottom-nav {
-        max-width: 900px !important;
+        /* Modal compacto en escritorio */
+        #productFullView { background-color: rgba(0, 0, 0, 0.6) !important; backdrop-filter: blur(8px); align-items: center; justify-content: center; display: none; }
+        #productFullView .pv-container { max-width: 500px !important; min-height: auto !important; height: auto !important; max-height: 90vh; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     }
 
-    /* En PC, mostramos los links horizontales y escondemos el círculo de info */
-    .desktop-links {
-        display: flex;
-        gap: 20px;
-        margin-right: 10px;
-    }
-    .desktop-links a {
-        text-decoration: none;
-        color: var(--text-main);
-        font-size: 12px;
-        font-weight: 700;
-        cursor: pointer;
-        text-transform: uppercase;
-    }
-
-    #info-celular {
-        display: none !important; /* Escondemos el icono de móvil en PC */
-    }
-
-    /* Vista de detalle (Modal compacto) */
-    #productFullView {
-        background-color: rgba(0, 0, 0, 0.6) !important;
-        backdrop-filter: blur(8px);
-        display: none; /* JS cambia a flex */
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-    }
-
-    #productFullView .pv-container {
-        max-width: 500px !important;
-        min-height: auto !important;
-        height: auto !important;
-        max-height: 85vh;
-        border-radius: 28px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        overflow-y: auto;
-        border: 1px solid var(--border);
-        margin: auto;
-    }
-
-    .pv-content {
-        padding: 30px 25px !important;
-    }
-}        
-    </style>
-</head>
-<body>
-  <div id="pwaPill" style="display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 10px 16px; border-radius: 50px; font-size: 12px; font-weight: 700; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); align-items: center; gap: 12px; width: max-content; animation: slideUp 0.4s ease-out;">
-    <span onclick="closePwaPill()" style="opacity: 0.7; font-size: 16px; cursor: pointer;">&times;</span>
-    <span id="pwaText" onclick="installPwa()">INSTALAR APP 🛒</span>
-</div>
-
-<style>
-<style>
-    /* Color de texto por defecto (Modo Claro - Fondo oscuro) */
-    #pwaPill {
-        color: #ffffff;
-    }
-
-    /* Color de texto en Modo Oscuro (Fondo blanco) */
-    .dark-mode #pwaPill {
-        color: #000000 !important;
-    }
-
-    /* Asegura que el icono de cerrar (X) también cambie */
-    .dark-mode #pwaPill span {
-        color: #000000;
-    }
-
-    @keyframes slideUp {
-        from { bottom: -50px; opacity: 0; }
-        to { bottom: 85px; opacity: 1; }
-    }
-
-    /* Si ya está instalada, no se muestra nunca */
     @media (display-mode: standalone) { 
         #pwaPill { display: none !important; } 
     }
-</style>
 </style>
 </div>
     <div id="productFullView">
@@ -697,11 +437,17 @@ flatList = rows.map(r => {
         renderView(); 
     }
 
-    function openProductView(id, pushState = true) {
+   function openProductView(id, pushState = true) {
     const item = flatList.find(i => i.id == id);
     if (!item) return;
     openId = id;
+   
+    // CAMBIO AQUÍ: Muestra el Ticker en el header del modal en lugar de "TradingChango"
+    const modalHeaderLogo = document.querySelector('#productFullView .logo');
+    if (modalHeaderLogo) modalHeaderLogo.innerText = item.ticker;
 
+}
+     
     // 1. Manejo de Historial/URL
     if (pushState) {
         const slug = getSlug(item.n);
@@ -773,12 +519,12 @@ flatList = rows.map(r => {
         } catch (err) { console.log(err); }
     };
 }
-    function closeProductView(pushState = true) {
-        document.getElementById('productFullView').style.display = 'none';
-        document.body.style.overflow = 'auto';
-        if (pushState) history.pushState(null, '', `/${currentTab === 'home' ? '' : currentTab}`);
-        openId = null;
-        renderView();
+    function closeProductView() {
+    document.getElementById('productFullView').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    const modalHeaderLogo = document.querySelector('#productFullView .logo');
+    if (modalHeaderLogo) modalHeaderLogo.innerText = "TradingChango"
+    renderView();
     }
 
     function openPage(c, t, pushState = true) {
