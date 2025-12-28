@@ -261,7 +261,8 @@
                 border-color: #ffffff !important;
             }        
         .pv-market-section { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 25px; }
-        /* Esto modifica el div que pediste y el de 'Tu Chango' */ .pv-market-title { font-size: 11px; font-weight: 800 !important; /* Negrita extra */ text-transform: uppercase; color: var(--text-main); /* Color principal, más oscuro que el muted */ margin-bottom: 15px; letter-spacing: 1px; display: block; }
+        .pv-market-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 15px; letter-spacing: 1px; }
+
         .ob-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
         .ob-store { font-weight: 600; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
         .dot { width: 8px; height: 8px; border-radius: 50%; }
@@ -269,48 +270,17 @@
         .best-val { color: var(--color-good); font-weight: 700; background: rgba(0, 230, 118, 0.1); } 
 
         .ticker-list { padding: 0; }
-        .ticker-card {
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    background: var(--bg-app);
-    gap: 10px; /* Espacio mínimo entre elementos */
-}
-
-.ticker-info {
-    display: flex;
-    flex: 1; /* Toma el espacio disponible */
-    align-items: center;
-    justify-content: space-between;
-    min-width: 0; /* Permite que los hijos se achiquen */
-}
-
-.t-left {
-    display: flex;
-    flex-direction: column;
-    min-width: 0; /* Crucial para el recorte de texto */
-    flex: 1;
-}
-
-.t-name {
-    font-size: 13px;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis; /* Pone "..." si no hay espacio */
-    font-weight: 500;
-}
+        .ticker-card { border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; position: relative; background: var(--bg-app); transition: background 0.2s; }
+        .ticker-info { flex-grow: 1; display: flex; align-items: center; justify-content: space-between; padding-right: 15px; }
+        .t-left { display: flex; flex-direction: column; gap: 3px; }
         .t-symbol { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
         .t-name { font-size: 13px; color: var(--text-muted); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .t-right { text-align: right; flex-shrink: 0; /* Impide que el precio y % se aplasten */ margin: 0 5px; }
+        .t-right { text-align: right; }
         .t-price { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; }
         .t-change { font-family: 'Roboto Mono'; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
         .trend-up { color: white; background: var(--color-bad); } .trend-down { color: white; background: var(--color-good); } .trend-neutral { color: var(--text-muted); background: rgba(128,128,128,0.1); }
         
-        .fav-btn { flex-shrink: 0; /* El carrito SIEMPRE se queda en su lugar */ width: 40px; height: 40px; display: flex; align-items: center; justify-content: flex-end; }
+        .fav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: flex-end; font-size: 18px; color: var(--border); transition: 0.2s; }
         .fav-btn.active { color: var(--star-gold); }
         
         .app-footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
@@ -585,7 +555,6 @@
     </div>
 
    <script>
-    let configDB = {};
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -910,13 +879,10 @@ flatList = rows.map(r => {
                             return `${parseInt(d[2])} ${MONTHS[parseInt(d[1])-1]} ${d[0]}`;
                         },
                         // MOSTRAR EMPRESA + PRECIO
-                        // Dentro de loadPvChart -> options -> plugins -> tooltip -> callbacks:
-                      label: (context) => {
-                          const entry = data[context.dataIndex];
-                          // Usamos || 'N/A' para que si es null no rompa, y chequeamos que el nombre sea correcto
-                          const tienda = entry.supermercado || entry.super || "MERCADO"; 
-                          return `${tienda}: $${format(entry.precio_minimo)}`;
-                      }
+                        label: (context) => {
+                            const entry = data[context.dataIndex];
+                            return `${entry.supermercado}: $${format(entry.precio_minimo)}`;
+                        }
                     }
                 }
             },
