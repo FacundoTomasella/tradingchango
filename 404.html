@@ -55,15 +55,13 @@
 
     <style>
       /* Controles de cantidad en el Chango */
+/* EL ARREGLO PARA LOS BOTONES + / - */
 .qty-control {
+    flex-shrink: 0 !important; /* Evita que los controles + / - se aplasten */
     display: flex;
     align-items: center;
-    gap: 12px;
-    background: var(--bg-card);
-    padding: 6px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    margin-right: 10px;
+    gap: 8px;
+}
 }
 .qty-btn {
     background: none;
@@ -94,16 +92,13 @@
         display: none !important;
     }
 }
-        .pv-chart-label {
-            font-size: 11px;
-            font-weight: 800 !important;;
-            text-transform: uppercase;
-            color: var(--text-main);
-            margin-top: 20px;   /* Espacio respecto a los botones */
-            margin-bottom: 5px;  /* Espacio pegado al porcentaje */
-            display: block;
-            letter-spacing: 0.5px;
-        }
+       /* Títulos de secciones en el producto */
+.pv-chart-label, .pv-market-title {
+    font-weight: 800 !important; /* Negrita extra */
+    color: var(--text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
         
         /* Ajuste opcional para el porcentaje para que no quede tan separado del gráfico */
         .chart-performance {
@@ -270,17 +265,17 @@
         .best-val { color: var(--color-good); font-weight: 700; background: rgba(0, 230, 118, 0.1); } 
 
         .ticker-list { padding: 0; }
-        .ticker-card { border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; position: relative; background: var(--bg-app); transition: background 0.2s; }
-        .ticker-info { flex-grow: 1; display: flex; align-items: center; justify-content: space-between; padding-right: 15px; }
-        .t-left { display: flex; flex-direction: column; gap: 3px; }
+        .ticker-card { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; gap: 10px; /* Espacio mínimo entre nombre, precio y botones */ min-width: 0; }        
+        .ticker-info { display: flex; flex: 1; /* Toma todo el espacio disponible */ justify-content: space-between; align-items: center; min-width: 0; /* Permite que los hijos se achiquen si es necesario */ }
+        .t-left { min-width: 0; /* Permite que el nombre se corte con puntos suspensivos */ flex: 1; }
         .t-symbol { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
-        .t-name { font-size: 13px; color: var(--text-muted); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .t-right { text-align: right; }
+        .t-name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* Si el nombre es largo, pone ... en vez de empujar */ }
+        .t-right { text-align: right; flex-shrink: 0; /* El precio y porcentaje NO se achican */ margin: 0 10px; }
         .t-price { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; }
         .t-change { font-family: 'Roboto Mono'; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
         .trend-up { color: white; background: var(--color-bad); } .trend-down { color: white; background: var(--color-good); } .trend-neutral { color: var(--text-muted); background: rgba(128,128,128,0.1); }
         
-        .fav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: flex-end; font-size: 18px; color: var(--border); transition: 0.2s; }
+        .fav-btn { flex-shrink: 0 !important; /* BLOQUEA el botón para que siempre se vea */ width: 40px; display: flex; justify-content: flex-end; }
         .fav-btn.active { color: var(--star-gold); }
         
         .app-footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
