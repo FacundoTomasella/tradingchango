@@ -292,7 +292,7 @@
         .cart-badge { position: absolute; top: 8px; right: 25%; background: var(--badge-bg); color: var(--badge-text); font-size: 9px; font-weight: 600; min-width: 15px; height: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 4px; display: none; }
 
         .loader { text-align: center; padding: 50px; color: var(--text-muted); font-family: 'Roboto Mono'; font-size: 12px; }
-        .chart-wrapper { width: 100%; height: 260px; position: relative; margin-top: 10px; /* Eliminamos padding-right para que el gráfico use todo el ancho disponible */ padding: 0; }
+        .chart-wrapper { width: 100%; height: 260px; position: relative; margin-top: 10px; /* Eliminamos todo el padding para que la línea llegue al final */ padding: 0 !important; overflow: hidden; } /* Aseguramos que el canvas ocupe el 100% real */ #pv-canvas { width: 100% !important; }
         .chart-performance { font-size: 11px; font-weight: 700; margin-bottom: 10px; display: block; }
 
         .chango-summary { padding: 20px; background: var(--bg-card); margin: 10px 20px; border-radius: 12px; border: 1px solid var(--border); }
@@ -820,6 +820,7 @@ flatList = rows.map(r => {
     const firstP = data[0].precio_minimo; 
     const lastP = data[data.length-1].precio_minimo; 
     const diffP = (((lastP - firstP) / firstP) * 100).toFixed(1);
+    
     const chartColor = diffP >= 0 ? '#00c853' : '#ff3b30';
     const chartFill = diffP >= 0 ? 'rgba(0, 200, 83, 0.05)' : 'rgba(255, 59, 48, 0.05)';
 
@@ -847,16 +848,18 @@ flatList = rows.map(r => {
                 backgroundColor: gradient,
                 tension: 0.4, 
                 pointRadius: 0,
-                pointHitRadius: 20,
-                pointHoverRadius: 4,
+                pointHitRadius: 30,
+                pointHoverRadius: 5,
                 pointHoverBackgroundColor: chartColor
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            // Quitamos paddings del layout para ganar espacio
-            layout: { padding: { left: 0, right: 0, top: 5, bottom: 0 } },
+            // LAYOUT: Eliminamos paddings laterales para que pegue a los bordes
+            layout: {
+                padding: { left: 0, right: 0, top: 10, bottom: 0 }
+            },
             interaction: { intersect: false, mode: 'index' },
             plugins: { 
                 legend: { display: false },
@@ -879,15 +882,15 @@ flatList = rows.map(r => {
             scales: {
                 y: {
                     display: true,
-                    position: 'right',
+                    position: 'right', // Precio a la derecha estilo Trading
                     grid: { display: false },
                     border: { display: false },
                     ticks: { 
                         font: { size: 10 },
                         color: '#999',
                         callback: v => '$' + format(v),
-                        maxTicksLimit: 6,
-                        padding: 0 // Pegamos los números al borde derecho
+                        maxTicksLimit: 5,
+                        padding: 2 // Espacio mínimo para el número
                     }
                 },
                 x: {
@@ -897,21 +900,12 @@ flatList = rows.map(r => {
                     ticks: {
                         font: { size: 10 },
                         color: '#bbb',
-                        maxTicksLimit: 4,
-                        callback: function(val, index) {
-                            const labels = this.chart.data.labels;
-                            const currentLabel = labels[val]; // Ej: "28 Dic"
-                            
-                            // LÓGICA DE ETIQUETA DINÁMICA
-                            const monthsInChart = new Set(labels.map(l => l.split(' ')[1]));
-                            
-                            if (monthsInChart.size > 1) {
-                                // Si hay más de un mes (ej: Dic y Ene), mostramos solo mes
-                                return currentLabel.split(' ')[1].toLowerCase();
-                            } else {
-                                // Si es todo del mismo mes, mostramos "Día Mes" (ej: "28 dic")
-                                return currentLabel.toLowerCase();
-                            }
+                        // FORZAMOS SOLO 3 COORDENADAS (Inicio, Medio, Fin)
+                        maxTicksLimit: 3, 
+                        autoSkip: true,
+                        callback: function(val) {
+                            const label = this.getLabelForValue(val);
+                            return label.toLowerCase(); // Retorna ej: "10 dic"
                         }
                     }
                 }
