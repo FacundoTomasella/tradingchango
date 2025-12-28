@@ -2,7 +2,24 @@
 <html lang="es">
 <head>
   <link rel="manifest" href="manifest.json">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RVLYJ69FYD"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
 
+  gtag('config', 'G-RVLYJ69FYD');
+</script>
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "urnhtyw6dr");
+</script>
+  
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js') // Asegúrate que diga .js
@@ -79,9 +96,9 @@
 }
         .pv-chart-label {
             font-size: 11px;
-            font-weight: 800;
+            font-weight: 800 !important;;
             text-transform: uppercase;
-            color: var(--text-muted);
+            color: var(--text-main);
             margin-top: 20px;   /* Espacio respecto a los botones */
             margin-bottom: 5px;  /* Espacio pegado al porcentaje */
             display: block;
@@ -225,8 +242,9 @@
             }
             
             .range-btn.active {
-                background: #131722; /* Fondo oscuro para el activo */
-                color: #fff;
+                font-weight: 800;
+                background: var(--accent);
+                color: var(--bg-app);
                 border-color: #131722;
             }
             
@@ -375,12 +393,32 @@
 </div>
 
 <style>
+<style>
+    /* Color de texto por defecto (Modo Claro - Fondo oscuro) */
+    #pwaPill {
+        color: #ffffff;
+    }
+
+    /* Color de texto en Modo Oscuro (Fondo blanco) */
+    .dark-mode #pwaPill {
+        color: #000000 !important;
+    }
+
+    /* Asegura que el icono de cerrar (X) también cambie */
+    .dark-mode #pwaPill span {
+        color: #000000;
+    }
+
     @keyframes slideUp {
         from { bottom: -50px; opacity: 0; }
         to { bottom: 85px; opacity: 1; }
     }
+
     /* Si ya está instalada, no se muestra nunca */
-    @media (display-mode: standalone) { #pwaPill { display: none !important; } }
+    @media (display-mode: standalone) { 
+        #pwaPill { display: none !important; } 
+    }
+</style>
 </style>
 </div>
     <div id="productFullView">
@@ -560,24 +598,32 @@ if (Array.isArray(favorites)) {
            // Dentro de la función async function init()
 flatList = rows.map(r => {
     const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
-    let t = generateTicker(r.nombre);
-    if(usedTickers.has(t)) t = (t.substring(0,3) + r.id.toString().slice(-1)).toUpperCase();
-    usedTickers.add(t);
+    let t = r.ticker || generateTicker(r.nombre);
     
     return {
         id: r.id, 
         n: r.nombre.trim(), 
         cat: r.categoria, 
         ticker: t,
-        p: [r.p_coto||0, r.p_carrefour||0, r.p_dia||0, r.p_jumbo||0],
-        // AGREGAMOS ESTA LÍNEA (Asegúrate que los nombres url_coto, etc., coincidan con Supabase)
-        urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#'],
+        p: [
+            r.p_coto || 0, 
+            r.p_carrefour || 0, 
+            r.p_dia || 0, 
+            r.p_jumbo || 0, 
+            r.p_masonline || 0
+        ],
+        urls: [
+            r.url_coto || '#', 
+            r.url_carrefour || '#', 
+            r.url_dia || '#', 
+            r.url_jumbo || '#', 
+            r.url_masonline || '#'
+        ],
         h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
         img: r.imagen_url
-    }
+    }; // <--- Asegurate de que este punto y coma esté aquí
 });
-
-            document.getElementById('loader').style.display = 'none';
+          document.getElementById('loader').style.display = 'none';
             updateCartBadge();
 
             // --- LÓGICA DE RUTAS AL CARGAR ---
@@ -709,6 +755,7 @@ flatList = rows.map(r => {
     document.body.style.overflow = 'hidden';
 
     // 8. Reiniciar filtros de gráfico y cargar datos
+    document.querySelector('#productFullView .logo').innerText = item.ticker;
     document.querySelectorAll('#pv-range-filters .range-btn').forEach(b => b.classList.remove('active'));
     const firstBtn = document.querySelector('#pv-range-filters .range-btn:first-child');
     if (firstBtn) firstBtn.classList.add('active');
@@ -729,6 +776,7 @@ flatList = rows.map(r => {
     };
 }
     function closeProductView(pushState = true) {
+        document.querySelector('#productFullView .logo').innerText = "TradingChango";
         document.getElementById('productFullView').style.display = 'none';
         document.body.style.overflow = 'auto';
         if (pushState) history.pushState(null, '', `/${currentTab === 'home' ? '' : currentTab}`);
@@ -1015,11 +1063,11 @@ flatList = rows.map(r => {
     });
 }
 function renderChangoSummary(container, items) {
-    const totals = [0, 0, 0, 0];
+    const totals = [0, 0, 0, 0, 0]; 
     items.forEach(item => {
-        const qty = favorites[item.id] || 1; // Obtenemos la cantidad
+        const qty = favorites[item.id] || 1;
         item.p.forEach((val, idx) => {
-            if (val > 0) totals[idx] += (val * qty); // Multiplicamos por cantidad
+            if (val > 0) totals[idx] += (val * qty);
         });
     });
 
@@ -1030,13 +1078,14 @@ function renderChangoSummary(container, items) {
     summaryDiv.className = 'chango-summary';
     
     let html = `<div class="pv-market-title" style="font-weight:800; color:var(--text-main);">Tu Chango (Total)</div>`;
-    const markets = ["Coto", "Carrefour", "Dia", "Jumbo"];
     
-    markets.forEach((name, i) => {
+    const storeNames = ["Coto", "Carrefour", "Dia", "Jumbo", "MasOnline"];
+    
+    storeNames.forEach((n, i) => {
         const isBest = totals[i] === minTotal && minTotal > 0;
         html += `
             <div class="chango-row ${isBest ? 'best' : ''}">
-                <span>${name}</span>
+                <span>${n}</span>
                 <span>$ ${format(totals[i])}</span>
             </div>`;
     });
@@ -1044,6 +1093,7 @@ function renderChangoSummary(container, items) {
     summaryDiv.innerHTML = html;
     container.appendChild(summaryDiv);
 }
+     
 function renderEmptyCart(container) {
     const emptyMsg = document.createElement('div');
     emptyMsg.className = 'empty-cart-message'; // Mejor usar clases CSS
@@ -1068,33 +1118,26 @@ function renderEmptyCart(container) {
         {name: "COTO", color: "#ff3b30"},
         {name: "CARREFOUR", color: "#2962ff"},
         {name: "DIA", color: "#ff3b30"},
-        {name: "JUMBO", color: "#00c853"}
+        {name: "JUMBO", color: "#00c853"},
+        {name: "MAS ONLINE", color: "#00c853"}
     ];
 
     return STORES.map((s, i) => { 
         const p = item.p[i];
-        const url = item.urls ? item.urls[i] : '#'; // Obtenemos la URL guardada
+        const url = item.urls[i];
         
-        // Si no hay precio, mostramos un estado desactivado
-        if (p === 0) {
-            return `
-                <div class="ob-row" style="opacity: 0.5;">
-                    <div class="ob-store">
-                        <div class="dot" style="background:#444"></div>
-                        ${s.name}
-                    </div>
-                    <span class="price-link no-price">N/A</span>
-                </div>`;
-        }
+        if (!p || p === 0) return `
+            <div class="ob-row" style="opacity:0.5;">
+                <div class="ob-store"><div class="dot" style="background:#444"></div>${s.name}</div>
+                <span class="price-link no-price">N/A</span>
+            </div>`;
 
-        // Si hay precio, creamos el link real
         return `
             <div class="ob-row">
                 <div class="ob-store">
-                    <div class="dot" style="background:${s.color}"></div>
-                    ${s.name}
+                    <div class="dot" style="background:${s.color}"></div>${s.name}
                 </div>
-                <a href="${url}" target="_blank" rel="noopener noreferrer" class="price-link ${p === min ? 'best-val' : ''}">
+                <a href="${url}" target="_blank" rel="noopener" class="price-link ${p === min ? 'best-val' : ''}">
                     $${format(p)}
                 </a>
             </div>`; 
@@ -1152,6 +1195,29 @@ document.getElementById('productFullView').addEventListener('click', function(e)
         closeProductView();
     }
 });  
+
+// 1. Medir cuando alguien instala la App
+window.addEventListener('appinstalled', () => {
+  if (typeof gtag === 'function') {
+    gtag('event', 'pwa_install', {
+      'event_category': 'App',
+      'event_label': 'PWA Installed'
+    });
+  }
+  console.log('App instalada con éxito');
+});
+
+// 2. Función para medir clics en los links de los supermercados
+function trackMarketClick(superName, productName) {
+  if (typeof gtag === 'function') {
+    gtag('event', 'click_supermercado', {
+      'supermercado': superName,
+      'producto': productName
+    });
+  }
+}
+
+     
     // Iniciar la app
     init();
 </script>
