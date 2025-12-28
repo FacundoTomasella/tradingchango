@@ -292,7 +292,7 @@
         .cart-badge { position: absolute; top: 8px; right: 25%; background: var(--badge-bg); color: var(--badge-text); font-size: 9px; font-weight: 600; min-width: 15px; height: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 4px; display: none; }
 
         .loader { text-align: center; padding: 50px; color: var(--text-muted); font-family: 'Roboto Mono'; font-size: 12px; }
-        .chart-wrapper { width: 100%; height: 240px; /* Reducimos un poco para compactar */ position: relative; margin-top: 10px; /* Evita que el gráfico toque los bordes del modal */ padding-right: 10px; }
+        .chart-wrapper { width: 100%; height: 260px; padding-top: 5px; position: relative; }
         .chart-performance { font-size: 11px; font-weight: 700; margin-bottom: 10px; display: block; }
 
         .chango-summary { padding: 20px; background: var(--bg-card); margin: 10px 20px; border-radius: 12px; border: 1px solid var(--border); }
@@ -802,7 +802,6 @@ flatList = rows.map(r => {
         btn.parentElement.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active')); 
         btn.classList.add('active'); 
     }
-    
     const item = flatList.find(i => i.id == openId);
     const res = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?nombre_producto=eq.${encodeURIComponent(item.n)}&fecha=gte.${(new Date(Date.now() - days*864e5)).toISOString().split('T')[0]}&order=fecha.asc`, { 
         headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
@@ -821,19 +820,14 @@ flatList = rows.map(r => {
     const lastP = data[data.length-1].precio_minimo; 
     const diffP = (((lastP - firstP) / firstP) * 100).toFixed(1);
     
-    // Binance Style: Verde si subió, Rojo si bajó
-    const chartColor = diffP >= 0 ? '#00c853' : '#ff3b30';
-    const chartFill = diffP >= 0 ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 59, 48, 0.1)';
+    let label = days === 7 ? 'últimos 7 días' : days === 15 ? 'últimos 15 días' : days === 30 ? 'último mes' : days === 90 ? 'últimos 3 meses' : days === 180 ? 'últimos 6 meses' : 'último año';
 
-    perfEl.style.color = chartColor;
-    perfEl.innerText = `${diffP > 0 ? '+' : ''}${diffP}% últimos días`;
+    perfEl.style.color = diffP >= 0 ? '#f23645' : '#00a650';
+    perfEl.innerText = `${diffP > 0 ? '+' : ''}${diffP}% ${label}`;
 
     const ctx = document.getElementById('pv-canvas').getContext('2d');
-    
-    // Crear degradado para el fondo de la línea
-    const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-    gradient.addColorStop(0, chartFill);
-    gradient.addColorStop(1, 'transparent');
+    const isDark = document.documentElement.classList.contains('dark-mode');
+    const mainColor = isDark ? '#ffffff' : '#131722';
 
     if(currentChart) currentChart.destroy();
     currentChart = new Chart(ctx, {
@@ -841,60 +835,71 @@ flatList = rows.map(r => {
         data: {
             labels: data.map(d => { 
                 const dt = new Date(d.fecha + 'T12:00:00'); 
-                return `${dt.getDate()} ${MONTHS[dt.getMonth()]}`; 
+                return `${dt.getDate()} ${MONTHS[dt.getMonth()]}.`; 
             }),
             datasets: [{ 
                 data: data.map(d => d.precio_minimo), 
-                borderColor: chartColor, 
+                borderColor: mainColor, 
                 borderWidth: 2,
-                fill: true,
-                backgroundColor: gradient,
-                tension: 0.4, // SUAVIZA LA LÍNEA (Estilo Binance)
-                pointRadius: 0, // QUITA LOS PUNTOS
-                pointHitRadius: 20, // Aumenta zona táctil para ver el precio
-                pointHoverRadius: 5, // Solo muestra el punto al pasar el mouse
-                pointHoverBackgroundColor: chartColor
+                backgroundColor: 'transparent',
+                fill: false,
+                tension: 0, 
+                pointStyle: 'circle',
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: mainColor,
+                pointBorderWidth: 2
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: { intersect: false, mode: 'index' },
+            // INTERACCIÓN: Se activa en cualquier parte del eje X (línea vertical)
+            interaction: {
+                intersect: false,
+                mode: 'index',
+            },
             plugins: { 
                 legend: { display: false },
                 tooltip: {
                     enabled: true,
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    titleColor: '#000',
-                    bodyColor: '#000',
-                    borderColor: '#ddd',
+                    backgroundColor: isDark ? '#1e222d' : '#fff',
+                    titleColor: isDark ? '#fff' : '#131722',
+                    bodyColor: isDark ? '#fff' : '#131722',
+                    borderColor: isDark ? '#444' : '#e0e3eb',
                     borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 6,
                     displayColors: false,
+                    titleFont: { size: 11, weight: 'normal' },
+                    bodyFont: { size: 13, weight: 'bold', family: 'Roboto Mono' },
                     callbacks: {
+                        title: (context) => {
+                            const d = data[context[0].dataIndex].fecha.split('-');
+                            return `${parseInt(d[2])} ${MONTHS[parseInt(d[1])-1]} ${d[0]}`;
+                        },
+                        // MOSTRAR EMPRESA + PRECIO
                         label: (context) => {
                             const entry = data[context.dataIndex];
-                            const tienda = entry.supermercado || "MERCADO";
-                            return `${tienda}: $${format(entry.precio_minimo)}`;
+                            return `${entry.supermercado}: $${format(entry.precio_minimo)}`;
                         }
                     }
                 }
             },
             scales: {
                 y: {
-                    display: true, // Binance muestra el precio actual a la derecha
-                    position: 'right',
-                    grid: { display: false }, // QUITA LÍNEAS HORIZONTALES
-                    ticks: { 
-                        font: { size: 10 },
-                        callback: v => '$' + format(v)
-                    }
+                    border: { display: false },
+                    grid: { color: isDark ? '#2a2a2a' : '#f0f0f0', drawTicks: false },
+                    ticks: { color: '#999', font: { size: 11 }, callback: v => '$' + v, padding: 10 }
                 },
                 x: {
-                    display: false // Binance Lite suele ocultar el eje X
+                    border: { display: false },
+                    grid: { display: false },
+                    ticks: { color: '#999', font: { size: 11 }, maxTicksLimit: 6 }
                 }
             }
-        }
-    });
+        },
         // PLUGIN PARA LA LÍNEA VERTICAL (CROSSHAIR)
         plugins: [{
             afterDraw: (chart) => {
