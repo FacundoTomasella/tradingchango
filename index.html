@@ -864,13 +864,26 @@ flatList = rows.map(r => {
             plugins: { 
                 legend: { display: false },
                 tooltip: {
-                    enabled: true,
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#131722',
-                    bodyColor: '#131722',
-                    borderColor: '#e0e3eb',
-                    borderWidth: 1,
-                    displayColors: false,
+                enabled: true,
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                titleColor: '#131722',
+                bodyColor: '#131722',
+                borderColor: '#e0e3eb',
+                borderWidth: 1,
+                cornerRadius: 4,
+                displayColors: false,
+                padding: 12,
+                
+                // --- AQUÍ APLICAMOS LAS NEGRITAS ---
+                titleFont: { 
+                    size: 11, 
+                    weight: 'bold' 
+                },
+                bodyFont: { 
+                    family: 'Roboto Mono', // Fuente tipo trading
+                    size: 13, 
+                    weight: '800' // Extra negrita para el nombre y precio
+                },
                     callbacks: {
                         label: (context) => {
                             const entry = data[context.dataIndex];
