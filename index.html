@@ -813,16 +813,25 @@ flatList = rows.map(r => {
     if (wrap.querySelector('.no-data-overlay')) wrap.querySelector('.no-data-overlay').remove();
 
     if(data.length < 2) {
-        const overlay = document.createElement('div'); overlay.className = 'no-data-overlay'; overlay.innerHTML = '<span class="no-data-text">Sin datos suficientes</span>';
-        wrap.appendChild(overlay); perfEl.innerText = ''; if(currentChart) currentChart.destroy(); return;
+        const overlay = document.createElement('div'); 
+        overlay.className = 'no-data-overlay'; 
+        overlay.innerHTML = '<span class="no-data-text">Sin datos suficientes</span>';
+        wrap.appendChild(overlay); 
+        perfEl.innerText = ''; 
+        if(currentChart) currentChart.destroy(); 
+        return;
     }
 
     const firstP = data[0].precio_minimo; 
     const lastP = data[data.length-1].precio_minimo; 
     const diffP = (((lastP - firstP) / firstP) * 100).toFixed(1);
     
-    const chartColor = diffP >= 0 ? '#00c853' : '#ff3b30';
-    const chartFill = diffP >= 0 ? 'rgba(0, 200, 83, 0.05)' : 'rgba(255, 59, 48, 0.05)';
+    // LÓGICA INVERTIDA: 
+    // Si bajó (diffP < 0) es VERDE. 
+    // Si subió (diffP > 0) es ROJO.
+    const isDown = lastP < firstP;
+    const chartColor = isDown ? '#00c853' : '#ff3b30'; // Verde vs Rojo
+    const chartFill = isDown ? 'rgba(0, 200, 83, 0.05)' : 'rgba(255, 59, 48, 0.05)';
 
     perfEl.style.color = chartColor;
     perfEl.innerText = `${diffP > 0 ? '+' : ''}${diffP}% últimos días`;
@@ -856,38 +865,27 @@ flatList = rows.map(r => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            // LAYOUT: Eliminamos paddings laterales para que pegue a los bordes
-            layout: {
-                padding: { left: 0, right: 0, top: 10, bottom: 0 }
-            },
+            layout: { padding: { left: 0, right: 0, top: 10, bottom: 0 } },
             interaction: { intersect: false, mode: 'index' },
             plugins: { 
                 legend: { display: false },
                 tooltip: {
-                enabled: true,
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                titleColor: '#131722',
-                bodyColor: '#131722',
-                borderColor: '#e0e3eb',
-                borderWidth: 1,
-                cornerRadius: 4,
-                displayColors: false,
-                padding: 12,
-                
-                // --- AQUÍ APLICAMOS LAS NEGRITAS ---
-                titleFont: { 
-                    size: 11, 
-                    weight: 'bold' 
-                },
-                bodyFont: { 
-                    family: 'Roboto Mono', // Fuente tipo trading
-                    size: 13, 
-                    weight: '800' // Extra negrita para el nombre y precio
-                },
+                    enabled: true,
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#131722',
+                    bodyColor: '#131722',
+                    borderColor: '#e0e3eb',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: false,
+                    // NEGRITAS EN EL TOOLTIP
+                    titleFont: { size: 11, weight: 'bold' },
+                    bodyFont: { family: 'Roboto Mono', size: 13, weight: '800' },
                     callbacks: {
                         label: (context) => {
                             const entry = data[context.dataIndex];
-                            return `${entry.supermercado || 'MERCADO'}: $${format(entry.precio_minimo)}`;
+                            const tienda = entry.supermercado || "MERCADO";
+                            return `${tienda}: $${format(entry.precio_minimo)}`;
                         }
                     }
                 }
@@ -895,15 +893,15 @@ flatList = rows.map(r => {
             scales: {
                 y: {
                     display: true,
-                    position: 'right', // Precio a la derecha estilo Trading
+                    position: 'right',
                     grid: { display: false },
                     border: { display: false },
                     ticks: { 
-                        font: { size: 10 },
+                        font: { size: 10, weight: 'bold' }, // Precios eje Y en negrita
                         color: '#999',
                         callback: v => '$' + format(v),
                         maxTicksLimit: 5,
-                        padding: 2 // Espacio mínimo para el número
+                        padding: 2
                     }
                 },
                 x: {
@@ -913,12 +911,11 @@ flatList = rows.map(r => {
                     ticks: {
                         font: { size: 10 },
                         color: '#bbb',
-                        // FORZAMOS SOLO 3 COORDENADAS (Inicio, Medio, Fin)
-                        maxTicksLimit: 3, 
+                        maxTicksLimit: 3, // SOLO 3 COORDENADAS (Inicio, Medio, Fin)
                         autoSkip: true,
                         callback: function(val) {
                             const label = this.getLabelForValue(val);
-                            return label.toLowerCase(); // Retorna ej: "10 dic"
+                            return label.toLowerCase();
                         }
                     }
                 }
