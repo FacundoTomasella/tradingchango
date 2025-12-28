@@ -861,42 +861,24 @@ flatList = rows.map(r => {
                 padding: { left: 0, right: 0, top: 10, bottom: 0 }
             },
             interaction: { intersect: false, mode: 'index' },
-            // Dentro de loadPvChart -> options -> plugins
-tooltip: {
-    enabled: true,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    titleColor: '#131722',
-    bodyColor: '#131722',
-    borderColor: '#e0e3eb',
-    borderWidth: 1,
-    cornerRadius: 4,
-    displayColors: false,
-    padding: 12,
-    
-    // --- AQUÍ APLICAMOS LAS NEGRITAS ---
-    titleFont: { 
-        size: 11, 
-        weight: 'bold' 
-    },
-    bodyFont: { 
-        family: 'Roboto Mono', // Fuente tipo trading
-        size: 13, 
-        weight: '800' // Extra negrita para el nombre y precio
-    },
-    
-    callbacks: {
-        title: (context) => {
-            // Esto muestra la fecha arriba en el tooltip
-            return context[0].label; 
-        },
-        label: (context) => {
-            const entry = data[context.dataIndex];
-            const tienda = entry.supermercado || "MERCADO";
-            // Retornamos el texto que ahora se verá en negrita gracias al bodyFont.weight
-            return `${tienda}: $${format(entry.precio_minimo)}`;
-        }
-    }
-}
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#131722',
+                    bodyColor: '#131722',
+                    borderColor: '#e0e3eb',
+                    borderWidth: 1,
+                    displayColors: false,
+                    callbacks: {
+                        label: (context) => {
+                            const entry = data[context.dataIndex];
+                            return `${entry.supermercado || 'MERCADO'}: $${format(entry.precio_minimo)}`;
+                        }
+                    }
+                }
+            },
             scales: {
                 y: {
                     display: true,
