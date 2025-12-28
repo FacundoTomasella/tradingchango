@@ -434,46 +434,48 @@
                 </div>
             </div>
             
-            <div class="pv-content">
-                <div class="pv-top-info">
-                    <!-- MODIFICADO: Imagen ahora a la izquierda -->
-                    <div class="pv-img-container" id="pv-img-wrap">
-                        <img id="pv-img" src="" alt="Producto">
-                    </div>
-                    <!-- MODIFICADO: Datos ahora a la derecha -->
-                    <div class="pv-title-box">
-                        <h1 id="pv-name">Cargando...</h1>
-                        <div class="pv-best-store" id="pv-best-store">---</div>
-                        <div class="pv-price-big" id="pv-price-big">$ 0</div>
-                        <!-- NUEVO: Dato de precio promedio -->
-                        <div class="pv-avg-price">Precio promedio: <span id="pv-avg-price">$ 0</span></div>
-                    </div>
-                </div>
-
-                <div class="pv-chart-section">
-                    <div class="range-filters" id="pv-range-filters">
-                        <button class="range-btn active" onclick="loadPvChart(7, this)">7D</button>
-                        <button class="range-btn" onclick="loadPvChart(15, this)">15D</button>
-                        <button class="range-btn" onclick="loadPvChart(30, this)">1M</button>
-                        <button class="range-btn" onclick="loadPvChart(90, this)">3M</button>
-                        <button class="range-btn" onclick="loadPvChart(180, this)">6M</button>
-                        <button class="range-btn" onclick="loadPvChart(365, this)">1Y</button>
-                    </div>
-                    
-                    <!-- AGREGAR ESTA LÍNEA AQUÍ -->
-                    <div class="pv-chart-label">Gráfico de tendencias</div> 
-                    <span id="pv-perf" class="chart-performance"></span>                
-                </div>
-
-                <div class="pv-market-section">
-                    <div class="pv-market-title">Comparación de mercado</div>
-                  <div class="chart-wrapper" id="pv-wrap"><canvas id="pv-canvas"></canvas></div>
-                    <div id="pv-market-list"></div>
-                </div>
-            </div>
+         <div class="pv-content">
+    <!-- INFO SUPERIOR (Imagen y Precio) -->
+    <div class="pv-top-info">
+        <div class="pv-img-container" id="pv-img-wrap">
+            <img id="pv-img" src="" alt="Producto">
+        </div>
+        <div class="pv-title-box">
+            <h1 id="pv-name">Cargando...</h1>
+            <div class="pv-best-store" id="pv-best-store">---</div>
+            <div class="pv-price-big" id="pv-price-big">$ 0</div>
+            <div class="pv-avg-price">Precio promedio: <span id="pv-avg-price">$ 0</span></div>
         </div>
     </div>
 
+    <!-- SECCIÓN GRÁFICO -->
+    <div class="pv-chart-section">
+        <div class="range-filters" id="pv-range-filters">
+            <button class="range-btn active" onclick="loadPvChart(7, this)">7D</button>
+            <button class="range-btn" onclick="loadPvChart(15, this)">15D</button>
+            <button class="range-btn" onclick="loadPvChart(30, this)">1M</button>
+            <button class="range-btn" onclick="loadPvChart(90, this)">3M</button>
+            <button class="range-btn" onclick="loadPvChart(180, this)">6M</button>
+            <button class="range-btn" onclick="loadPvChart(365, this)">1Y</button>
+        </div>
+        
+        <div class="pv-chart-label">Gráfico de tendencias</div> 
+        <span id="pv-perf" class="chart-performance"></span>
+        
+        <!-- El gráfico y su cartel de 'sin datos' viven aquí adentro -->
+        <div class="chart-wrapper" id="pv-wrap">
+            <canvas id="pv-canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- SECCIÓN COMPARATIVA -->
+    <div class="pv-market-section">
+        <div class="pv-market-title">Comparación de mercado</div>
+        <div id="pv-market-list"></div>
+    </div>
+</div>
+        </div>
+   </div>
     <div class="app-container">
         <header>
             <div class="top-row">
