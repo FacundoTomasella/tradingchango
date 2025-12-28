@@ -797,7 +797,7 @@ flatList = rows.map(r => {
         window.scrollTo(0,0);
     }
 
-    async function loadPvChart(days, btn) {
+   async function loadPvChart(days, btn) {
     if(btn) { 
         btn.parentElement.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active')); 
         btn.classList.add('active'); 
@@ -810,7 +810,7 @@ flatList = rows.map(r => {
     const data = await res.json();
     const wrap = document.getElementById('pv-wrap');
     const perfEl = document.getElementById('pv-perf');
-    wrap.querySelectorAll('.no-data-overlay').forEach(ov => ov.remove());
+    if (wrap.querySelector('.no-data-overlay')) wrap.querySelector('.no-data-overlay').remove();
 
     if(data.length < 2) {
         const overlay = document.createElement('div'); overlay.className = 'no-data-overlay'; overlay.innerHTML = '<span class="no-data-text">Sin datos suficientes</span>';
@@ -821,16 +821,14 @@ flatList = rows.map(r => {
     const lastP = data[data.length-1].precio_minimo; 
     const diffP = (((lastP - firstP) / firstP) * 100).toFixed(1);
     
-    // Binance Style: Verde si subió, Rojo si bajó
+    // Colores Binance
     const chartColor = diffP >= 0 ? '#00c853' : '#ff3b30';
-    const chartFill = diffP >= 0 ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 59, 48, 0.1)';
+    const chartFill = diffP >= 0 ? 'rgba(0, 200, 83, 0.05)' : 'rgba(255, 59, 48, 0.05)';
 
     perfEl.style.color = chartColor;
     perfEl.innerText = `${diffP > 0 ? '+' : ''}${diffP}% últimos días`;
 
     const ctx = document.getElementById('pv-canvas').getContext('2d');
-    
-    // Crear degradado para el fondo de la línea
     const gradient = ctx.createLinearGradient(0, 0, 0, 250);
     gradient.addColorStop(0, chartFill);
     gradient.addColorStop(1, 'transparent');
@@ -841,18 +839,19 @@ flatList = rows.map(r => {
         data: {
             labels: data.map(d => { 
                 const dt = new Date(d.fecha + 'T12:00:00'); 
+                // Guardamos día y mes para el tooltip y el eje
                 return `${dt.getDate()} ${MONTHS[dt.getMonth()]}`; 
             }),
             datasets: [{ 
                 data: data.map(d => d.precio_minimo), 
                 borderColor: chartColor, 
-                borderWidth: 2,
+                borderWidth: 1.5, // Línea más fina como Binance Lite
                 fill: true,
                 backgroundColor: gradient,
-                tension: 0.4, // SUAVIZA LA LÍNEA (Estilo Binance)
-                pointRadius: 0, // QUITA LOS PUNTOS
-                pointHitRadius: 20, // Aumenta zona táctil para ver el precio
-                pointHoverRadius: 5, // Solo muestra el punto al pasar el mouse
+                tension: 0.4, 
+                pointRadius: 0,
+                pointHitRadius: 20,
+                pointHoverRadius: 4,
                 pointHoverBackgroundColor: chartColor
             }]
         },
@@ -864,33 +863,51 @@ flatList = rows.map(r => {
                 legend: { display: false },
                 tooltip: {
                     enabled: true,
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    titleColor: '#000',
-                    bodyColor: '#000',
-                    borderColor: '#ddd',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#131722',
+                    bodyColor: '#131722',
+                    borderColor: '#e0e3eb',
                     borderWidth: 1,
+                    cornerRadius: 4,
                     displayColors: false,
+                    padding: 10,
+                    bodyFont: { family: 'Roboto Mono', size: 12 },
                     callbacks: {
                         label: (context) => {
                             const entry = data[context.dataIndex];
-                            const tienda = entry.supermercado || "MERCADO";
-                            return `${tienda}: $${format(entry.precio_minimo)}`;
+                            return `${entry.supermercado || 'MERCADO'}: $${format(entry.precio_minimo)}`;
                         }
                     }
                 }
             },
             scales: {
                 y: {
-                    display: true, // Binance muestra el precio actual a la derecha
+                    display: true,
                     position: 'right',
-                    grid: { display: false }, // QUITA LÍNEAS HORIZONTALES
+                    grid: { display: false },
+                    border: { display: false },
                     ticks: { 
-                        font: { size: 10 },
-                        callback: v => '$' + format(v)
+                        font: { size: 9 },
+                        color: '#999',
+                        callback: v => '$' + format(v),
+                        maxTicksLimit: 5
                     }
                 },
                 x: {
-                    display: false // Binance Lite suele ocultar el eje X
+                    display: true, // HABILITAMOS EL EJE X
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: {
+                        font: { size: 10, weight: '500' },
+                        color: '#bbb',
+                        autoSkip: true,
+                        maxTicksLimit: 4, // Solo mostramos 3 o 4 etiquetas para no amontonar
+                        callback: function(val, index) {
+                            const label = this.getLabelForValue(val); // Ej: "28 Dic"
+                            const mesAbbr = label.split(' ')[1]; // Tomamos "Dic"
+                            return mesAbbr ? mesAbbr.toLowerCase() : label; // Retornamos "dic"
+                        }
+                    }
                 }
             }
         }
