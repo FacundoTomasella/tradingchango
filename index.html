@@ -261,7 +261,7 @@
                 border-color: #ffffff !important;
             }        
         .pv-market-section { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 25px; }
-        .pv-market-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 15px; letter-spacing: 1px; }
+        .pv-market-title { font-size: 11px; font-weight: 800 !important; text-transform: uppercase; color: var(--text-muted); margin-bottom: 15px; letter-spacing: 1px; }
 
         .ob-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
         .ob-store { font-weight: 600; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
@@ -275,7 +275,7 @@
         .t-left { display: flex; flex-direction: column; gap: 3px; }
         .t-symbol { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
         .t-name { font-size: 13px; color: var(--text-muted); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .t-right { text-align: right; }
+        .t-right { text-align: right; flex-shrink: 0;      /* PROHIBE que se achique */ width: 90px;         /* Le damos un ancho fijo para que el número largo no empuje */ margin-right: 5px;   /* Un pequeño espacio antes del carrito */ }
         .t-price { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; }
         .t-change { font-family: 'Roboto Mono'; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
         .trend-up { color: white; background: var(--color-bad); } .trend-down { color: white; background: var(--color-good); } .trend-neutral { color: var(--text-muted); background: rgba(128,128,128,0.1); }
@@ -878,11 +878,13 @@ flatList = rows.map(r => {
                             const d = data[context[0].dataIndex].fecha.split('-');
                             return `${parseInt(d[2])} ${MONTHS[parseInt(d[1])-1]} ${d[0]}`;
                         },
-                        // MOSTRAR EMPRESA + PRECIO
-                        label: (context) => {
-                            const entry = data[context.dataIndex];
-                            return `${entry.supermercado}: $${format(entry.precio_minimo)}`;
-                        }
+                        // Dentro de loadPvChart -> options -> plugins -> tooltip -> callbacks:
+                  label: (context) => {
+                      const entry = data[context.dataIndex];
+                      // Usamos || 'N/A' para que si es null no rompa, y chequeamos que el nombre sea correcto
+                      const tienda = entry.supermercado || entry.super || "MERCADO"; 
+                      return `${tienda}: $${format(entry.precio_minimo)}`;
+}
                     }
                 }
             },
@@ -1217,6 +1219,30 @@ function trackMarketClick(superName, productName) {
   }
 }
 
+// Buscá dentro de init() la parte de configDB y pegá esto abajo:
+
+configDB['acerca_de'] = `
+    <div style="color: var(--text-main)">
+        <h3>Sobre TradingChango</h3>
+        <p>Somos la primera plataforma de "trading" de productos de consumo masivo.</p>
+        <p>Nuestra misión es que el usuario pueda visualizar los precios del supermercado como si fueran activos financieros, analizando tendencias para maximizar su poder de compra.</p>
+    </div>`;
+
+configDB['terminos'] = `
+    <div style="color: var(--text-main)">
+        <h3>Términos y Condiciones</h3>
+        <p>1. Los precios son obtenidos de fuentes públicas y pueden variar según la sucursal.</p>
+        <p>2. TradingChango no se responsabiliza por cambios de precios de último momento en los establecimientos.</p>
+        <p>3. El uso de la plataforma es gratuito y con fines informativos.</p>
+    </div>`;
+
+configDB['contacto'] = `
+    <div style="color: var(--text-main)">
+        <h3>Contacto</h3>
+        <p>¿Tenés sugerencias o querés reportar un error?</p>
+        <p>Escribinos a: <b>contacto@tradingchango.com.ar</b></p>
+        <p>O buscanos en nuestras redes sociales.</p>
+    </div>`;     
      
     // Iniciar la app
     init();
