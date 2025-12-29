@@ -726,7 +726,7 @@ flatList = rows.map(r => {
     }
 
     // 4. Mejores Precios y Promedio
-    const stores = ["COTO", "CARREFOUR", "DIA", "JUMBO"];
+    const stores = ["COTO", "CARREFOUR", "DIA", "JUMBO", "MAS ONLINE"];
     document.getElementById('pv-best-store').innerText = `Mejor precio hoy en ${stores[item.p.indexOf(stats.min)]}`;
     document.getElementById('pv-price-big').innerText = `$ ${format(stats.min)}`;
 
