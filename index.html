@@ -556,9 +556,15 @@
     </div>
 
    <script>
-    const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
-    const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+
+const _u_ = "aHR0cHM6Ly91Z2lucmF5bGR2a2hgodvfhtaLnN1cGFiYXNlLmNv";
+const _k_ = "ZXlKaGJHY2lPaUpJVXoxTklpc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMyTWlPaUp6ZFhCaFltRnpadVNoSW5KbFp6STZJblZpYlc1eWVYSXpTSFpyYUdkeVpIWm1hSFJoSWl3aWNtOXNaU0k2SW1GdWIyNGlMQ0pwWVhRaU9qRTNOall3T0RFeU16YzNfMC5oUnA3WWpWeW1QbnNxYndoOGRKalmZktGZzc3Y2RkMEE1by1FVFdnZWl3";
+
+const _path = atob(_u_);
+const _token = atob(_k_);   
+     
+     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
     // 1. Reemplazá tu línea de declaración por estas:
 let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
@@ -581,19 +587,22 @@ if (Array.isArray(favorites)) {
 
     async function init() {
         try {
-            // 1. Cargar Configuración (Legales, etc)
-            const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const configRows = await resC.json();
-            configRows.forEach(row => configDB[row.clave] = row.valor);
+const resC = await fetch(`${_path}/rest/v1/configuracion?select=*`, { 
+    headers: { "apikey": _token, "Authorization": `Bearer ${_token}` } 
+});
+const configRows = await resC.json();
+configRows.forEach(row => configDB[row.clave] = row.valor);
 
-            // 2. Cargar Productos
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const rows = await res.json();
-            
-            // 3. Cargar Historial (últimos 7 días)
-            const d7 = new Date(); d7.setDate(d7.getDate() - 7);
-            const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const hData = await resH.json();
+const res = await fetch(`${_path}/rest/v1/productos?select=*`, { 
+    headers: { "apikey": _token, "Authorization": `Bearer ${_token}` } 
+});
+const rows = await res.json();
+
+const d7 = new Date(); d7.setDate(d7.getDate() - 7);
+const resH = await fetch(`${_path}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { 
+    headers: { "apikey": _token, "Authorization": `Bearer ${_token}` } 
+});
+const hData = await resH.json();
             
             const usedTickers = new Set();
            // Dentro de la función async function init()
@@ -804,9 +813,9 @@ flatList = rows.map(r => {
     }
     
     const item = flatList.find(i => i.id == openId);
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?nombre_producto=eq.${encodeURIComponent(item.n)}&fecha=gte.${(new Date(Date.now() - days*864e5)).toISOString().split('T')[0]}&order=fecha.asc`, { 
-        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
-    });
+const res = await fetch(`${_path}/rest/v1/historial_precios?nombre_producto=eq.${encodeURIComponent(item.n)}&fecha=gte.${(new Date(Date.now() - days*864e5)).toISOString().split('T')[0]}&order=fecha.asc`, { 
+    headers: { "apikey": _token, "Authorization": `Bearer ${_token}` } 
+});
     const data = await res.json();
     const wrap = document.getElementById('pv-wrap');
     const perfEl = document.getElementById('pv-perf');
