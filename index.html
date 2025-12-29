@@ -402,7 +402,6 @@
 </div>
 
 <style>
-<style>
     /* Color de texto por defecto (Modo Claro - Fondo oscuro) */
     #pwaPill {
         color: #ffffff;
@@ -428,7 +427,7 @@
         #pwaPill { display: none !important; } 
     }
 </style>
-</style>
+
 </div>
     <div id="productFullView">
         <div class="pv-container">
@@ -815,7 +814,6 @@ flatList = rows.map(r => {
     
     const item = flatList.find(i => i.id == openId);
     const res = await fetch(`${_API}/rest/v1/historial_precios?nombre_producto=eq.${encodeURIComponent(item.n)}&fecha=gte.${(new Date(Date.now() - days*864e5)).toISOString().split('T')[0]}&order=fecha.asc`);
-    });
     const data = await res.json();
     const wrap = document.getElementById('pv-wrap');
     const perfEl = document.getElementById('pv-perf');
