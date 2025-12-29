@@ -56,14 +56,8 @@
     <style>
       /* Controles de cantidad en el Chango */
 .qty-control {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--bg-card);
-    padding: 6px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    margin-right: 10px;
+    flex-shrink: 0 !important; /* Evita que los botones + - se aplasten */
+}
 }
 .qty-btn {
     background: none;
@@ -271,16 +265,16 @@
 
         .ticker-list { padding: 0; }
         .ticker-card { border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; position: relative; background: var(--bg-app); transition: background 0.2s; }
-        .ticker-info { flex-grow: 1; display: flex; align-items: center; justify-content: space-between; padding-right: 15px; }
-        .t-left { display: flex; flex-direction: column; gap: 3px; }
+        .ticker-info { display: flex; flex: 1; align-items: center; justify-content: space-between; min-width: 0; /* Clave para el recorte de texto */ }        .t-left { display: flex; flex-direction: column; gap: 3px; }
         .t-symbol { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
-        .t-name { font-size: 13px; color: var(--text-muted); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .t-right { text-align: right; }
+        .t-name { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* Pone los "..." automáticamente */ font-weight: 500;
+        .t-right { text-align: right; flex-shrink: 0; /* Prohíbe que el precio se deforme o desaparezca */ margin: 0 5px; min-width: 75px; /* Asegura un espacio mínimo para el precio */ }
+        .t-left { display: flex; flex-direction: column; min-width: 0; /* Necesario para que el nombre no empuje */ flex: 1; }
         .t-price { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; }
         .t-change { font-family: 'Roboto Mono'; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
         .trend-up { color: white; background: var(--color-bad); } .trend-down { color: white; background: var(--color-good); } .trend-neutral { color: var(--text-muted); background: rgba(128,128,128,0.1); }
         
-        .fav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: flex-end; font-size: 18px; color: var(--border); transition: 0.2s; }
+        .fav-btn { flex-shrink: 0 !important; /* El carrito siempre visible a la derecha */ width: 35px; display: flex; justify-content: flex-end; }
         .fav-btn.active { color: var(--star-gold); }
         
         .app-footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
