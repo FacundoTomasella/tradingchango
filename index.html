@@ -96,7 +96,7 @@
 }
         .pv-chart-label {
             font-size: 11px;
-            font-weight: 800 !important;;
+            font-weight: 800 !important;
             text-transform: uppercase;
             color: var(--text-main);
             margin-top: 20px;   /* Espacio respecto a los botones */
@@ -396,39 +396,24 @@
   
 </head>
 <body>
-  <div id="pwaPill" style="display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 10px 16px; border-radius: 50px; font-size: 12px; font-weight: 700; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); align-items: center; gap: 12px; width: max-content; animation: slideUp 0.4s ease-out;">
+  <div id="pwaPill">
     <span onclick="closePwaPill()" style="opacity: 0.7; font-size: 16px; cursor: pointer;">&times;</span>
     <span id="pwaText" onclick="installPwa()">INSTALAR APP 🛒</span>
-</div>
+  </div>
 
-<style>
-<style>
-    /* Color de texto por defecto (Modo Claro - Fondo oscuro) */
+  <style>
     #pwaPill {
-        color: #ffffff;
+        display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); 
+        background: var(--accent); color: #ffffff; padding: 10px 16px; border-radius: 50px; 
+        font-size: 12px; font-weight: 700; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+        align-items: center; gap: 12px; width: max-content; animation: slideUp 0.4s ease-out;
     }
+    .dark-mode #pwaPill { color: #000000 !important; }
+    .dark-mode #pwaPill span { color: #000000 !important; }
 
-    /* Color de texto en Modo Oscuro (Fondo blanco) */
-    .dark-mode #pwaPill {
-        color: #000000 !important;
-    }
-
-    /* Asegura que el icono de cerrar (X) también cambie */
-    .dark-mode #pwaPill span {
-        color: #000000;
-    }
-
-    @keyframes slideUp {
-        from { bottom: -50px; opacity: 0; }
-        to { bottom: 85px; opacity: 1; }
-    }
-
-    /* Si ya está instalada, no se muestra nunca */
-    @media (display-mode: standalone) { 
-        #pwaPill { display: none !important; } 
-    }
-</style>
-</style>
+    @keyframes slideUp { from { bottom: -50px; opacity: 0; } to { bottom: 85px; opacity: 1; } }
+    @media (display-mode: standalone) { #pwaPill { display: none !important; } }
+  </style>
 </div>
     <div id="productFullView">
         <div class="pv-container">
