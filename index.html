@@ -428,7 +428,9 @@
                     <button class="pv-share-btn" id="pv-share-btn"><i class="fa-solid fa-arrow-up-from-bracket"></i></button>
                 </div>
             </div>
-            
+        </div>    
+      </div>
+  </div>
          <div class="pv-content">
     <!-- INFO SUPERIOR (Imagen y Precio) -->
     <div class="pv-top-info">
@@ -593,8 +595,12 @@ if (Array.isArray(favorites)) {
             
             const usedTickers = new Set();
            // Dentro de la función async function init()
-flatList = rows.map(r => {
+
+      flatList = rows.map(r => {
+    // Filtramos el historial para este producto específico
     const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+    
+    // Generamos el ticker si no existe
     let t = r.ticker || generateTicker(r.nombre);
     
     return {
@@ -618,10 +624,13 @@ flatList = rows.map(r => {
         ],
         h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
         img: r.imagen_url
-    }; // <--- Asegurate de que este punto y coma esté aquí
-});
-          document.getElementById('loader').style.display = 'none';
-            updateCartBadge();
+    }; 
+}); 
+
+
+document.getElementById('loader').style.display = 'none';
+updateCartBadge();
+
 
             // --- LÓGICA DE RUTAS AL CARGAR ---
             const path = window.location.pathname.split('/').filter(p => p !== "");
