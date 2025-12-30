@@ -283,17 +283,16 @@
         .best-val { color: var(--color-good); font-weight: 700; background: rgba(0, 230, 118, 0.1); } 
 
         .ticker-list { padding: 0; }
-        .ticker-card { border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; position: relative; background: var(--bg-app); transition: background 0.2s; }
-        .ticker-info { flex-grow: 1; display: flex; align-items: center; justify-content: space-between; padding-right: 15px; }
-        .t-left { display: flex; flex-direction: column; gap: 3px; }
+        .ticker-card { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; gap: 10px; min-width: 0; /* Permite que los hijos se compriman */ }
+        .t-left { display: flex; flex-direction: column; min-width: 0; flex: 1; } 
+        .ticker-info { display: flex; flex: 1; align-items: center; justify-content: space-between; min-width: 0; /* Crucial para el recorte */ }        .t-left { display: flex; flex-direction: column; gap: 3px; }
         .t-symbol { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
-        .t-name { font-size: 13px; color: var(--text-muted); max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .t-right { text-align: right; flex-shrink: 0; }
+        .t-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* Pone "..." si el nombre es largo */ max-width: 100%; }       
         .t-price { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; }
         .t-change { font-family: 'Roboto Mono'; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
         .trend-up { color: white; background: var(--color-bad); } .trend-down { color: white; background: var(--color-good); } .trend-neutral { color: var(--text-muted); background: rgba(128,128,128,0.1); }
-        
-        .fav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: flex-end; font-size: 18px; color: var(--border); transition: 0.2s; flex-shrink: 0 !important; }
+        .t-right { text-align: right; flex-shrink: 0; /* Prohíbe que el precio se deforme */ min-width: 90px; /* Ancho fijo para que el carrito no baile */ }
+        .fav-btn { flex-shrink: 0 !important; /* El carrito se queda clavado a la derecha */ width: 30px; display: flex; justify-content: flex-end; }
         .fav-btn.active { color: var(--star-gold); }
         
         .app-footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
@@ -585,6 +584,26 @@ if (Array.isArray(favorites)) {
     // Función para generar URLs limpias
     const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
+    async function handleAuthState(session) {
+    const userBtn = document.getElementById('userBtn');
+    if (session) {
+        currentUser = session.user;
+        // Cambiamos el icono a uno con un check verde para indicar sesión activa
+        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user" style="color:var(--color-good)"></i>';
+        
+        // OPCIONAL: Aquí podrías subir los favoritos del localStorage a la DB del usuario
+        console.log("Usuario identificado:", currentUser.email);
+        document.getElementById('authModal').style.display = 'none';
+    } else {
+        currentUser = null;
+        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user"></i>';
+    }
+    // Refrescamos la vista para aplicar/quitar límites visualmente si es necesario
+    renderView();
+}
+
+
+     
     async function init() {
         try {
             // 1. Cargar Configuración (Legales, etc)
@@ -948,11 +967,23 @@ flatList = rows.map(r => {
      
      
      function toggleFav(id, btn) {
-    // Si ya existe, lo borramos (sacar del chango)
-    if (favorites[id]) {
+    const isAlreadyFav = !!favorites[id];
+
+    // LÓGICA DE LÍMITES
+    if (!currentUser && !isAlreadyFav) {
+        const count = Object.keys(favorites).length;
+        if (count >= 5) {
+            if(confirm("Llegaste al límite de 5 productos. ¡Registrate gratis para tener un Chango ilimitado!")) {
+                openAuth(); // Abre el modal de registro
+            }
+            return;
+        }
+    }
+
+    // Proceso normal de agregar/quitar
+    if (isAlreadyFav) {
         delete favorites[id];
     } else {
-        // Si no existe, lo agregamos con cantidad 1
         favorites[id] = 1;
     }
     
@@ -962,10 +993,9 @@ flatList = rows.map(r => {
     if (currentTab === 'favs') {
         renderView(); 
     } else if (btn) {
-        // Cambiamos 'active' según si el ID existe como llave en el objeto
         btn.classList.toggle('active', !!favorites[id]);
     }
- }
+}
 
     function updateCartBadge() {
     const b = document.getElementById('cartBadge');
