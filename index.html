@@ -569,10 +569,10 @@
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const supabase = window.supabase.createClient(_path, _token);
 
     // 1. Reemplazá tu línea de declaración por estas:
-let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null; let currentUser = null;
+let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
+
 // Inicialización limpia de favoritos como OBJETO
 let favorites = JSON.parse(localStorage.getItem('fav_tickers')) || {};
 if (Array.isArray(favorites)) { 
@@ -591,7 +591,6 @@ if (Array.isArray(favorites)) {
 
     async function init() {
         try {
-          await initAuth();
             // 1. Cargar Configuración (Legales, etc)
             const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
             const configRows = await resC.json();
@@ -953,22 +952,11 @@ flatList = rows.map(r => {
      
      
      function toggleFav(id, btn) {
-    const isAlreadyFav = !!favorites[id];
-
-    // LÓGICA DE LÍMITES: Si no hay usuario y quiere agregar un 6to producto
-    if (!currentUser && !isAlreadyFav) {
-        const count = Object.keys(favorites).length;
-        if (count >= 5) {
-            if(confirm("Llegaste al límite de 5 productos. ¿Querés crearte una cuenta gratuita para tener un Chango ilimitado?")) {
-                openAuth();
-            }
-            return;
-        }
-    }
-
-    if (isAlreadyFav) {
+    // Si ya existe, lo borramos (sacar del chango)
+    if (favorites[id]) {
         delete favorites[id];
     } else {
+        // Si no existe, lo agregamos con cantidad 1
         favorites[id] = 1;
     }
     
@@ -978,9 +966,11 @@ flatList = rows.map(r => {
     if (currentTab === 'favs') {
         renderView(); 
     } else if (btn) {
+        // Cambiamos 'active' según si el ID existe como llave en el objeto
         btn.classList.toggle('active', !!favorites[id]);
     }
-}
+ }
+
     function updateCartBadge() {
     const b = document.getElementById('cartBadge');
     const count = Object.keys(favorites).length; // Contamos las propiedades del objeto
@@ -1249,59 +1239,6 @@ function trackMarketClick(superName, productName) {
   }
 }
 
-   // --- SISTEMA DE USUARIOS ---
-async function initAuth() {
-    // Verificamos si existe la sesión al cargar
-    const { data: { session } } = await supabase.auth.getSession();
-    handleAuthState(session);
-
-    // Escuchamos cambios (login/logout)
-    supabase.auth.onAuthStateChange((_event, session) => {
-        handleAuthState(session);
-    });
-}
-
-function handleAuthState(session) {
-    const userBtn = document.getElementById('userBtn');
-    if (session) {
-        currentUser = session.user;
-        // Cambiamos el icono para mostrar que está logueado
-        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user" style="color:var(--color-good)"></i>';
-        closeAuth();
-    } else {
-        currentUser = null;
-        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user"></i>';
-    }
-}
-
-async function handleSignUp(event) {
-    event.preventDefault();
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPass').value;
-    
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-        alert("Error: " + error.message);
-    } else {
-        alert("¡Cuenta creada! Revisá tu email para confirmar tu cuenta y activar el Chango ilimitado.");
-        closeAuth();
-    }
-}
-
-function openAuth() { 
-    const modal = document.getElementById('authModal');
-    if(modal) modal.style.display = 'flex'; 
-}
-
-function closeAuth() { 
-    const modal = document.getElementById('authModal');
-    if(modal) modal.style.display = 'none'; 
-}
-
-function showLogin() {
-    // Por ahora usamos el mismo formulario de SignUp para simplificar
-    document.getElementById('authTitle').innerText = "Iniciar Sesión";
-}  
      
     // Iniciar la app
     init();
