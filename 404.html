@@ -33,12 +33,25 @@
     
     <title>TradingChango | Tradeá los Precios, Maximizá el Carrito</title>
     <meta name="description" content="Comparador de precios de supermercados en tiempo real. Analizá tendencias y compará antes de comprar.">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/img/logo2.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/img/logo.png">
+
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="TradingChango">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
+    <link rel="apple-touch-icon" href="assets/img/logo2.png">
+
+
+      <!-- Imagen de previsualización para WhatsApp y Redes Sociales - Usamos el de 500x500 -->
+      <meta property="og:image" content="https://www.tradingchango.com.ar/assets/img/logo.png">
+      <meta property="og:image:width" content="500">
+      <meta property="og:image:height" content="500">
+      <meta property="og:type" content="website">
+      <meta property="og:title" content="TradingChango">
+      <meta property="og:description" content="Tradeá los precios, maximizá el carrito. Comparador de supermercados en tiempo real.">
+      <meta property="og:url" content="https://www.tradingchango.com.ar">
+      <meta name="twitter:card" content="summary_large_image">
     
     <script>
         if (typeof history.scrollRestoration !== 'undefined') { history.scrollRestoration = 'manual'; }
@@ -96,7 +109,7 @@
 }
         .pv-chart-label {
             font-size: 11px;
-            font-weight: 800 !important;;
+            font-weight: 800 !important;
             text-transform: uppercase;
             color: var(--text-main);
             margin-top: 20px;   /* Espacio respecto a los botones */
@@ -261,7 +274,7 @@
                 border-color: #ffffff !important;
             }        
         .pv-market-section { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 25px; }
-        .pv-market-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 15px; letter-spacing: 1px; }
+        /* Esto modifica el div que pediste y el de 'Tu Chango' */ .pv-market-title { font-size: 11px; font-weight: 800 !important; /* Negrita extra */ text-transform: uppercase; color: var(--text-main); /* Color principal, más oscuro que el muted */ margin-bottom: 15px; letter-spacing: 1px; display: block; }
 
         .ob-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
         .ob-store { font-weight: 600; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
@@ -274,13 +287,13 @@
         .ticker-info { flex-grow: 1; display: flex; align-items: center; justify-content: space-between; padding-right: 15px; }
         .t-left { display: flex; flex-direction: column; gap: 3px; }
         .t-symbol { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
-        .t-name { font-size: 13px; color: var(--text-muted); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .t-right { text-align: right; }
+        .t-name { font-size: 13px; color: var(--text-muted); max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .t-right { text-align: right; flex-shrink: 0; }
         .t-price { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 16px; }
         .t-change { font-family: 'Roboto Mono'; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
         .trend-up { color: white; background: var(--color-bad); } .trend-down { color: white; background: var(--color-good); } .trend-neutral { color: var(--text-muted); background: rgba(128,128,128,0.1); }
         
-        .fav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: flex-end; font-size: 18px; color: var(--border); transition: 0.2s; }
+        .fav-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: flex-end; font-size: 18px; color: var(--border); transition: 0.2s; flex-shrink: 0 !important; }
         .fav-btn.active { color: var(--star-gold); }
         
         .app-footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
@@ -292,7 +305,7 @@
         .cart-badge { position: absolute; top: 8px; right: 25%; background: var(--badge-bg); color: var(--badge-text); font-size: 9px; font-weight: 600; min-width: 15px; height: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 4px; display: none; }
 
         .loader { text-align: center; padding: 50px; color: var(--text-muted); font-family: 'Roboto Mono'; font-size: 12px; }
-        .chart-wrapper { width: 100%; height: 260px; padding-top: 5px; position: relative; }
+        .chart-wrapper { width: 100%; height: 260px; position: relative; margin-top: 10px; /* Eliminamos todo el padding para que la línea llegue al final */ padding: 0 !important; overflow: hidden; } /* Aseguramos que el canvas ocupe el 100% real */ #pv-canvas { width: 100% !important; }
         .chart-performance { font-size: 11px; font-weight: 700; margin-bottom: 10px; display: block; }
 
         .chango-summary { padding: 20px; background: var(--bg-card); margin: 10px 20px; border-radius: 12px; border: 1px solid var(--border); }
@@ -385,41 +398,34 @@
     }
 }        
     </style>
+<meta http-equiv="Content-Security-Policy" content="
+    default-src 'self'; 
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.google-analytics.com https://www.clarity.ms; 
+    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; 
+    font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com; 
+    img-src 'self' data: https://uginrayldvkhgodvfhta.supabase.co https://*.supabase.co https://www.google-analytics.com https://www.clarity.ms; 
+    connect-src 'self' https://api-tradingchango.facu-tomasella.workers.dev https://uginrayldvkhgodvfhta.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://www.clarity.ms https://*.bing.com;
+"> 
 </head>
 <body>
-  <div id="pwaPill" style="display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 10px 16px; border-radius: 50px; font-size: 12px; font-weight: 700; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); align-items: center; gap: 12px; width: max-content; animation: slideUp 0.4s ease-out;">
+  <div id="pwaPill">
     <span onclick="closePwaPill()" style="opacity: 0.7; font-size: 16px; cursor: pointer;">&times;</span>
     <span id="pwaText" onclick="installPwa()">INSTALAR APP 🛒</span>
-</div>
+  </div>
 
-<style>
-<style>
-    /* Color de texto por defecto (Modo Claro - Fondo oscuro) */
+  <style>
     #pwaPill {
-        color: #ffffff;
+        display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); 
+        background: var(--accent); color: #ffffff; padding: 10px 16px; border-radius: 50px; 
+        font-size: 12px; font-weight: 700; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+        align-items: center; gap: 12px; width: max-content; animation: slideUp 0.4s ease-out;
     }
+    .dark-mode #pwaPill { color: #000000 !important; }
+    .dark-mode #pwaPill span { color: #000000 !important; }
 
-    /* Color de texto en Modo Oscuro (Fondo blanco) */
-    .dark-mode #pwaPill {
-        color: #000000 !important;
-    }
-
-    /* Asegura que el icono de cerrar (X) también cambie */
-    .dark-mode #pwaPill span {
-        color: #000000;
-    }
-
-    @keyframes slideUp {
-        from { bottom: -50px; opacity: 0; }
-        to { bottom: 85px; opacity: 1; }
-    }
-
-    /* Si ya está instalada, no se muestra nunca */
-    @media (display-mode: standalone) { 
-        #pwaPill { display: none !important; } 
-    }
-</style>
-</style>
+    @keyframes slideUp { from { bottom: -50px; opacity: 0; } to { bottom: 85px; opacity: 1; } }
+    @media (display-mode: standalone) { #pwaPill { display: none !important; } }
+  </style>
 </div>
     <div id="productFullView">
         <div class="pv-container">
@@ -434,47 +440,48 @@
                 </div>
             </div>
             
-            <div class="pv-content">
-                <div class="pv-top-info">
-                    <!-- MODIFICADO: Imagen ahora a la izquierda -->
-                    <div class="pv-img-container" id="pv-img-wrap">
-                        <img id="pv-img" src="" alt="Producto">
-                    </div>
-                    <!-- MODIFICADO: Datos ahora a la derecha -->
-                    <div class="pv-title-box">
-                        <h1 id="pv-name">Cargando...</h1>
-                        <div class="pv-best-store" id="pv-best-store">---</div>
-                        <div class="pv-price-big" id="pv-price-big">$ 0</div>
-                        <!-- NUEVO: Dato de precio promedio -->
-                        <div class="pv-avg-price">Precio promedio: <span id="pv-avg-price">$ 0</span></div>
-                    </div>
-                </div>
-
-                <div class="pv-chart-section">
-                    <div class="range-filters" id="pv-range-filters">
-                        <button class="range-btn active" onclick="loadPvChart(7, this)">7D</button>
-                        <button class="range-btn" onclick="loadPvChart(15, this)">15D</button>
-                        <button class="range-btn" onclick="loadPvChart(30, this)">1M</button>
-                        <button class="range-btn" onclick="loadPvChart(90, this)">3M</button>
-                        <button class="range-btn" onclick="loadPvChart(180, this)">6M</button>
-                        <button class="range-btn" onclick="loadPvChart(365, this)">1Y</button>
-                    </div>
-                    
-                    <!-- AGREGAR ESTA LÍNEA AQUÍ -->
-                    <div class="pv-chart-label">Gráfico de tendencias</div> 
-                    
-                    <span id="pv-perf" class="chart-performance"></span>
-                    <div class="chart-wrapper" id="pv-wrap"><canvas id="pv-canvas"></canvas></div>
-                </div>
-
-                <div class="pv-market-section">
-                    <div class="pv-market-title">Comparación de mercado</div>
-                    <div id="pv-market-list"></div>
-                </div>
-            </div>
+         <div class="pv-content">
+    <!-- INFO SUPERIOR (Imagen y Precio) -->
+    <div class="pv-top-info">
+        <div class="pv-img-container" id="pv-img-wrap">
+            <img id="pv-img" src="" alt="Producto">
+        </div>
+        <div class="pv-title-box">
+            <h1 id="pv-name">Cargando...</h1>
+            <div class="pv-best-store" id="pv-best-store">---</div>
+            <div class="pv-price-big" id="pv-price-big">$ 0</div>
+            <div class="pv-avg-price">Precio promedio: <span id="pv-avg-price">$ 0</span></div>
         </div>
     </div>
 
+    <!-- SECCIÓN GRÁFICO -->
+    <div class="pv-chart-section">
+        <div class="range-filters" id="pv-range-filters">
+            <button class="range-btn active" onclick="loadPvChart(7, this)">7D</button>
+            <button class="range-btn" onclick="loadPvChart(15, this)">15D</button>
+            <button class="range-btn" onclick="loadPvChart(30, this)">1M</button>
+            <button class="range-btn" onclick="loadPvChart(90, this)">3M</button>
+            <button class="range-btn" onclick="loadPvChart(180, this)">6M</button>
+            <button class="range-btn" onclick="loadPvChart(365, this)">1Y</button>
+        </div>
+        
+        <div class="pv-chart-label">Gráfico de tendencias</div> 
+        <span id="pv-perf" class="chart-performance"></span>
+        
+        <!-- El gráfico y su cartel de 'sin datos' viven aquí adentro -->
+        <div class="chart-wrapper" id="pv-wrap">
+            <canvas id="pv-canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- SECCIÓN COMPARATIVA -->
+    <div class="pv-market-section">
+        <div class="pv-market-title">Comparación de mercado</div>
+        <div id="pv-market-list"></div>
+    </div>
+</div>
+        </div>
+   </div>
     <div class="app-container">
         <header>
             <div class="top-row">
@@ -725,7 +732,7 @@ flatList = rows.map(r => {
     }
 
     // 4. Mejores Precios y Promedio
-    const stores = ["COTO", "CARREFOUR", "DIA", "JUMBO"];
+    const stores = ["COTO", "CARREFOUR", "DIA", "JUMBO", "MAS ONLINE"];
     document.getElementById('pv-best-store').innerText = `Mejor precio hoy en ${stores[item.p.indexOf(stats.min)]}`;
     document.getElementById('pv-price-big').innerText = `$ ${format(stats.min)}`;
 
@@ -796,11 +803,12 @@ flatList = rows.map(r => {
         window.scrollTo(0,0);
     }
 
-    async function loadPvChart(days, btn) {
+   async function loadPvChart(days, btn) {
     if(btn) { 
         btn.parentElement.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active')); 
         btn.classList.add('active'); 
     }
+    
     const item = flatList.find(i => i.id == openId);
     const res = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?nombre_producto=eq.${encodeURIComponent(item.n)}&fecha=gte.${(new Date(Date.now() - days*864e5)).toISOString().split('T')[0]}&order=fecha.asc`, { 
         headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
@@ -808,25 +816,36 @@ flatList = rows.map(r => {
     const data = await res.json();
     const wrap = document.getElementById('pv-wrap');
     const perfEl = document.getElementById('pv-perf');
-    wrap.querySelectorAll('.no-data-overlay').forEach(ov => ov.remove());
+    if (wrap.querySelector('.no-data-overlay')) wrap.querySelector('.no-data-overlay').remove();
 
     if(data.length < 2) {
-        const overlay = document.createElement('div'); overlay.className = 'no-data-overlay'; overlay.innerHTML = '<span class="no-data-text">Sin datos suficientes</span>';
-        wrap.appendChild(overlay); perfEl.innerText = ''; if(currentChart) currentChart.destroy(); return;
+        const overlay = document.createElement('div'); 
+        overlay.className = 'no-data-overlay'; 
+        overlay.innerHTML = '<span class="no-data-text">Sin datos suficientes</span>';
+        wrap.appendChild(overlay); 
+        perfEl.innerText = ''; 
+        if(currentChart) currentChart.destroy(); 
+        return;
     }
 
     const firstP = data[0].precio_minimo; 
     const lastP = data[data.length-1].precio_minimo; 
     const diffP = (((lastP - firstP) / firstP) * 100).toFixed(1);
     
-    let label = days === 7 ? 'últimos 7 días' : days === 15 ? 'últimos 15 días' : days === 30 ? 'último mes' : days === 90 ? 'últimos 3 meses' : days === 180 ? 'últimos 6 meses' : 'último año';
+    // LÓGICA INVERTIDA: 
+    // Si bajó (diffP < 0) es VERDE. 
+    // Si subió (diffP > 0) es ROJO.
+    const isDown = lastP < firstP;
+    const chartColor = isDown ? '#00c853' : '#ff3b30'; // Verde vs Rojo
+    const chartFill = isDown ? 'rgba(0, 200, 83, 0.05)' : 'rgba(255, 59, 48, 0.05)';
 
-    perfEl.style.color = diffP >= 0 ? '#f23645' : '#00a650';
-    perfEl.innerText = `${diffP > 0 ? '+' : ''}${diffP}% ${label}`;
+    perfEl.style.color = chartColor;
+    perfEl.innerText = `${diffP > 0 ? '+' : ''}${diffP}% últimos días`;
 
     const ctx = document.getElementById('pv-canvas').getContext('2d');
-    const isDark = document.documentElement.classList.contains('dark-mode');
-    const mainColor = isDark ? '#ffffff' : '#131722';
+    const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+    gradient.addColorStop(0, chartFill);
+    gradient.addColorStop(1, 'transparent');
 
     if(currentChart) currentChart.destroy();
     currentChart = new Chart(ctx, {
@@ -834,90 +853,80 @@ flatList = rows.map(r => {
         data: {
             labels: data.map(d => { 
                 const dt = new Date(d.fecha + 'T12:00:00'); 
-                return `${dt.getDate()} ${MONTHS[dt.getMonth()]}.`; 
+                return `${dt.getDate()} ${MONTHS[dt.getMonth()]}`; 
             }),
             datasets: [{ 
                 data: data.map(d => d.precio_minimo), 
-                borderColor: mainColor, 
+                borderColor: chartColor, 
                 borderWidth: 2,
-                backgroundColor: 'transparent',
-                fill: false,
-                tension: 0, 
-                pointStyle: 'circle',
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: mainColor,
-                pointBorderWidth: 2
+                fill: true,
+                backgroundColor: gradient,
+                tension: 0.4, 
+                pointRadius: 0,
+                pointHitRadius: 30,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: chartColor
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            // INTERACCIÓN: Se activa en cualquier parte del eje X (línea vertical)
-            interaction: {
-                intersect: false,
-                mode: 'index',
-            },
+            layout: { padding: { left: 0, right: 0, top: 10, bottom: 0 } },
+            interaction: { intersect: false, mode: 'index' },
             plugins: { 
                 legend: { display: false },
                 tooltip: {
                     enabled: true,
-                    backgroundColor: isDark ? '#1e222d' : '#fff',
-                    titleColor: isDark ? '#fff' : '#131722',
-                    bodyColor: isDark ? '#fff' : '#131722',
-                    borderColor: isDark ? '#444' : '#e0e3eb',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#131722',
+                    bodyColor: '#131722',
+                    borderColor: '#e0e3eb',
                     borderWidth: 1,
                     padding: 12,
-                    cornerRadius: 6,
                     displayColors: false,
-                    titleFont: { size: 11, weight: 'normal' },
-                    bodyFont: { size: 13, weight: 'bold', family: 'Roboto Mono' },
+                    // NEGRITAS EN EL TOOLTIP
+                    titleFont: { size: 11, weight: 'bold' },
+                    bodyFont: { family: 'Roboto Mono', size: 13, weight: '800' },
                     callbacks: {
-                        title: (context) => {
-                            const d = data[context[0].dataIndex].fecha.split('-');
-                            return `${parseInt(d[2])} ${MONTHS[parseInt(d[1])-1]} ${d[0]}`;
-                        },
-                        // MOSTRAR EMPRESA + PRECIO
                         label: (context) => {
                             const entry = data[context.dataIndex];
-                            return `${entry.supermercado}: $${format(entry.precio_minimo)}`;
+                            const tienda = entry.supermercado || "MERCADO";
+                            return `${tienda}: $${format(entry.precio_minimo)}`;
                         }
                     }
                 }
             },
             scales: {
                 y: {
+                    display: true,
+                    position: 'right',
+                    grid: { display: false },
                     border: { display: false },
-                    grid: { color: isDark ? '#2a2a2a' : '#f0f0f0', drawTicks: false },
-                    ticks: { color: '#999', font: { size: 11 }, callback: v => '$' + v, padding: 10 }
+                    ticks: { 
+                        font: { size: 10, weight: 'bold' }, // Precios eje Y en negrita
+                        color: '#999',
+                        callback: v => '$' + format(v),
+                        maxTicksLimit: 5,
+                        padding: 2
+                    }
                 },
                 x: {
-                    border: { display: false },
+                    display: true,
                     grid: { display: false },
-                    ticks: { color: '#999', font: { size: 11 }, maxTicksLimit: 6 }
+                    border: { display: false },
+                    ticks: {
+                        font: { size: 10 },
+                        color: '#bbb',
+                        maxTicksLimit: 3, // SOLO 3 COORDENADAS (Inicio, Medio, Fin)
+                        autoSkip: true,
+                        callback: function(val) {
+                            const label = this.getLabelForValue(val);
+                            return label.toLowerCase();
+                        }
+                    }
                 }
             }
-        },
-        // PLUGIN PARA LA LÍNEA VERTICAL (CROSSHAIR)
-        plugins: [{
-            afterDraw: (chart) => {
-                if (chart.tooltip?._active?.length) {
-                    const x = chart.tooltip._active[0].element.x;
-                    const yAxis = chart.scales.y;
-                    const ctx = chart.ctx;
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.moveTo(x, yAxis.top);
-                    ctx.lineTo(x, yAxis.bottom);
-                    ctx.lineWidth = 1;
-                    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.15)';
-                    ctx.setLineDash([4, 4]); // Línea punteada
-                    ctx.stroke();
-                    ctx.restore();
-                }
-            }
-        }]
+        }
     });
 }
    
@@ -1064,10 +1073,15 @@ flatList = rows.map(r => {
 }
 function renderChangoSummary(container, items) {
     const totals = [0, 0, 0, 0, 0]; 
+    const itemCounts = [0, 0, 0, 0, 0]; // Nuevo: contador de items por súper
+
     items.forEach(item => {
         const qty = favorites[item.id] || 1;
         item.p.forEach((val, idx) => {
-            if (val > 0) totals[idx] += (val * qty);
+            if (val > 0) {
+                totals[idx] += (val * qty);
+                itemCounts[idx] += 1; // Sumamos 1 al contador si el súper tiene el producto
+            }
         });
     });
 
@@ -1077,23 +1091,27 @@ function renderChangoSummary(container, items) {
     const summaryDiv = document.createElement('div');
     summaryDiv.className = 'chango-summary';
     
-    let html = `<div class="pv-market-title" style="font-weight:800; color:var(--text-main);">Tu Chango (Total)</div>`;
+    // Título en negrita potente (800)
+    let html = `<div class="pv-market-title" style="font-weight:800; color:var(--text-main); margin-bottom:15px;">Tu Chango (Total)</div>`;
     
     const storeNames = ["Coto", "Carrefour", "Dia", "Jumbo", "MasOnline"];
-    
+    const totalItems = items.length; // Total de productos que el usuario marcó como favoritos
+
     storeNames.forEach((n, i) => {
         const isBest = totals[i] === minTotal && minTotal > 0;
+        // Agregamos el conteo (x/y) al lado del nombre del supermercado
         html += `
             <div class="chango-row ${isBest ? 'best' : ''}">
-                <span>${n}</span>
-                <span>$ ${format(totals[i])}</span>
+                <span style="font-size:13px;">
+                    ${n} <small style="opacity:0.6; font-weight:400;">(${itemCounts[i]}/${totalItems})</small>
+                </span>
+                <span style="font-weight:700;">$ ${format(totals[i])}</span>
             </div>`;
     });
     
     summaryDiv.innerHTML = html;
     container.appendChild(summaryDiv);
-}
-     
+}     
 function renderEmptyCart(container) {
     const emptyMsg = document.createElement('div');
     emptyMsg.className = 'empty-cart-message'; // Mejor usar clases CSS
