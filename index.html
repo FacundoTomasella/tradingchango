@@ -570,8 +570,9 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
+    // 1. Reemplazá tu línea de declaración por estas:
+let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
 
-let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null, currentUser = null; [cite: 1]
 // Inicialización limpia de favoritos como OBJETO
 let favorites = JSON.parse(localStorage.getItem('fav_tickers')) || {};
 if (Array.isArray(favorites)) { 
@@ -953,23 +954,24 @@ flatList = rows.map(r => {
    
      // --- LÓGICA DE USUARIOS ---
 async function initAuth() {
-    const { data: { session } } = await supabase.auth.getSession(); [cite: 95]
-    handleAuthState(session); [cite: 95]
-    supabase.auth.onAuthStateChange((_event, session) => handleAuthState(session)); [cite: 95]
+    // Usamos la librería de Supabase que ya tenés cargada en el HEAD
+    const { data: { session } } = await supabase.auth.getSession();
+    handleAuthState(session);
+    supabase.auth.onAuthStateChange((_event, session) => handleAuthState(session));
 }
 
 function handleAuthState(session) {
     const userBtn = document.getElementById('userBtn');
     if (session) {
-        currentUser = session.user; [cite: 96]
-        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-user-check" style="color:var(--color-good)"></i>'; [cite: 97]
-        document.getElementById('authModal').style.display = 'none'; [cite: 97]
+        currentUser = session.user;
+        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-user-check" style="color:var(--color-good)"></i>';
+        document.getElementById('authModal').style.display = 'none';
     } else {
-        currentUser = null; [cite: 98]
-        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user"></i>'; [cite: 98]
+        currentUser = null;
+        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user"></i>';
     }
 }
-     
+
 async function handleSignUp(event) {
     event.preventDefault();
     const email = document.getElementById('regEmail').value;
