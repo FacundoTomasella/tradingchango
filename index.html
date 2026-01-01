@@ -1271,32 +1271,31 @@ function trackMarketClick(superName, productName) {
   }
 }
 
-    function renderAds() {
+   function renderAds() {
     const adTop = document.getElementById('ad-top');
     const adBottom = document.getElementById('ad-bottom');
 
-    // Control del banner superior
+    // Manejo del Banner Superior
     if (configDB['ad_top_visible'] === 'true') {
         adTop.style.display = 'block';
-        // Si ya tenés el código de AdSense, lo inyectamos acá una sola vez
-        if (adTop.innerHTML === "") {
-            adTop.innerHTML += `
-                <!-- PEGA AQUÍ TU CÓDIGO <ins> DE ADSENSE -->
-                <div style="background:rgba(128,128,128,0.1); height:90px; line-height:90px;">Espacio AdSense Top</div>
-            `;
+        // Inyectamos el contenido que viene de la base de datos
+        adTop.innerHTML = configDB['ad_top_content'] || '<small>Espacio publicitario</small>';
+        
+        // Si el contenido es AdSense, hay que avisarle a Google que cargue
+        if (adTop.innerHTML.includes("adsbygoogle")) {
+            (adsbygoogle = window.adsbygoogle || []).push({});
         }
     } else {
         adTop.style.display = 'none';
     }
 
-    // Control del banner inferior
+    // Manejo del Banner Inferior
     if (configDB['ad_bottom_visible'] === 'true') {
         adBottom.style.display = 'block';
-        if (adBottom.innerHTML === "") {
-            adBottom.innerHTML += `
-                <!-- PEGA AQUÍ TU CÓDIGO <ins> DE ADSENSE -->
-                <div style="background:rgba(128,128,128,0.1); height:90px; line-height:90px;">Espacio AdSense Bottom</div>
-            `;
+        adBottom.innerHTML = configDB['ad_bottom_content'] || '<small>Espacio publicitario</small>';
+        
+        if (adBottom.innerHTML.includes("adsbygoogle")) {
+            (adsbygoogle = window.adsbygoogle || []).push({});
         }
     } else {
         adBottom.style.display = 'none';
