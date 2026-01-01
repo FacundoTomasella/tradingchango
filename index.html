@@ -588,13 +588,20 @@
         <div id="loader" class="loader">CONECTANDO A MERCADO...</div>
         <div id="tickerList" class="ticker-list"></div>
         
-        <div id="pageView" class="page-view">
-            <div class="page-header">
-                <div id="pageTitle" class="page-title"></div>
-                <div class="back-link" onclick="setTab('home')">Volver <i class="fa-solid fa-chevron-right"></i></div>
-            </div>
-            <div id="pageContent"></div>
+       <div id="pageView" class="page-view" style="display: none; padding-top: 0;">
+    <!-- Encabezado compacto -->
+    <div class="page-header" style="display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 0;">
+        <div id="pageTitle" style="font-weight: 800; font-size: 16px; text-transform: uppercase; letter-spacing: -0.5px; color: var(--text-main);"></div>
+        
+        <!-- Botón Volver con estilo similar a tus filtros de rango (7D, 15D...) -->
+        <div class="back-link" onclick="setTab('home')" style="cursor: pointer; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+            <i class="fa-solid fa-arrow-left" style="font-size: 10px;"></i> VOLVER
         </div>
+    </div>
+    
+    <!-- Contenido de Supabase -->
+    <div id="pageContent" style="margin-top: 0;"></div>
+</div>
 
         <footer class="app-footer">
             <div>Desarrollado por <a href="https://bento.me/facutom" target="_blank" style="color:var(--text-main); text-decoration:none; font-weight:600;">Facu Tom</a></div>
