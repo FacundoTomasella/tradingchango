@@ -1287,6 +1287,8 @@ function trackMarketClick(superName, productName) {
 }
 
   function renderAds() {
+    if (!configDB) return; // Seguridad si los datos aún no llegan
+
     const slots = [
         { id: 'ad-top', visible: 'ad_top_visible', content: 'ad_top_content' },
         { id: 'ad-bottom', visible: 'ad_bottom_visible', content: 'ad_bottom_content' }
@@ -1296,25 +1298,29 @@ function trackMarketClick(superName, productName) {
         const container = document.getElementById(slot.id);
         if (!container) return;
 
-        if (configDB[slot.visible] === 'true') {
-            container.style.display = 'block';
+        // Convertimos a string por si viene como booleano de la DB
+        const isVisible = String(configDB[slot.visible]) === 'true';
+
+        if (isVisible) {
+            const content = configDB[slot.content] || '';
             
-            // Solo inyectamos si el contenedor está vacío para no duplicar anuncios
-            if (container.innerHTML === "") {
-                container.innerHTML = configDB[slot.content] || '';
+            // Solo inyectar si cambió el contenido para evitar parpadeos
+            if (container.innerHTML !== content) {
+                container.style.display = 'block';
+                container.innerHTML = content;
                 
-                // Si el contenido es de AdSense, ejecutamos el push de Google
-                if (container.innerHTML.includes("adsbygoogle")) {
+                // Si es AdSense, necesita el empujón de JS
+                if (content.includes("adsbygoogle")) {
                     try {
-                        (adsbygoogle = window.adsbygoogle || []).push({});
+                        (window.adsbygoogle = window.adsbygoogle || []).push({});
                     } catch (e) {
-                        console.error("Error cargando AdSense:", e);
+                        console.error("AdSense Error:", e);
                     }
                 }
             }
         } else {
             container.style.display = 'none';
-            container.innerHTML = ''; // Limpiamos si se desactiva
+            container.innerHTML = '';
         }
     });
 }
