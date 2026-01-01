@@ -1026,7 +1026,7 @@ flatList = rows.map(r => {
         dataToShow = dataToShow.filter(i => i.n.toUpperCase().includes(term) || i.ticker.toUpperCase().includes(term));
     }
     if (currentTrendFilter && currentTab !== 'favs') dataToShow = dataToShow.filter(item => currentTrendFilter === 'up' ? getStats(item.p, item.h7d).isUp : getStats(item.p, item.h7d).isDown);
-        }
+       })  }
 
     // Dibujar tarjetas
     dataToShow.forEach(item => {
