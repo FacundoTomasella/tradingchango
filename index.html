@@ -71,13 +71,6 @@
       
     <style>
 
-    /* Estilo para el botón Volver al pasar el mouse */
-.back-link:hover {
-    background: var(--text-main) !important;
-    color: var(--bg-app) !important;
-    transform: translateX(-3px);
-}
-      
           .ad-container {
     display: none; /* Se activa por JS */
     width: 100%;
@@ -563,6 +556,26 @@
 <main>
     <!-- Aquí se muestra la lista de productos -->
     <div id="tickerList" class="ticker-list"></div>
+
+    <!-- Aquí se muestran las páginas legales (Acerca de, etc.) -->
+    <div id="pageView" class="page-view">
+    <div class="page-header" style="display: flex; justify-content: flex-end; align-items: center; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div class="btn-back" onclick="setTab('home')" style="
+            cursor: pointer; 
+            background: var(--primary-color, #e63946); 
+            color: white; 
+            padding: 8px 20px; 
+            border-radius: 50px; 
+            font-weight: 600; 
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <i class="fa-solid fa-chevron-left"></i> Volver
+        </div>
+    </div>
     <div id="pageContent" style="margin-top: 20px;"></div>
 </div>
 </main>
@@ -575,18 +588,21 @@
         <div id="loader" class="loader">CONECTANDO A MERCADO...</div>
         <div id="tickerList" class="ticker-list"></div>
         
-    <!-- Vista de Páginas (Acerca de / Términos / Contacto) -->
-<div id="pageView" class="page-view" style="display: none; padding-top: 0;">
-    <!-- Contenedor del botón Volver -->
-    <div style="display: flex; align-items: center; padding: 15px 0 10px 0;">
-        <div class="back-link" onclick="setTab('home')" style="cursor: pointer; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            <i class="fa-solid fa-chevron-left" style="font-size: 9px;"></i> VOLVER
+       <div id="pageView" class="page-view" style="display: none; padding-top: 0;">
+    <!-- Encabezado compacto -->
+    <div class="page-header" style="display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 0;">
+        <div id="pageTitle" style="font-weight: 800; font-size: 16px; text-transform: uppercase; letter-spacing: -0.5px; color: var(--text-main);"></div>
+        
+        <!-- Botón Volver con estilo similar a tus filtros de rango (7D, 15D...) -->
+        <div class="back-link" onclick="setTab('home')" style="cursor: pointer; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+            <i class="fa-solid fa-arrow-left" style="font-size: 10px;"></i> VOLVER
         </div>
     </div>
     
     <!-- Contenido de Supabase -->
     <div id="pageContent" style="margin-top: 0;"></div>
 </div>
+
         <footer class="app-footer">
             <div>Desarrollado por <a href="https://bento.me/facutom" target="_blank" style="color:var(--text-main); text-decoration:none; font-weight:600;">Facu Tom</a></div>
         </footer>
@@ -844,22 +860,16 @@ flatList = rows.map(r => {
         renderView();
     }
 
- function openPage(c, t, pushState = true) {
+   function openPage(c, t, pushState = true) {
     if (pushState) history.pushState({page: c}, '', `/${c}`);
-    
-    // Ocultamos las secciones de la Home
     document.getElementById('tickerList').style.display = 'none';
     document.getElementById('searchBarSection').style.display = 'none';
     document.getElementById('heroSection').style.display = 'none';
     
-    // Mostramos el contenedor de página
     const v = document.getElementById('pageView');
-    v.style.display = 'block'; 
+    v.classList.add('active');
     
-    // Inyectamos el contenido (Ya no usamos el div de 'pageTitle')
     document.getElementById('pageContent').innerHTML = configDB[c] || 'Cargando...';
-    
-    renderAds(); // Refrescamos publicidad si tenés
     window.scrollTo(0,0);
 }
    async function loadPvChart(days, btn) {
