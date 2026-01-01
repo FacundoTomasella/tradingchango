@@ -68,6 +68,26 @@
 
     <style>
       /* Controles de cantidad en el Chango */
+  /* Espacios de Publicidad */
+.ad-slot {
+    display: none; /* Se activa vía JS */
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px dashed var(--border);
+    margin: 15px 0;
+    text-align: center;
+    padding: 10px;
+    min-height: 90px;
+    overflow: hidden;
+}
+.ad-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+    
 .qty-control {
     display: flex;
     align-items: center;
@@ -408,6 +428,14 @@
 "> 
 </head>
 <body>
+  <!-- Debajo del Hero Section -->
+<div id="ad-top" class="ad-slot"><div class="ad-label">Publicidad</div><div id="ad-top-content"></div></div>
+
+<div id="tickerList" class="ticker-list"></div>
+
+<!-- Encima del footer -->
+<div id="ad-bottom" class="ad-slot"><div class="ad-label">Publicidad</div><div id="ad-bottom-content"></div></div>
+  
   <div id="pwaPill">
     <span onclick="closePwaPill()" style="opacity: 0.7; font-size: 16px; cursor: pointer;">&times;</span>
     <span id="pwaText" onclick="installPwa()">INSTALAR APP 🛒</span>
