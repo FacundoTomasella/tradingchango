@@ -553,29 +553,24 @@
 </div>
 
 <!-- 2. ZONA DE CONTENIDO VARIABLE -->
-<!-- 2. ZONA DE CONTENIDO VARIABLE -->
-<main style="min-height: 400px; padding: 0 20px;">
-    <!-- Cargador (Se muestra mientras descargan los datos) -->
-    <div id="loader" class="loader">CONECTANDO A MERCADO...</div>
-
-    <!-- 1. Lista de productos (Home / Categorías / Chango) -->
+<main>
+    <!-- Aquí se muestra la lista de productos -->
     <div id="tickerList" class="ticker-list"></div>
 
-    <!-- 2. Vista de Páginas (Acerca de / Términos / Contacto) -->
-    <div id="pageView" class="page-view" style="display: none; padding-top: 5px;">
-        <!-- Encabezado compacto: Título y Botón cerrar en la misma línea -->
-        <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 15px;">
-            <h2 id="pageTitle" style="font-size: 17px; font-weight: 800; margin: 0; color: var(--text-main); text-transform: uppercase; letter-spacing: -0.5px;"></h2>
-            
-            <div onclick="setTab('home')" style="cursor: pointer; color: var(--text-muted); font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; text-transform: uppercase; letter-spacing: 0.5px;">
-                Cerrar <i class="fa-solid fa-xmark" style="font-size: 13px;"></i>
-            </div>
-        </div>
+    <!-- Aquí se muestran las páginas legales (Acerca de, etc.) -->
+    <div id="pageView" class="page-view" style="display: none; padding-top: 0;">
+    <!-- Encabezado compacto: Título a la izquierda, Cerrar a la derecha -->
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border);">
+        <h2 id="pageTitle" style="font-size: 18px; font-weight: 800; margin: 0; color: var(--text-main); text-transform: uppercase; letter-spacing: -0.5px;"></h2>
         
-        <!-- Contenedor del texto/formularios de Supabase -->
-        <div id="pageContent" style="line-height: 1.6; font-size: 14px; color: var(--text-main);"></div>
+        <div onclick="setTab('home')" style="cursor: pointer; color: var(--text-muted); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+            Cerrar <i class="fa-solid fa-xmark" style="font-size: 14px;"></i>
+        </div>
     </div>
+    <div id="pageContent" style="margin-top: 20px;"></div>
+</div>
 </main>
+
 <!-- 3. Banner Inferior (Siempre abajo del contenido actual) -->
 <div id="ad-bottom" class="ad-container">
     <div id="ad-bottom-content"></div>
