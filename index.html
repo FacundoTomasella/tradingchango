@@ -554,59 +554,32 @@
 
 <!-- 2. ZONA DE CONTENIDO VARIABLE -->
 <main>
-    <div id="tickerList" class="list-container"></div>
+    <!-- Aquí se muestra la lista de productos -->
+    <div id="tickerList" class="ticker-list"></div>
 
-    <div id="pageView" class="page-view" style="display: none;">
-        <div class="back-navigation">
-            <button type="button" class="back-button" onclick="setTab('home')">
-                <i class="fa-solid fa-arrow-left"></i> 
-                <span>Volver</span>
-            </button>
+    <!-- Aquí se muestran las páginas legales (Acerca de, etc.) -->
+    <div id="pageView" class="page-view">
+    <div class="page-header" style="display: flex; justify-content: flex-end; align-items: center; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div class="btn-back" onclick="setTab('home')" style="
+            cursor: pointer; 
+            background: var(--primary-color, #e63946); 
+            color: white; 
+            padding: 8px 20px; 
+            border-radius: 50px; 
+            font-weight: 600; 
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <i class="fa-solid fa-chevron-left"></i> Volver
         </div>
-
-        <div id="pageContent" class="content-body"></div>
     </div>
+    <div id="pageContent" style="margin-top: 20px;"></div>
+</div>
 </main>
 
-<style>
-    /* Estilos sugeridos para mover el diseño fuera del HTML */
-    .page-view {
-        padding: 0 20px;
-    }
-    
-    .back-navigation {
-        padding: 15px 0 5px;
-    }
-
-    .back-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        color: var(--text-main);
-        padding: 5px 12px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        transition: all 0.2s ease;
-    }
-
-    .back-button:hover {
-        background: var(--border); /* Efecto visual al pasar el mouse */
-    }
-
-    .back-button i {
-        font-size: 10px;
-    }
-
-    .content-body {
-        margin-top: 20px;
-    }
-</style>
 <!-- 3. Banner Inferior (Siempre abajo del contenido actual) -->
 <div id="ad-bottom" class="ad-container">
     <div id="ad-bottom-content"></div>
@@ -615,17 +588,13 @@
         <div id="loader" class="loader">CONECTANDO A MERCADO...</div>
         <div id="tickerList" class="ticker-list"></div>
         
-       <div id="pageView" class="page-view" style="display: none; padding-top: 0;">
-    <!-- Encabezado compacto -->
-    <div class="page-header" style="display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 0;">
-        <div id="pageTitle" style="font-weight: 800; font-size: 16px; text-transform: uppercase; letter-spacing: -0.5px; color: var(--text-main);"></div>
-        
-     
-    </div>
-    
-    <!-- Contenido de Supabase -->
-    <div id="pageContent" style="margin-top: 0;"></div>
-</div>
+        <div id="pageView" class="page-view">
+            <div class="page-header">
+                <div id="pageTitle" class="page-title"></div>
+                <div class="back-link" onclick="setTab('home')">Volver <i class="fa-solid fa-chevron-right"></i></div>
+            </div>
+            <div id="pageContent"></div>
+        </div>
 
         <footer class="app-footer">
             <div>Desarrollado por <a href="https://bento.me/facutom" target="_blank" style="color:var(--text-main); text-decoration:none; font-weight:600;">Facu Tom</a></div>
