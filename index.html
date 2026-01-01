@@ -500,9 +500,7 @@
 </div>
         </div>
    </div>
-    <div id="promo-top" class="ad-container"></div>
-    <div id="promo-bottom" class="ad-container"></div>
-
+    <div class="app-container">
         <header>
             <div class="top-row">
                 <a class="logo-link" onclick="setTab('home')"><div class="logo"><div class="logo-icon-wrapper"><i class="fa-solid fa-cart-shopping"></i><i class="fa-solid fa-arrow-trend-up"></i></div>TradingChango</div></a>
@@ -635,16 +633,14 @@ if (Array.isArray(favorites)) {
     // Función para generar URLs limpias
     const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
-          async function init() {
-          try {
-              // 1. Cargar Configuración (Legales y Ads)
-              const resC = await fetch(`${_API}/rest/v1/configuracion?select=*`);
-              const configRows = await resC.json();
-              configRows.forEach(row => configDB[row.clave] = row.valor);
-      
-              // --- LLAMADA CRUCIAL ---
-              renderAds(); 
+    async function init() {
+        try {
+            // 1. Cargar Configuración (Legales, etc)
+            const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+            const configRows = await resC.json();
+            configRows.forEach(row => configDB[row.clave] = row.valor);
 
+            renderAds(); 
 
           
             // 2. Cargar Productos
@@ -1292,33 +1288,33 @@ function trackMarketClick(superName, productName) {
 
   function renderAds() {
     const slots = [
-        { id: 'promo-top', visible: 'ad_top_visible', content: 'ad_top_content' },
-        { id: 'promo-bottom', visible: 'ad_bottom_visible', content: 'ad_bottom_content' }
+        { id: 'ad-top', visible: 'ad_top_visible', content: 'ad_top_content' },
+        { id: 'ad-bottom', visible: 'ad_bottom_visible', content: 'ad_bottom_content' }
     ];
 
     slots.forEach(slot => {
         const container = document.getElementById(slot.id);
         if (!container) return;
 
-        // Comprobamos si en Supabase pusiste 'true'
-        const isVisible = String(configDB[slot.visible]).toLowerCase() === 'true';
-
-        if (isVisible) {
+        if (configDB[slot.visible] === 'true') {
             container.style.display = 'block';
-            const htmlContent = configDB[slot.content];
             
-            if (htmlContent && container.innerHTML === "") {
-                container.innerHTML = htmlContent;
+            // Solo inyectamos si el contenedor está vacío para no duplicar anuncios
+            if (container.innerHTML === "") {
+                container.innerHTML = configDB[slot.content] || '';
                 
-                // Si es AdSense, activar el motor de Google
-                if (htmlContent.includes("adsbygoogle")) {
+                // Si el contenido es de AdSense, ejecutamos el push de Google
+                if (container.innerHTML.includes("adsbygoogle")) {
                     try {
                         (adsbygoogle = window.adsbygoogle || []).push({});
-                    } catch (e) { console.error("Error AdSense:", e); }
+                    } catch (e) {
+                        console.error("Error cargando AdSense:", e);
+                    }
                 }
             }
         } else {
             container.style.display = 'none';
+            container.innerHTML = ''; // Limpiamos si se desactiva
         }
     });
 }
