@@ -67,6 +67,28 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
 
     <style>
+
+          .ad-container {
+          display: none; /* Se activa por JS */
+          width: 100%;
+          max-width: 728px; /* Ancho estándar de banners */
+          margin: 15px auto;
+          text-align: center;
+          overflow: hidden;
+          min-height: 90px; /* Altura mínima para que no salte el contenido al cargar */
+      }
+      
+      /* Opcional: una etiqueta sutil que diga 'Publicidad' */
+      .ad-container::before {
+          content: "PUBLICIDAD";
+          display: block;
+          font-size: 8px;
+          color: var(--text-muted);
+          letter-spacing: 1px;
+          margin-bottom: 4px;
+      }
+        
+      
       /* Controles de cantidad en el Chango */
 .qty-control {
     display: flex;
@@ -529,7 +551,14 @@
                 <div class="hero-subtitle">Analizá los precios, tendencias, y compará antes de comprar</div>
             </div>
         </header>
-
+      <!-- ABAJO DEL HERO SECTION (Publicidad Superior) -->
+          <div id="ad-top" class="ad-container"></div>
+          
+          <div id="tickerList" class="ticker-list"></div>
+          
+          <!-- ARRIBA DEL FOOTER (Publicidad Inferior) -->
+          <div id="ad-bottom" class="ad-container"></div>
+      
         <div id="loader" class="loader">CONECTANDO A MERCADO...</div>
         <div id="tickerList" class="ticker-list"></div>
         
@@ -636,6 +665,9 @@ flatList = rows.map(r => {
 });
           document.getElementById('loader').style.display = 'none';
             updateCartBadge();
+
+            renderAds(); 
+
 
             // --- LÓGICA DE RUTAS AL CARGAR ---
             const path = window.location.pathname.split('/').filter(p => p !== "");
@@ -1239,6 +1271,38 @@ function trackMarketClick(superName, productName) {
   }
 }
 
+    function renderAds() {
+    const adTop = document.getElementById('ad-top');
+    const adBottom = document.getElementById('ad-bottom');
+
+    // Control del banner superior
+    if (configDB['ad_top_visible'] === 'true') {
+        adTop.style.display = 'block';
+        // Si ya tenés el código de AdSense, lo inyectamos acá una sola vez
+        if (adTop.innerHTML === "") {
+            adTop.innerHTML += `
+                <!-- PEGA AQUÍ TU CÓDIGO <ins> DE ADSENSE -->
+                <div style="background:rgba(128,128,128,0.1); height:90px; line-height:90px;">Espacio AdSense Top</div>
+            `;
+        }
+    } else {
+        adTop.style.display = 'none';
+    }
+
+    // Control del banner inferior
+    if (configDB['ad_bottom_visible'] === 'true') {
+        adBottom.style.display = 'block';
+        if (adBottom.innerHTML === "") {
+            adBottom.innerHTML += `
+                <!-- PEGA AQUÍ TU CÓDIGO <ins> DE ADSENSE -->
+                <div style="background:rgba(128,128,128,0.1); height:90px; line-height:90px;">Espacio AdSense Bottom</div>
+            `;
+        }
+    } else {
+        adBottom.style.display = 'none';
+    }
+}
+     
      
     // Iniciar la app
     init();
