@@ -72,25 +72,18 @@
     <style>
 
           .ad-container {
-          display: none; /* Se activa por JS */
-          width: 100%;
-          max-width: 728px; /* Ancho estándar de banners */
-          margin: 15px auto;
-          text-align: center;
-          overflow: hidden;
-          min-height: 90px; /* Altura mínima para que no salte el contenido al cargar */
-      }
-      
-      /* Opcional: una etiqueta sutil que diga 'Publicidad' */
-      .ad-container::before {
-          content: "PUBLICIDAD";
-          display: block;
-          font-size: 8px;
-          color: var(--text-muted);
-          letter-spacing: 1px;
-          margin-bottom: 4px;
-      }
-        
+    display: none; /* Se activa por JS */
+    width: 100%;
+    margin: 10px auto;
+    text-align: center;
+    overflow: hidden;
+    /* No ponemos altura fija para que se adapte al banner */
+}
+  @media (max-width: 600px) {
+    .ad-container {
+        margin: 5px auto;
+    }
+}
       
       /* Controles de cantidad en el Chango */
 .qty-control {
@@ -1293,35 +1286,37 @@ function trackMarketClick(superName, productName) {
   }
 }
 
-   function renderAds() {
-    const adTop = document.getElementById('ad-top');
-    const adBottom = document.getElementById('ad-bottom');
+  function renderAds() {
+    const slots = [
+        { id: 'ad-top', visible: 'ad_top_visible', content: 'ad_top_content' },
+        { id: 'ad-bottom', visible: 'ad_bottom_visible', content: 'ad_bottom_content' }
+    ];
 
-    // Manejo del Banner Superior
-    if (configDB['ad_top_visible'] === 'true') {
-        adTop.style.display = 'block';
-        // Inyectamos el contenido que viene de la base de datos
-        adTop.innerHTML = configDB['ad_top_content'] || '<small>Espacio publicitario</small>';
-        
-        // Si el contenido es AdSense, hay que avisarle a Google que cargue
-        if (adTop.innerHTML.includes("adsbygoogle")) {
-            (adsbygoogle = window.adsbygoogle || []).push({});
-        }
-    } else {
-        adTop.style.display = 'none';
-    }
+    slots.forEach(slot => {
+        const container = document.getElementById(slot.id);
+        if (!container) return;
 
-    // Manejo del Banner Inferior
-    if (configDB['ad_bottom_visible'] === 'true') {
-        adBottom.style.display = 'block';
-        adBottom.innerHTML = configDB['ad_bottom_content'] || '<small>Espacio publicitario</small>';
-        
-        if (adBottom.innerHTML.includes("adsbygoogle")) {
-            (adsbygoogle = window.adsbygoogle || []).push({});
+        if (configDB[slot.visible] === 'true') {
+            container.style.display = 'block';
+            
+            // Solo inyectamos si el contenedor está vacío para no duplicar anuncios
+            if (container.innerHTML === "") {
+                container.innerHTML = configDB[slot.content] || '';
+                
+                // Si el contenido es de AdSense, ejecutamos el push de Google
+                if (container.innerHTML.includes("adsbygoogle")) {
+                    try {
+                        (adsbygoogle = window.adsbygoogle || []).push({});
+                    } catch (e) {
+                        console.error("Error cargando AdSense:", e);
+                    }
+                }
+            }
+        } else {
+            container.style.display = 'none';
+            container.innerHTML = ''; // Limpiamos si se desactiva
         }
-    } else {
-        adBottom.style.display = 'none';
-    }
+    });
 }
      
      
