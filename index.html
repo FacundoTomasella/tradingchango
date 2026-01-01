@@ -66,6 +66,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
 
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5219278625876538"
+     crossorigin="anonymous"></script>
+      
     <style>
 
           .ad-container {
@@ -551,13 +554,34 @@
                 <div class="hero-subtitle">Analizá los precios, tendencias, y compará antes de comprar</div>
             </div>
         </header>
-      <!-- ABAJO DEL HERO SECTION (Publicidad Superior) -->
-          <div id="ad-top" class="ad-container"></div>
-          
-          <div id="tickerList" class="ticker-list"></div>
-          
-          <!-- ARRIBA DEL FOOTER (Publicidad Inferior) -->
-          <div id="ad-bottom" class="ad-container"></div>
+     <!-- 1. Banner Superior (Siempre arriba) -->
+<div id="ad-top" class="ad-container">
+    <div class="ad-label">Publicidad</div>
+    <div id="ad-top-content"></div>
+</div>
+
+<!-- 2. ZONA DE CONTENIDO VARIABLE -->
+<main>
+    <!-- Aquí se muestra la lista de productos -->
+    <div id="tickerList" class="ticker-list"></div>
+
+    <!-- Aquí se muestran las páginas legales (Acerca de, etc.) -->
+    <div id="pageView" class="page-view">
+        <div class="page-header">
+            <div id="pageTitle" class="page-title" style="font-weight: 800;"></div>
+            <div class="back-link" onclick="setTab('home')" style="cursor:pointer; color:var(--text-muted);">
+                Volver <i class="fa-solid fa-chevron-right"></i>
+            </div>
+        </div>
+        <div id="pageContent" style="margin-top: 20px;"></div>
+    </div>
+</main>
+
+<!-- 3. Banner Inferior (Siempre abajo del contenido actual) -->
+<div id="ad-bottom" class="ad-container">
+    <div class="ad-label">Publicidad</div>
+    <div id="ad-bottom-content"></div>
+</div>
       
         <div id="loader" class="loader">CONECTANDO A MERCADO...</div>
         <div id="tickerList" class="ticker-list"></div>
