@@ -558,22 +558,13 @@
     <div id="tickerList" class="ticker-list"></div>
 
     <!-- Aquí se muestran las páginas legales (Acerca de, etc.) -->
-    <div id="pageView" class="page-view">
-    <div class="page-header" style="display: flex; justify-content: flex-end; align-items: center; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-        <div class="btn-back" onclick="setTab('home')" style="
-            cursor: pointer; 
-            background: var(--primary-color, #e63946); 
-            color: white; 
-            padding: 8px 20px; 
-            border-radius: 50px; 
-            font-weight: 600; 
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: transform 0.2s, background 0.2s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-            <i class="fa-solid fa-chevron-left"></i> Volver
+    <div id="pageView" class="page-view" style="display: none; padding-top: 0;">
+    <!-- Encabezado compacto: Título a la izquierda, Cerrar a la derecha -->
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border);">
+        <h2 id="pageTitle" style="font-size: 18px; font-weight: 800; margin: 0; color: var(--text-main); text-transform: uppercase; letter-spacing: -0.5px;"></h2>
+        
+        <div onclick="setTab('home')" style="cursor: pointer; color: var(--text-muted); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+            Cerrar <i class="fa-solid fa-xmark" style="font-size: 14px;"></i>
         </div>
     </div>
     <div id="pageContent" style="margin-top: 20px;"></div>
