@@ -71,19 +71,25 @@
       
     <style>
 
-    /* Elimina el espacio sobrante arriba del texto inyectado */
+    /* Estilo para el botón Volver al pasar el mouse */
+.back-link:hover {
+    background: var(--text-main) !important;
+    color: var(--bg-app) !important;
+    transform: translateX(-3px);
+}
+
+/* Reset de márgenes para el contenido que viene de Supabase */
+      #pageContent h1, 
       #pageContent h2, 
-      #pageContent h3, 
-      #pageContent p, 
-      #pageContent div {
-          margin-top: 0 !important;
-          padding-top: 0 !important;
+      #pageContent h3 {
+          margin-top: 10px !important; /* Espacio mínimo con el botón */
+          margin-bottom: 15px !important;
+          line-height: 1.2;
       }
       
-      /* Estilo para que el botón Volver resalte sutilmente al pasar el mouse */
-      .back-link:hover {
-          background: var(--border) !important;
-          opacity: 0.8;
+      #pageContent p {
+          margin-top: 0 !important;
+          margin-bottom: 15px !important;
       }
       
           .ad-container {
@@ -603,22 +609,18 @@
         <div id="loader" class="loader">CONECTANDO A MERCADO...</div>
         <div id="tickerList" class="ticker-list"></div>
         
-      <!-- Vista de Páginas (Acerca de / Términos / Contacto) -->
-<div id="pageView" class="page-view" style="display: none; padding-top: 10px;">
-    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 15px;">
-        <!-- El título se carga acá -->
-        <div id="pageTitle" style="font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: -0.2px; color: var(--text-main);"></div>
-        
-        <!-- Botón Volver compacto estilo 'Trading' -->
-        <div class="back-link" onclick="setTab('home')" style="cursor: pointer; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; transition: 0.2s;">
-            <i class="fa-solid fa-arrow-left" style="font-size: 9px;"></i> VOLVER
+    <!-- Vista de Páginas (Acerca de / Términos / Contacto) -->
+<div id="pageView" class="page-view" style="display: none; padding-top: 0;">
+    <!-- Contenedor del botón Volver -->
+    <div style="display: flex; align-items: center; padding: 15px 0 10px 0;">
+        <div class="back-link" onclick="setTab('home')" style="cursor: pointer; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <i class="fa-solid fa-chevron-left" style="font-size: 9px;"></i> VOLVER
         </div>
     </div>
     
     <!-- Contenido de Supabase -->
-    <div id="pageContent"></div>
+    <div id="pageContent" style="margin-top: 0;"></div>
 </div>
-
         <footer class="app-footer">
             <div>Desarrollado por <a href="https://bento.me/facutom" target="_blank" style="color:var(--text-main); text-decoration:none; font-weight:600;">Facu Tom</a></div>
         </footer>
@@ -876,16 +878,22 @@ flatList = rows.map(r => {
         renderView();
     }
 
-   function openPage(c, t, pushState = true) {
+ function openPage(c, t, pushState = true) {
     if (pushState) history.pushState({page: c}, '', `/${c}`);
+    
+    // Ocultamos las secciones de la Home
     document.getElementById('tickerList').style.display = 'none';
     document.getElementById('searchBarSection').style.display = 'none';
     document.getElementById('heroSection').style.display = 'none';
     
+    // Mostramos el contenedor de página
     const v = document.getElementById('pageView');
-    v.classList.add('active');
+    v.style.display = 'block'; 
     
+    // Inyectamos el contenido (Ya no usamos el div de 'pageTitle')
     document.getElementById('pageContent').innerHTML = configDB[c] || 'Cargando...';
+    
+    renderAds(); // Refrescamos publicidad si tenés
     window.scrollTo(0,0);
 }
    async function loadPvChart(days, btn) {
