@@ -554,35 +554,59 @@
 
 <!-- 2. ZONA DE CONTENIDO VARIABLE -->
 <main>
-    <!-- Aquí se muestra la lista de productos -->
-    <div id="tickerList" class="ticker-list"></div>
+    <div id="tickerList" class="list-container"></div>
 
-   <div id="pageView" class="page-view" style="display: none; padding: 0 20px;">
-    <!-- Contenedor del botón Volver (Chico y pegado al texto) -->
-    <div style="padding-top: 15px; padding-bottom: 5px;">
-        <div class="back-link" onclick="setTab('home')" style="
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 5px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: 0.2s;
-        ">
-            <i class="fa-solid fa-arrow-left" style="font-size: 10px;"></i> Volver
+    <div id="pageView" class="page-view" style="display: none;">
+        <div class="back-navigation">
+            <button type="button" class="back-button" onclick="setTab('home')">
+                <i class="fa-solid fa-arrow-left"></i> 
+                <span>Volver</span>
+            </button>
         </div>
+
+        <div id="pageContent" class="content-body"></div>
     </div>
-     <div id="pageContent" style="margin-top: 20px;"></div>
-</div>
 </main>
 
+<style>
+    /* Estilos sugeridos para mover el diseño fuera del HTML */
+    .page-view {
+        padding: 0 20px;
+    }
+    
+    .back-navigation {
+        padding: 15px 0 5px;
+    }
+
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--text-main);
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+    }
+
+    .back-button:hover {
+        background: var(--border); /* Efecto visual al pasar el mouse */
+    }
+
+    .back-button i {
+        font-size: 10px;
+    }
+
+    .content-body {
+        margin-top: 20px;
+    }
+</style>
 <!-- 3. Banner Inferior (Siempre abajo del contenido actual) -->
 <div id="ad-bottom" class="ad-container">
     <div id="ad-bottom-content"></div>
