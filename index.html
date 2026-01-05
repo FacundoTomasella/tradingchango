@@ -97,7 +97,8 @@
               width: 100%;
               margin: 15px 0;
               text-align: center;
-          }
+              min-height: 50px; /* Evita saltos de layout si tarda en cargar */
+      }
           
           /* --- MEDIA QUERIES PARA ADAPTACIÓN --- */
           
@@ -115,6 +116,11 @@
               }
               .ad-mobile-slot {
                   display: block; /* Se activa el banner de abajo/medio */
+              /* Opcional: Pegar el banner superior al borde */
+              #ad-mobile-top {
+              margin-top: 0;
+              padding-bottom: 10px;
+                    
               }
           }
                 
@@ -712,7 +718,7 @@
 </div>
 
         <footer class="app-footer">
-         <div> Si Ahorraste, invitame un <a href="https://cafecito.app/facutom" target="_blank" style="color:var(--text-main); text-decoration:none; font-weight:600;"> Cafecito </a> </div>
+         <div> Si Ahorraste, invitame un <a href="https://cafecito.app/facutom" target="_blank" style="color:var(--text-main); text-decoration:none; font-weight:600;"> Cafecito ☕</a> </div>
         
         </footer>
 
