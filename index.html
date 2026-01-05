@@ -663,6 +663,8 @@
 <div id="ad-bottom" class="ad-container">
     <div id="ad-bottom-content"></div>
 </div>
+          <!-- PUBLICIDAD MÓVIL SUPERIOR (Nueva) -->
+    <div id="ad-mobile-top" class="ad-mobile-slot"></div>
        <!-- Espacio para publicidad en MÓVIL (aparece solo en celu) -->
                 <div id="ad-mobile" class="ad-mobile-slot"></div>
         <div id="loader" class="loader">CONECTANDO A MERCADO...</div>
@@ -1392,8 +1394,9 @@ function trackMarketClick(superName, productName) {
     const slots = [
         { id: 'ad-left', visible: 'ad_left_visible', content: 'ad_left_content' },
         { id: 'ad-right', visible: 'ad_right_visible', content: 'ad_right_content' },
+        { id: 'ad-mobile-top', visible: 'ad_mobile_top_visible', content: 'ad_mobile_top_content' },
         { id: 'ad-mobile', visible: 'ad_mobile_visible', content: 'ad_mobile_content' }
-    ];
+      ];
 
     slots.forEach(slot => {
         const container = document.getElementById(slot.id);
@@ -1402,15 +1405,14 @@ function trackMarketClick(superName, productName) {
         const isVisible = String(configDB[slot.visible]).toLowerCase() === 'true';
 
         if (isVisible) {
-            // Solo cargamos el contenido si el contenedor está vacío
             if (container.innerHTML === "") {
                 container.innerHTML = configDB[slot.content] || '';
                 
-                // Si es AdSense, activamos el script
                 if (container.innerHTML.includes("adsbygoogle")) {
-                    (adsbygoogle = window.adsbygoogle || []).push({});
+                    try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
                 }
             }
+            container.style.display = 'block';
         } else {
             container.style.display = 'none';
         }
