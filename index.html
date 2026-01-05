@@ -396,6 +396,32 @@
     width: 180px;
 }
 
+/* --- CONTROL DE VISIBILIDAD POR DISPOSITIVO --- */
+
+/* En Escritorio (PC), escondemos los banners horizontales de móvil */
+@media (min-width: 1024px) {
+    #ad-mobile-top, 
+    #ad-mobile-bottom {
+        display: none !important; /* El !important le gana al 'block' del JavaScript */
+    }
+    
+    /* Si querés ver los laterales, recordá que deben estar en block */
+    .ad-sidebar {
+        display: block; 
+    }
+}
+
+/* En Móvil, mostramos los banners horizontales y escondemos los laterales */
+@media (max-width: 1023px) {
+    .ad-sidebar {
+        display: none !important;
+    }
+    #ad-mobile-top, 
+    #ad-mobile-bottom {
+        /* Aquí no forzamos el display, dejamos que el JS decida según Supabase */
+    }
+}
+      
 /* --- AJUSTE INTEGRAL PARA ESCRITORIO (Pantallas mayores a 1024px) --- */
 @media (min-width: 1024px) {
     .app-container, .bottom-nav {
