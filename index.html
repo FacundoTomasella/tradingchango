@@ -556,16 +556,29 @@
 <main>
     <div id="tickerList" class="list-container"></div>
 
-    <div id="pageView" class="page-view" style="display: none;">
-        <div class="back-navigation">
-            <button type="button" class="back-button" onclick="setTab('home')">
-                <i class="fa-solid fa-arrow-left"></i> 
-                <span>Volver</span>
-            </button>
+     <!-- Aquí se muestran las páginas legales (Acerca de, etc.) -->
+    <div id="pageView" class="page-view">
+    <div class="page-header" style="display: flex; justify-content: flex-start; align-items: center; padding: 15px 0 10px 0; border-bottom: 1px solid var(--border);">
+        <div class="back-link" onclick="setTab('home')" style="
+            cursor: pointer; 
+            background: var(--bg-card); 
+            color: var(--text-main); 
+            padding: 5px 12px; 
+            border-radius: 6px; 
+            border: 1px solid var(--border);
+            font-weight: 700; 
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: 0.2s;">
+            <i class="fa-solid fa-arrow-left" style="font-size: 10px;"></i> Volver
         </div>
-
-        <div id="pageContent" class="content-body"></div>
     </div>
+    <div id="pageContent" style="margin-top: 20px;"></div>
+</div>
 </main>
 
 <style>
