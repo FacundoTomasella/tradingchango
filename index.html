@@ -71,20 +71,52 @@
       
     <style>
 
-          .ad-container {
-    display: none; /* Se activa por JS */
-    width: 100%;
-    margin: 10px auto;
-    text-align: center;
-    overflow: hidden;
-    /* No ponemos altura fija para que se adapte al banner */
-}
-  @media (max-width: 600px) {
-    .ad-container {
-        margin: 5px auto;
-    }
-}
-      
+       /* Layout General para PC */
+          .desktop-ad-layout {
+              display: flex;
+              justify-content: center;
+              align-items: flex-start;
+              gap: 20px;
+              width: 100%;
+          }
+          
+          /* Sidebars de publicidad (PC) */
+          .ad-sidebar {
+              display: none; /* Oculto por defecto */
+              width: 160px; /* Ancho estándar de Skyscraper */
+              position: sticky;
+              top: 20px;
+              height: 600px;
+              background: transparent;
+          }
+          
+          /* Banner sutil para móvil */
+          .ad-mobile-slot {
+              display: none;
+              width: 100%;
+              margin: 15px 0;
+              text-align: center;
+          }
+          
+          /* --- MEDIA QUERIES PARA ADAPTACIÓN --- */
+          
+          /* Pantallas grandes (Escritorio) */
+          @media (min-width: 1200px) {
+              .ad-sidebar {
+                  display: block; /* Se muestran los costados */
+              }
+          }
+          
+          /* Pantallas chicas (Móvil) */
+          @media (max-width: 1023px) {
+              .ad-sidebar {
+                  display: none !important; /* Desaparecen los laterales */
+              }
+              .ad-mobile-slot {
+                  display: block; /* Se activa el banner de abajo/medio */
+              }
+          }
+                
       /* Controles de cantidad en el Chango */
 .qty-control {
     display: flex;
@@ -225,38 +257,38 @@
         .pv-price-big { font-family: 'Roboto Mono'; font-size: 32px; font-weight: 600; margin-top: 5px; color: var(--text-main); }
         /* NUEVO: Estilo para precio promedio */
         /* Estilo del contenedor de Precio Promedio */
-.pv-avg-price {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 600;
-    margin-top: 12px;
-    
-    /* Fondo gris y bordes */
-    background: #f1f3f6; 
-    padding: 8px 12px;
-    border-radius: 8px;
-    
-    /* Para que no ocupe todo el ancho, solo lo necesario */
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid rgba(0,0,0,0.03);
+          .pv-avg-price {
+          font-size: 12px;
+          color: var(--text-muted);
+          font-weight: 600;
+          margin-top: 12px;
+          
+          /* Fondo gris y bordes */
+          background: #f1f3f6; 
+          padding: 8px 12px;
+          border-radius: 8px;
+          
+          /* Para que no ocupe todo el ancho, solo lo necesario */
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          border: 1px solid rgba(0,0,0,0.03);
 }
 
-/* Ajuste para Modo Oscuro */
-.dark-mode .pv-avg-price {
-    background: #1e222d; /* Gris oscuro tipo TradingView */
-    color: #b2b5be;
-    border-color: #2a2e39;
-}
-
-/* El número adentro del promedio */
-.pv-avg-price span {
-    color: var(--text-main);
-    font-weight: 700;
-    font-family: 'Roboto Mono', monospace;
-    font-size: 13px;
-}
+          /* Ajuste para Modo Oscuro */
+          .dark-mode .pv-avg-price {
+              background: #1e222d; 
+              color: #b2b5be;
+              border-color: #2a2e39;
+          }
+          
+          /* El número adentro del promedio */
+          .pv-avg-price span {
+              color: var(--text-main);
+              font-weight: 700;
+              font-family: 'Roboto Mono', monospace;
+              font-size: 13px;
+          }
         
         .pv-chart-section { margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px; }
         .range-filters { display: flex; gap: 4px; justify-content: flex-end; margin-bottom: 10px; }
@@ -426,6 +458,12 @@
 "> 
 </head>
 <body>
+   <!-- 1. Envoltura Global para Escritorio -->
+    <div class="desktop-ad-layout">
+        
+        <!-- Sidebar Izquierdo (Solo PC) -->
+        <aside id="ad-left" class="ad-sidebar"></aside>
+
   <div id="pwaPill">
     <span onclick="closePwaPill()" style="opacity: 0.7; font-size: 16px; cursor: pointer;">&times;</span>
     <span id="pwaText" onclick="installPwa()">INSTALAR APP 🛒</span>
@@ -502,7 +540,7 @@
    </div>
     <div class="app-container">
         <header>
-            <div class="top-row">
+                <div class="top-row">
                 <a class="logo-link" onclick="setTab('home')"><div class="logo"><div class="logo-icon-wrapper"><i class="fa-solid fa-cart-shopping"></i><i class="fa-solid fa-arrow-trend-up"></i></div>TradingChango</div></a>
                 <div class="header-actions">
   
@@ -1342,40 +1380,31 @@ function trackMarketClick(superName, productName) {
 }
 
   function renderAds() {
-    if (!configDB) return; // Seguridad si los datos aún no llegan
-
+    // Definimos los slots
     const slots = [
-        { id: 'ad-top', visible: 'ad_top_visible', content: 'ad_top_content' },
-        { id: 'ad-bottom', visible: 'ad_bottom_visible', content: 'ad_bottom_content' }
+        { id: 'ad-left', visible: 'ad_left_visible', content: 'ad_left_content' },
+        { id: 'ad-right', visible: 'ad_right_visible', content: 'ad_right_content' },
+        { id: 'ad-mobile', visible: 'ad_mobile_visible', content: 'ad_mobile_content' }
     ];
 
     slots.forEach(slot => {
         const container = document.getElementById(slot.id);
         if (!container) return;
 
-        // Convertimos a string por si viene como booleano de la DB
-        const isVisible = String(configDB[slot.visible]) === 'true';
+        const isVisible = String(configDB[slot.visible]).toLowerCase() === 'true';
 
         if (isVisible) {
-            const content = configDB[slot.content] || '';
-            
-            // Solo inyectar si cambió el contenido para evitar parpadeos
-            if (container.innerHTML !== content) {
-                container.style.display = 'block';
-                container.innerHTML = content;
+            // Solo cargamos el contenido si el contenedor está vacío
+            if (container.innerHTML === "") {
+                container.innerHTML = configDB[slot.content] || '';
                 
-                // Si es AdSense, necesita el empujón de JS
-                if (content.includes("adsbygoogle")) {
-                    try {
-                        (window.adsbygoogle = window.adsbygoogle || []).push({});
-                    } catch (e) {
-                        console.error("AdSense Error:", e);
-                    }
+                // Si es AdSense, activamos el script
+                if (container.innerHTML.includes("adsbygoogle")) {
+                    (adsbygoogle = window.adsbygoogle || []).push({});
                 }
             }
         } else {
             container.style.display = 'none';
-            container.innerHTML = '';
         }
     });
 }
@@ -1399,6 +1428,8 @@ function trackMarketClick(superName, productName) {
             <button type="submit" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 8px; font-weight: 800; cursor: pointer;">CONTINUAR</button>
         </form>
     </div>
+      <!-- Sidebar Derecho (Solo PC) -->
+            <aside id="ad-right" class="ad-sidebar"></aside>
 </div>
 
 </body>
