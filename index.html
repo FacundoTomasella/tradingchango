@@ -71,6 +71,24 @@
       
     <style>
 
+          /* Contenedor del botón */
+          .cafecito-wrapper {
+              display: flex;
+              justify-content: center;
+              margin: 20px 0;
+          }
+          
+          /* Estilo de la imagen */
+          .cafecito-btn {
+              height: 40px; /* Tamaño sugerido para que no quede gigante */
+              transition: filter 0.3s ease; /* Para que el cambio de color sea suave */
+          }
+          
+          /* MODO OSCURO: Invertimos la imagen */
+          .dark-mode .cafecito-btn {
+              filter: invert(1) brightness(2); /* Invertir colores y subir brillo para que sea blanco puro */
+          }
+
        /* Layout General para PC */
           .desktop-ad-layout {
               display: flex;
@@ -711,7 +729,14 @@
 </div>
 
         <footer class="app-footer">
-            <div>Desarrollado por <a href="https://bento.me/facutom" target="_blank" style="color:var(--text-main); text-decoration:none; font-weight:600;">Facu Tom</a></div>
+           <div class="cafecito-wrapper">
+    <a href='https://cafecito.app/facutom' rel='noopener' target='_blank'>
+        <img class="cafecito-btn" 
+             srcset='https://cdn.cafecito.app/imgs/buttons/button_5.png 1x, https://cdn.cafecito.app/imgs/buttons/button_5_2x.png 2x, https://cdn.cafecito.app/imgs/buttons/button_5_3.75x.png 3.75x' 
+             src='https://cdn.cafecito.app/imgs/buttons/button_5.png' 
+             alt='Invitame un café en cafecito.app' />
+    </a>
+</div>
         </footer>
 
         <nav class="bottom-nav">
