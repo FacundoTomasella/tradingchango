@@ -71,10 +71,6 @@
       
     <style>
 
-      #heroSection {
-    transition: transform 0.1s ease-out, opacity 0.1s ease-out;
-    will-change: transform, opacity; /* Optimiza el rendimiento en el celu */
-      }
        
        /* Layout General para PC */
           .desktop-ad-layout {
@@ -573,16 +569,10 @@
 
             <div class="app-container">
         <header>
-                   
-          <div class="top-row">
+                <div class="top-row">
                 <a class="logo-link" onclick="setTab('home')"><div class="logo"><div class="logo-icon-wrapper"><i class="fa-solid fa-cart-shopping"></i><i class="fa-solid fa-arrow-trend-up"></i></div>TradingChango</div></a>
                 <div class="header-actions">
-               
-                <div class="hero-section" id="heroSection">
-                <div class="hero-title">Los precios del super como nunca los viste</div>
-                <div class="hero-subtitle">Analizá los precios, tendencias, y compará antes de comprar</div>
-            </div>
-                  
+  
     <!-- Estos links se verán solo en computadora -->
     <div class="desktop-links">
         <a onclick="openPage('acerca_de', 'Acerca de')">Acerca de</a>
@@ -619,7 +609,10 @@
                 </div>
             </div>
             
-          
+            <div class="hero-section" id="heroSection">
+                <div class="hero-title">Los precios del super como nunca los viste</div>
+                <div class="hero-subtitle">Analizá los precios, tendencias, y compará antes de comprar</div>
+            </div>
         </header>
               <!-- NUEVO: Banner debajo de los botones -->
   <div id="ad-mobile-top" class="ad-mobile-slot"></div>
@@ -867,7 +860,7 @@ flatList = rows.map(r => {
     }
 
     function goHome() {
-        currentTab = 'home';
+        currentTab = 'home'; 
         document.getElementById('tickerList').style.display = 'block';
         document.getElementById('pageView').classList.remove('active');
         document.getElementById('searchBarSection').style.display = 'block';
@@ -1458,27 +1451,7 @@ function trackMarketClick(superName, productName) {
         }
     });
 }
-     // Efecto dinámico para el Hero Section
-window.addEventListener('scroll', function() {
-    const hero = document.getElementById('heroSection');
-    
-    // Solo aplicar si estamos en la pestaña home y el hero es visible
-    if (currentTab === 'home' && hero.style.display !== 'none') {
-        let scrollPos = window.scrollY;
-        
-        // Mueve el texto hacia abajo más lento que el scroll (parallax)
-        // y lo desvanece (opacity)
-        hero.style.transform = `translateY(${scrollPos * 0.4}px)`;
-        hero.style.opacity = 1 - (scrollPos / 300);
-        
-        // Evita que el hero ocupe espacio cuando ya no se ve
-        if (scrollPos > 350) {
-            hero.style.visibility = 'hidden';
-        } else {
-            hero.style.visibility = 'visible';
-        }
-    }
-});
+     
      
     // Iniciar la app
     init();
