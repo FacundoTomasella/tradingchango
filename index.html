@@ -889,7 +889,6 @@ flatList = rows.map(r => {
     }
 
     function setTab(t, btn, pushState = true) { 
-        goHome(); 
         currentTab = t; 
         if (pushState) {
             const nuevaUrl = t === 'home' ? '/' : `/${t.toLowerCase()}`;
