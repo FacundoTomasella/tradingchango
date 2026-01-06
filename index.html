@@ -749,7 +749,10 @@
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-
+    let currentUser = null;
+    let userProfile = null; // Guardará el nivel de suscripción
+    let isSignUpMode = false;
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     // 1. Reemplazá tu línea de declaración por estas:
 let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
 
@@ -771,6 +774,7 @@ if (Array.isArray(favorites)) {
 
     async function init() {
         try {
+            await initAuth();
             // 1. Cargar Configuración (Legales, etc)
             const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
             const configRows = await resC.json();
@@ -1134,24 +1138,38 @@ flatList = rows.map(r => {
      
      
      
-     function toggleFav(id, btn) {
-    // Si ya existe, lo borramos (sacar del chango)
-    if (favorites[id]) {
+    function toggleFav(id, btn) {
+    const isAlreadyFav = !!favorites[id];
+
+    // NIVEL 1: No registrado (0 favoritos)
+    if (!currentUser) {
+        alert("🔒 Debes crear una cuenta para guardar productos en tu chango.");
+        openAuth();
+        return;
+    }
+
+    // NIVEL 2: Registrado Free (Límite 5)
+    const count = Object.keys(favorites).length;
+    const isPro = userProfile?.subscription === 'pro';
+
+    if (!isPro && !isAlreadyFav && count >= 5) {
+        alert("🚀 Has alcanzado el límite de 5 productos del plan gratuito. ¡Pasate a PRO para agregar ilimitados!");
+        openAuth(); // Le mostramos su perfil donde estará el botón de pago
+        return;
+    }
+
+    // NIVEL 3: Usuario PRO (Sin límites) o quitar favorito existente
+    if (isAlreadyFav) {
         delete favorites[id];
     } else {
-        // Si no existe, lo agregamos con cantidad 1
         favorites[id] = 1;
     }
     
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
     
-    if (currentTab === 'favs') {
-        renderView(); 
-    } else if (btn) {
-        // Cambiamos 'active' según si el ID existe como llave en el objeto
-        btn.classList.toggle('active', !!favorites[id]);
-    }
+    if (currentTab === 'favs') renderView();
+    else if (btn) btn.classList.toggle('active', !!favorites[id]);
  }
 
     function updateCartBadge() {
@@ -1450,7 +1468,82 @@ function trackMarketClick(superName, productName) {
             container.style.display = 'none';
         }
     });
+  async function initAuth() {
+    const { data: { session } } = await supabase.auth.getSession();
+    await handleAuthState(session);
+    supabase.auth.onAuthStateChange((_event, session) => handleAuthState(session));
 }
+
+async function handleAuthState(session) {
+    const userBtn = document.getElementById('userBtn');
+    if (session) {
+        currentUser = session.user;
+        // Buscamos el perfil para saber si es PRO
+        const { data } = await supabase.from('perfiles').select('*').eq('id', currentUser.id).single();
+        userProfile = data;
+        
+        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-user-check" style="color:var(--color-good)"></i>';
+    } else {
+        currentUser = null;
+        userProfile = null;
+        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user"></i>';
+    }
+}
+
+async function handleAuthSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPass').value;
+
+    if (isSignUpMode) {
+        // REGISTRO
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) alert(error.message);
+        else {
+            // Creamos el perfil inicial en Supabase
+            await supabase.from('perfiles').insert([{ id: data.user.id, email: email, subscription: 'free' }]);
+            alert("¡Registro exitoso! Ya podés ingresar.");
+            toggleAuthMode();
+        }
+    } else {
+        // LOGIN
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else closeAuth();
+    }
+}
+
+function openAuth() {
+    const modal = document.getElementById('authModal');
+    modal.style.display = 'flex';
+    
+    if (currentUser) {
+        // Si ya está logueado, mostramos info de su cuenta
+        const subStatus = (userProfile?.subscription === 'pro') ? "MASTER TRADER (PRO) ⭐" : "TRADER JUNIOR (FREE)";
+        document.getElementById('registerFields').style.display = 'none';
+        document.getElementById('authTitle').innerText = "Tu Perfil";
+        document.getElementById('authEmail').value = currentUser.email;
+        document.getElementById('authEmail').disabled = true;
+        document.getElementById('authPass').style.display = 'none';
+        document.getElementById('authBtnLabel').innerText = "CERRAR SESIÓN";
+        document.getElementById('authBtnLabel').onclick = handleSignOut;
+        document.getElementById('authSwitch').innerText = `Suscripción: ${subStatus}`;
+    }
+}
+
+      async function handleSignOut() {
+          await supabase.auth.signOut();
+          location.reload();
+      }
+      
+      function toggleAuthMode() {
+          isSignUpMode = !isSignUpMode;
+          document.getElementById('authTitle').innerText = isSignUpMode ? "Crear Cuenta" : "Iniciar Sesión";
+          document.getElementById('authBtnLabel').innerText = isSignUpMode ? "REGISTRARME" : "INGRESAR";
+          document.getElementById('authSwitch').innerText = isSignUpMode ? "¿Ya tenés cuenta? Iniciá Sesión" : "¿No tenés cuenta? Registrate gratis";
+}
+    
+  }
      
      
     // Iniciar la app
@@ -1468,7 +1561,7 @@ function trackMarketClick(superName, productName) {
             </div>
             <input type="email" id="regEmail" placeholder="Email" required style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
             <input type="password" id="regPass" placeholder="Contraseña" required style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
-            <button type="submit" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 8px; font-weight: 800; cursor: pointer;">CONTINUAR</button>
+            <button type="submit" id="authBtnLabel" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 8px; font-weight: 800; cursor: pointer;">CONTINUAR</button>
         </form>
     </div>
     
