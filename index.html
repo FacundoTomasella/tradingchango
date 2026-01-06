@@ -369,7 +369,7 @@
         .page-view.active { display: block; }
         .legal-dropdown { position: absolute; top: 50px; right: 20px; background: var(--bg-app); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none; flex-direction: column; z-index: 200; width: 180px; }
         .legal-dropdown a { padding: 12px 15px; font-size: 12px; font-weight: 700; color: var(--text-main); text-decoration: none; border-bottom: 1px solid var(--border); text-transform: uppercase; cursor: pointer; }
-    
+        .auth-modal input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); }
 /* --- ESTILOS PARA MÓVIL (Por defecto) --- */
 
 /* Escondemos los links de PC en el celular */
@@ -475,37 +475,6 @@
     .pv-content {
         padding: 30px 25px !important;
     }
-
-#authModal {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.8);
-  display: none; /* Se cambia a flex con JS */
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.auth-modal {
-  background: #1e222d; /* Color estilo TradingView */
-  padding: 30px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 400px;
-  text-align: center;
-  color: white;
-}
-
-.auth-modal input {
-  width: 100%;
-  margin: 10px 0;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #363a45;
-  background: #2a2e39;
-  color: white;
-}
-
 }        
     </style>
 <meta http-equiv="Content-Security-Policy" content="
@@ -1186,7 +1155,7 @@ flatList = rows.map(r => {
 
     // 🚫 NO logueado
     if (!currentUser) {
-        alert("Registrate para usar el chango 🛒");
+        openAuthModal();return;
         return;
     }
 
@@ -1485,19 +1454,9 @@ function trackMarketClick(superName, productName) {
 
 function openAuth() {
   if (!currentUser) {
-    // En lugar de llamar a Google, abrimos el modal manual
-    openAuthModal(); 
-  }
-}
-
-function openAuthModal() {
-  document.getElementById('authModal').style.display = 'flex';
-}
-
-function closeAuthModal() {
-  document.getElementById('authModal').style.display = 'none';
-}
-    
+    supabaseAuth.auth.signInWithOAuth({
+      provider: 'google'
+    });
   } else {
     if (confirm("¿Cerrar sesión?")) {
       supabaseAuth.auth.signOut();
@@ -1543,8 +1502,7 @@ function updateUserIcon(logged) {
         }
     });
 }
-     // REGISTRO DE NUEVOS USUARIOS
-async function registerFree() {
+     async function registerFree() {
   const email = document.getElementById('authEmail').value;
   const password = document.getElementById('authPassword').value;
 
@@ -1563,38 +1521,34 @@ async function registerFree() {
     return;
   }
 
-  // CAMBIO AQUÍ: Usamos 'perfiles' en lugar de 'profiles'
-  await supabaseAuth.from('perfiles').insert({
+  // Crear perfil FREE
+  await supabaseAuth.from('profiles').insert({
     id: data.user.id,
     email: email,
     plan: 'free'
   });
 
   closeAuthModal();
-  if (typeof loadSession === "function") await loadSession();
+  await loadSession();
 }
-
-// LOGIN DE USUARIOS EXISTENTES
 async function loginUser() {
   const email = document.getElementById('authEmail').value;
   const password = document.getElementById('authPassword').value;
 
-  const { data, error } = await supabaseAuth.auth.signInWithPassword({
+  const { error } = await supabaseAuth.auth.signInWithPassword({
     email,
     password
   });
 
   if (error) {
-    alert("Email o contraseña incorrectos.");
+    alert("Email o contraseña incorrectos");
     return;
   }
 
-  console.log("Sesión iniciada:", data.user);
   closeAuthModal();
-  
-  // Aquí llamarías a la función que recarga tu app (ej: window.location.reload() o loadSession())
-  if (typeof loadSession === "function") loadSession();
+  await loadSession();
 }
+
      
     // Iniciar la app
     init();
