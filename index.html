@@ -751,10 +751,10 @@
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     // 1. Reemplazá tu línea de declaración por estas:
-let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
-let currentUser = null;
-let userProfile = null;
-let isSignUpMode = false;
+    let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
+    let currentUser = null;
+    let userProfile = null;
+    let isSignUpMode = false;
 
 // Inicialización limpia de favoritos como OBJETO
 let favorites = JSON.parse(localStorage.getItem('fav_tickers')) || {};
@@ -771,13 +771,9 @@ if (Array.isArray(favorites)) { favorites = {}; }
     const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
     async function init() {
-        try {
-           console.log("Iniciando componentes...");
-        
-        try {
-          // Iniciamos Auth pero sin dejar que bloquee la carga si falla
+    try {
+        // Iniciamos Auth pero sin dejar que bloquee la carga si falla
         try { await initAuth(); } catch(e) { console.error(e); }
-        }
             // 1. Cargar Configuración (Legales, etc)
             const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
             const configRows = await resC.json();
