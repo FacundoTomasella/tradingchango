@@ -749,15 +749,16 @@
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     // 1. Reemplazá tu línea de declaración por estas:
 let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
+let currentUser = null;
+let userProfile = null;
+let isSignUpMode = false;
 
 // Inicialización limpia de favoritos como OBJETO
 let favorites = JSON.parse(localStorage.getItem('fav_tickers')) || {};
-if (Array.isArray(favorites)) { 
-    favorites = {}; // Si era un array viejo, lo reseteamos a objeto vacío
-    localStorage.setItem('fav_tickers', JSON.stringify(favorites));
+if (Array.isArray(favorites)) { favorites = {}; }
 }
     // Diccionario de páginas estáticas para reconocerlas en la URL
     const paginasEstaticas = {
@@ -773,11 +774,9 @@ if (Array.isArray(favorites)) {
         try {
            console.log("Iniciando componentes...");
         
-        // Ejecutamos Auth pero sin dejar que un error acá trabe toda la web
         try {
-            await initAuth();
-        } catch (authError) {
-            console.error("Error en Auth, continuando como visita:", authError);
+          // Iniciamos Auth pero sin dejar que bloquee la carga si falla
+        try { await initAuth(); } catch(e) { console.error(e); }
         }
             // 1. Cargar Configuración (Legales, etc)
             const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
@@ -1475,10 +1474,6 @@ function trackMarketClick(superName, productName) {
     
     });
 
-// --- 1. VARIABLES DE ESTADO (Asegurate de que solo estén una vez) ---
-let currentUser = null;
-let userProfile = null;
-let isSignUpMode = false;
 
 // --- 2. INICIALIZACIÓN DE AUTH (Llamar esto dentro de init()) ---
 async function initAuth() {
@@ -1517,14 +1512,13 @@ async function handleAuthState(session) {
 function openAuth() {
     const modal = document.getElementById('authModal');
     if (!modal) return;
-    
     modal.style.display = 'flex';
     
     if (currentUser) {
         document.getElementById('authFormArea').style.display = 'none';
         document.getElementById('profileArea').style.display = 'block';
         document.getElementById('profileName').innerText = currentUser.email.split('@')[0].toUpperCase();
-        document.getElementById('profileSub').innerText = (userProfile?.subscription === 'pro') ? "PLAN MASTER TRADER (PRO)" : "PLAN TRADER JUNIOR (FREE)";
+        document.getElementById('profileSub').innerText = (userProfile?.subscription === 'pro') ? "PLAN PRO" : "PLAN FREE";
     } else {
         document.getElementById('authFormArea').style.display = 'block';
         document.getElementById('profileArea').style.display = 'none';
@@ -1532,8 +1526,7 @@ function openAuth() {
 }
 
 function closeAuth() {
-    const modal = document.getElementById('authModal');
-    if (modal) modal.style.display = 'none';
+    document.getElementById('authModal').style.display = 'none';
 }
 
 function toggleAuthMode() {
@@ -1575,30 +1568,27 @@ async function handleSignOut() {
 function toggleFav(id, btn) {
     const isAlreadyFav = !!favorites[id];
 
-    // NIVEL 1: Si NO está logueado, prohibido agregar
+    // BLOQUEO: Si no está logueado
     if (!currentUser) {
-        alert("🔒 Iniciá sesión para guardar productos en tu chango.");
-        openAuth();
+        if(confirm("🔒 Iniciá sesión para guardar productos en tu chango.")) {
+            openAuth();
+        }
         return;
     }
 
-    // NIVEL 2: Si es FREE y tiene 5 o más, bloqueamos el 6to
+    // LÍMITE: Si es FREE y quiere agregar el 6to
     const count = Object.keys(favorites).length;
     const isPro = userProfile?.subscription === 'pro';
 
     if (!isPro && !isAlreadyFav && count >= 5) {
-        alert("🚀 Llegaste al límite de 5 productos del plan gratuito. ¡Pasate a PRO para agregar más!");
+        alert("🚀 Límite de 5 productos alcanzado. ¡Pasate a PRO para agregar más!");
         openAuth();
         return;
     }
 
-    // Proceso de agregar/quitar
-    if (isAlreadyFav) {
-        delete favorites[id];
-    } else {
-        favorites[id] = 1;
-    }
-    
+    if (isAlreadyFav) delete favorites[id];
+    else favorites[id] = 1;
+
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
     
