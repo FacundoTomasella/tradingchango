@@ -1512,7 +1512,63 @@ function updateUserIcon(logged) {
         }
     });
 }
-     
+     // REGISTRO DE NUEVOS USUARIOS
+async function registerFree() {
+  const email = document.getElementById('authEmail').value;
+  const password = document.getElementById('authPassword').value;
+
+  if (!email || !password) {
+    alert("Por favor, completá todos los campos.");
+    return;
+  }
+
+  // 1. Crear el usuario en el sistema de Auth de Supabase
+  const { data, error } = await supabaseAuth.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    alert("Error al registrarse: " + error.message);
+    return;
+  }
+
+  if (data.user) {
+    // 2. Crear su perfil en tu tabla 'profiles'
+    const { error: profileError } = await supabaseAuth
+      .from('profiles')
+      .insert([
+        { id: data.user.id, email: email, plan: 'free' }
+      ]);
+
+    if (profileError) console.error("Error creando perfil:", profileError);
+
+    alert("¡Cuenta creada! Revisá tu email para confirmar (si tenés la opción activada).");
+    closeAuthModal();
+  }
+}
+
+// LOGIN DE USUARIOS EXISTENTES
+async function loginUser() {
+  const email = document.getElementById('authEmail').value;
+  const password = document.getElementById('authPassword').value;
+
+  const { data, error } = await supabaseAuth.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    alert("Email o contraseña incorrectos.");
+    return;
+  }
+
+  console.log("Sesión iniciada:", data.user);
+  closeAuthModal();
+  
+  // Aquí llamarías a la función que recarga tu app (ej: window.location.reload() o loadSession())
+  if (typeof loadSession === "function") loadSession();
+}
      
     // Iniciar la app
     init();
