@@ -744,11 +744,20 @@
         <aside id="ad-right" class="ad-sidebar"></aside>
 
           </div>
-          
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      
    <script>
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+     const supabase = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
+      
+      let currentUser = null;
+      let currentProfile = null;
+
 
     // 1. Reemplazá tu línea de declaración por estas:
 let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
@@ -769,6 +778,43 @@ if (Array.isArray(favorites)) {
     // Función para generar URLs limpias
     const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
+    async function loadSession() {
+    const { data } = await supabase.auth.getSession();
+    currentUser = data.session?.user || null;
+  
+    if (currentUser) {
+      await loadProfile();
+      updateUserIcon(true);
+    } else {
+      updateUserIcon(false);
+    }
+  }
+    async function loadProfile() {
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .single();
+
+  currentProfile = data;
+}
+    function openAuth() {
+  if (!currentUser) {
+    supabase.auth.signInWithOAuth({
+      provider: 'google'
+    });
+  } else {
+    const salir = confirm("¿Cerrar sesión?");
+    if (salir) supabase.auth.signOut();
+  }
+}
+function getFavLimit() {
+  if (!currentUser) return 0;
+  if (currentProfile?.plan === 'premium') return Infinity;
+  return 5;
+}
+
+     
     async function init() {
         try {
             // 1. Cargar Configuración (Legales, etc)
@@ -1134,26 +1180,36 @@ flatList = rows.map(r => {
      
      
      
-     function toggleFav(id, btn) {
-    // Si ya existe, lo borramos (sacar del chango)
-    if (favorites[id]) {
-        delete favorites[id];
-    } else {
-        // Si no existe, lo agregamos con cantidad 1
-        favorites[id] = 1;
-    }
-    
-    localStorage.setItem('fav_tickers', JSON.stringify(favorites));
-    updateCartBadge();
-    
-    if (currentTab === 'favs') {
-        renderView(); 
-    } else if (btn) {
-        // Cambiamos 'active' según si el ID existe como llave en el objeto
-        btn.classList.toggle('active', !!favorites[id]);
-    }
- }
+     function toggleFav(productId) {
+  if (!currentUser) {
+    alert("Tenés que registrarte para usar favoritos");
+    return;
+  }
 
+  const favCount = Object.keys(favorites).length;
+  const limit = getFavLimit();
+
+  if (!favorites[productId] && favCount >= limit) {
+    alert("Límite de favoritos alcanzado. Pasate a Premium 🚀");
+    return;
+  }
+
+  if (favorites[productId]) {
+    delete favorites[productId];
+  } else {
+    favorites[productId] = true;
+  }
+
+  localStorage.setItem('fav_tickers', JSON.stringify(favorites));
+  updateCartBadge();
+}
+
+    await supabase
+  .from('profiles')
+  .update({ plan: 'premium' })
+  .eq('id', currentUser.id);
+
+     
     function updateCartBadge() {
     const b = document.getElementById('cartBadge');
     const count = Object.keys(favorites).length; // Contamos las propiedades del objeto
