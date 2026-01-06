@@ -746,121 +746,71 @@
           </div>
           
    <script>
-    const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
-    const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    // 1. Reemplazá tu línea de declaración por estas:
-    let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
-    let currentUser = null;
-    let userProfile = null;
-    let isSignUpMode = false;
+    // --- CONFIGURACIÓN DE CONEXIÓN ---
+const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
 
-// Inicialización limpia de favoritos como OBJETO
+// INICIALIZACIÓN DEL CLIENTE (Vital para que el botón de usuario funcione)
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+// VARIABLES DE ESTADO
+let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
+let currentUser = null;
+let userProfile = null;
+let isSignUpMode = false;
+
+// Inicialización de Favoritos (Aseguramos que sea OBJETO {})
 let favorites = JSON.parse(localStorage.getItem('fav_tickers')) || {};
 if (Array.isArray(favorites)) { favorites = {}; }
-}
-    // Diccionario de páginas estáticas para reconocerlas en la URL
-    const paginasEstaticas = {
-        'acerca_de': 'Acerca de',
-        'terminos': 'Términos',
-        'contacto': 'Contacto'
-    };
 
-    // Función para generar URLs limpias
-    const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+const paginasEstaticas = { 'acerca_de': 'Acerca de', 'terminos': 'Términos', 'contacto': 'Contacto' };
+const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
-    async function init() {
+async function init() {
     try {
         // Iniciamos Auth pero sin dejar que bloquee la carga si falla
         try { await initAuth(); } catch(e) { console.error(e); }
-            // 1. Cargar Configuración (Legales, etc)
-            const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const configRows = await resC.json();
-            configRows.forEach(row => configDB[row.clave] = row.valor);
 
-            renderAds(); 
+        // 1. Cargar Configuración
+        const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+        const configRows = await resC.json();
+        configRows.forEach(row => configDB[row.clave] = row.valor);
 
-          
-            // 2. Cargar Productos
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const rows = await res.json();
-            
-            // 3. Cargar Historial (últimos 7 días)
-            const d7 = new Date(); d7.setDate(d7.getDate() - 7);
-            const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const hData = await resH.json();
-            
-            const usedTickers = new Set();
-           // Dentro de la función async function init()
-flatList = rows.map(r => {
-    const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
-    let t = r.ticker || generateTicker(r.nombre);
-    
-    return {
-        id: r.id, 
-        n: r.nombre.trim(), 
-        cat: r.categoria, 
-        ticker: t,
-        p: [
-            r.p_coto || 0, 
-            r.p_carrefour || 0, 
-            r.p_dia || 0, 
-            r.p_jumbo || 0, 
-            r.p_masonline || 0
-        ],
-        urls: [
-            r.url_coto || '#', 
-            r.url_carrefour || '#', 
-            r.url_dia || '#', 
-            r.url_jumbo || '#', 
-            r.url_masonline || '#'
-        ],
-        h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
-        img: r.imagen_url
-    }; // <--- Asegurate de que este punto y coma esté aquí
-});
-          document.getElementById('loader').style.display = 'none';
-            updateCartBadge(); 
-
-            // --- LÓGICA DE RUTAS AL CARGAR ---
-            const path = window.location.pathname.split('/').filter(p => p !== "");
-
-            if (paginasEstaticas[path[0]]) {
-                openPage(path[0], paginasEstaticas[path[0]], false);
-            } 
-            else if (path.length >= 2) {
-                const itemEncontrado = flatList.find(i => getSlug(i.n) === path[1]);
-                if (itemEncontrado) openProductView(itemEncontrado.id, false);
-                else goHome();
-            } 
-            else if (path.length === 1 && path[0] !== 'index.html') {
-                setTab(path[0], null, false);
-            } 
-            else {
-                goHome();
-            }
-
-            // --- MANEJO DEL BOTÓN ATRÁS ---
-            window.onpopstate = (e) => {
-                const p = window.location.pathname.split('/').filter(x => x !== "");
-                if (paginasEstaticas[p[0]]) {
-                    openPage(p[0], paginasEstaticas[p[0]], false);
-                } 
-                else if (p.length >= 2) {
-                    const itemPop = flatList.find(i => getSlug(i.n) === p[1]);
-                    if (itemPop) openProductView(itemPop.id, false);
-                } 
-                else {
-                    document.getElementById('pageView').classList.remove('active');
-                    document.getElementById('productFullView').style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                    setTab(p[0] || 'home', null, false);
-                }
+        // 2. Cargar Productos
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+        const rows = await res.json();
+        
+        // 3. Cargar Historial
+        const d7 = new Date(); d7.setDate(d7.getDate() - 7);
+        const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+        const hData = await resH.json();
+        
+        const usedTickers = new Set();
+        flatList = rows.map(r => {
+            const h7 = (Array.isArray(hData) ? hData : []).filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+            let t = r.ticker || generateTicker(r.nombre);
+            if(usedTickers.has(t)) t = (t.substring(0,3) + r.id.toString().slice(-1)).toUpperCase();
+            usedTickers.add(t);
+            return {
+                id: r.id, n: r.nombre.trim(), cat: r.categoria, ticker: t,
+                p: [r.p_coto||0, r.p_carrefour||0, r.p_dia||0, r.p_jumbo||0, r.p_masonline||0],
+                urls: [r.url_coto||'#', r.url_carrefour||'#', r.url_dia||'#', r.url_jumbo||'#', r.url_masonline||'#'],
+                h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
+                img: r.imagen_url
             };
+        });
 
-        } catch (e) { console.error(e); }
+        document.getElementById('loader').style.display = 'none';
+        updateCartBadge(); 
+        goHome(); // Esto activa el primer renderView()
+
+    } catch (e) { 
+        console.error(e);
+        document.getElementById('loader').innerText = "ERROR DE CONEXIÓN";
     }
+}
 
     function goHome() {
         currentTab = 'home'; 
