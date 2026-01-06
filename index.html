@@ -771,6 +771,7 @@ if (Array.isArray(favorites)) {
 
     async function init() {
         try {
+            await initAuth();
             // 1. Cargar Configuración (Legales, etc)
             const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
             const configRows = await resC.json();
@@ -1467,18 +1468,56 @@ function trackMarketClick(superName, productName) {
     
     });
 
-let isSignUpMode = false; // Empezamos en modo Login por defecto
+// --- 1. VARIABLES DE ESTADO (Asegurate de que solo estén una vez) ---
+let currentUser = null;
+let userProfile = null;
+let isSignUpMode = false;
 
-// --- FUNCIÓN PARA ABRIR EL PERFIL ---
+// --- 2. INICIALIZACIÓN DE AUTH (Llamar esto dentro de init()) ---
+async function initAuth() {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        await handleAuthState(session);
+
+        // Escuchar cambios de sesión
+        supabase.auth.onAuthStateChange((_event, session) => {
+            handleAuthState(session);
+        });
+    } catch (e) {
+        console.error("Error en Auth:", e);
+    }
+}
+
+async function handleAuthState(session) {
+    const userBtn = document.getElementById('userBtn');
+    if (session) {
+        currentUser = session.user;
+        // Buscamos los datos extra (suscripción) en la tabla perfiles
+        const { data } = await supabase.from('perfiles').select('*').eq('id', currentUser.id).single();
+        userProfile = data;
+        
+        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user" style="color:var(--color-good)"></i>';
+        closeAuth();
+    } else {
+        currentUser = null;
+        userProfile = null;
+        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user"></i>';
+    }
+    renderView(); // Refrescamos para aplicar límites
+}
+
+// --- 3. FUNCIONES DEL MODAL ---
 function openAuth() {
     const modal = document.getElementById('authModal');
+    if (!modal) return;
+    
     modal.style.display = 'flex';
     
     if (currentUser) {
         document.getElementById('authFormArea').style.display = 'none';
         document.getElementById('profileArea').style.display = 'block';
-        document.getElementById('profileName').innerText = currentUser.email.split('@')[0];
-        document.getElementById('profileSub').innerText = (userProfile?.subscription === 'pro') ? "Plan Master Trader (PRO)" : "Plan Trader Junior (FREE)";
+        document.getElementById('profileName').innerText = currentUser.email.split('@')[0].toUpperCase();
+        document.getElementById('profileSub').innerText = (userProfile?.subscription === 'pro') ? "PLAN MASTER TRADER (PRO)" : "PLAN TRADER JUNIOR (FREE)";
     } else {
         document.getElementById('authFormArea').style.display = 'block';
         document.getElementById('profileArea').style.display = 'none';
@@ -1486,7 +1525,8 @@ function openAuth() {
 }
 
 function closeAuth() {
-    document.getElementById('authModal').style.display = 'none';
+    const modal = document.getElementById('authModal');
+    if (modal) modal.style.display = 'none';
 }
 
 function toggleAuthMode() {
@@ -1496,28 +1536,56 @@ function toggleAuthMode() {
     document.getElementById('authSwitch').innerText = isSignUpMode ? "¿Ya tenés cuenta? Iniciá Sesión" : "¿No tenés cuenta? Registrate gratis";
 }
 
-// --- LOGICA DE FAVORITOS (CORREGIDA) ---
+// --- 4. LOGIN Y REGISTRO ---
+async function handleAuthSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPass').value;
+
+    if (isSignUpMode) {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) alert(error.message);
+        else {
+            // Creamos la fila en la tabla perfiles automáticamente
+            await supabase.from('perfiles').insert([{ id: data.user.id, email: email, subscription: 'free' }]);
+            alert("¡Registro exitoso! Ya podés ingresar.");
+            isSignUpMode = false;
+            toggleAuthMode();
+        }
+    } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        // El onAuthStateChange se encarga del resto
+    }
+}
+
+async function handleSignOut() {
+    await supabase.auth.signOut();
+    location.reload();
+}
+
+// --- 5. LÓGICA DE FAVORITOS (LÍMITES) ---
 function toggleFav(id, btn) {
     const isAlreadyFav = !!favorites[id];
 
-    // 1. Si NO está logueado, no puede agregar nada
+    // NIVEL 1: Si NO está logueado, prohibido agregar
     if (!currentUser) {
-        alert("Iniciá sesión para guardar productos en tu chango.");
+        alert("🔒 Iniciá sesión para guardar productos en tu chango.");
         openAuth();
         return;
     }
 
-    // 2. Si es FREE y quiere agregar el 6to, bloqueamos
+    // NIVEL 2: Si es FREE y tiene 5 o más, bloqueamos el 6to
     const count = Object.keys(favorites).length;
     const isPro = userProfile?.subscription === 'pro';
 
     if (!isPro && !isAlreadyFav && count >= 5) {
-        alert("Llegaste al límite de 5 productos del plan gratuito. ¡Pasate a PRO!");
+        alert("🚀 Llegaste al límite de 5 productos del plan gratuito. ¡Pasate a PRO para agregar más!");
         openAuth();
         return;
     }
 
-    // 3. Agregar o Quitar
+    // Proceso de agregar/quitar
     if (isAlreadyFav) {
         delete favorites[id];
     } else {
@@ -1527,41 +1595,8 @@ function toggleFav(id, btn) {
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
     
-    if (currentTab === 'favs') {
-        renderView(); 
-    } else if (btn) {
-        btn.classList.toggle('active', !!favorites[id]);
-    }
-}
-
-// --- LOGIN Y REGISTRO ---
-async function handleAuthSubmit(e) {
-    e.preventDefault();
-    const email = document.getElementById('authEmail').value;
-    const password = document.getElementById('authPass').value;
-
-    try {
-        if (isSignUpMode) {
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) throw error;
-            // Crear perfil inicial
-            await supabase.from('perfiles').insert([{ id: data.user.id, email: email, subscription: 'free' }]);
-            alert("¡Registro exitoso! Ya podés ingresar.");
-            isSignUpMode = false;
-            toggleAuthMode();
-        } else {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-            location.reload();
-        }
-    } catch (err) {
-        alert(err.message);
-    }
-}
-
-async function handleSignOut() {
-    await supabase.auth.signOut();
-    location.reload();
+    if (currentTab === 'favs') renderView();
+    else if (btn) btn.classList.toggle('active', !!favorites[id]);
 }
   
   
