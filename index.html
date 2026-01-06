@@ -369,7 +369,7 @@
         .page-view.active { display: block; }
         .legal-dropdown { position: absolute; top: 50px; right: 20px; background: var(--bg-app); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none; flex-direction: column; z-index: 200; width: 180px; }
         .legal-dropdown a { padding: 12px 15px; font-size: 12px; font-weight: 700; color: var(--text-main); text-decoration: none; border-bottom: 1px solid var(--border); text-transform: uppercase; cursor: pointer; }
-        .auth-modal input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); }
+    
 /* --- ESTILOS PARA MÓVIL (Por defecto) --- */
 
 /* Escondemos los links de PC en el celular */
@@ -1155,7 +1155,7 @@ flatList = rows.map(r => {
 
     // 🚫 NO logueado
     if (!currentUser) {
-        openAuthModal();return;
+        alert("Registrate para usar el chango 🛒");
         return;
     }
 
@@ -1502,53 +1502,7 @@ function updateUserIcon(logged) {
         }
     });
 }
-     async function registerFree() {
-  const email = document.getElementById('authEmail').value;
-  const password = document.getElementById('authPassword').value;
-
-  if (!email || !password) {
-    alert("Completá email y contraseña");
-    return;
-  }
-
-  const { data, error } = await supabaseAuth.auth.signUp({
-    email,
-    password
-  });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  // Crear perfil FREE
-  await supabaseAuth.from('profiles').insert({
-    id: data.user.id,
-    email: email,
-    plan: 'free'
-  });
-
-  closeAuthModal();
-  await loadSession();
-}
-async function loginUser() {
-  const email = document.getElementById('authEmail').value;
-  const password = document.getElementById('authPassword').value;
-
-  const { error } = await supabaseAuth.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) {
-    alert("Email o contraseña incorrectos");
-    return;
-  }
-
-  closeAuthModal();
-  await loadSession();
-}
-
+     
      
     // Iniciar la app
     init();
