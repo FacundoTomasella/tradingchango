@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RVLYJ69FYD"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -592,7 +594,7 @@
     </div>
                <!-- NUEVO BOTÓN DE USUARIO -->
     <button class="user-btn" id="userBtn" onclick="openAuth()">
-        <i class="fa-solid fa-circle-user"></i>
+           <i class="fa-solid fa-circle-user"></i>
     </button> 
     <button class="theme-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
 </div>
@@ -749,6 +751,14 @@
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const supabaseAuth = supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+    
+    let currentUser = null;
+    let currentProfile = null;
+
 
     // 1. Reemplazá tu línea de declaración por estas:
 let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
@@ -771,6 +781,8 @@ if (Array.isArray(favorites)) {
 
     async function init() {
         try {
+            await loadSession();
+
             // 1. Cargar Configuración (Legales, etc)
             const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
             const configRows = await resC.json();
@@ -1132,27 +1144,45 @@ flatList = rows.map(r => {
 }
      
      
-     
+     function getFavLimit() {
+  if (!currentUser) return 0; // no logueado
+  if (currentProfile?.plan === 'premium') return Infinity;
+  return 5; // free
+}
+
      
      function toggleFav(id, btn) {
-    // Si ya existe, lo borramos (sacar del chango)
+
+    // 🚫 NO logueado
+    if (!currentUser) {
+        alert("Registrate para usar el chango 🛒");
+        return;
+    }
+
+    const favCount = Object.keys(favorites).length;
+    const limit = getFavLimit();
+
+    // 🚫 Límite alcanzado
+    if (!favorites[id] && favCount >= limit) {
+        alert("Llegaste al límite de 5 favoritos. Pasate a Premium 🚀");
+        return;
+    }
+
+    // ✅ Lógica original (intacta)
     if (favorites[id]) {
         delete favorites[id];
     } else {
-        // Si no existe, lo agregamos con cantidad 1
         favorites[id] = 1;
     }
-    
+
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
-    
-    if (currentTab === 'favs') {
-        renderView(); 
-    } else if (btn) {
-        // Cambiamos 'active' según si el ID existe como llave en el objeto
+
+    if (btn) {
         btn.classList.toggle('active', !!favorites[id]);
     }
- }
+}
+
 
     function updateCartBadge() {
     const b = document.getElementById('cartBadge');
@@ -1422,6 +1452,27 @@ function trackMarketClick(superName, productName) {
   }
 }
 
+function openAuth() {
+  if (!currentUser) {
+    supabaseAuth.auth.signInWithOAuth({
+      provider: 'google'
+    });
+  } else {
+    if (confirm("¿Cerrar sesión?")) {
+      supabaseAuth.auth.signOut();
+      currentUser = null;
+      currentProfile = null;
+      updateUserIcon(false);
+    }
+  }
+}
+
+function updateUserIcon(logged) {
+  const btn = document.getElementById('userBtn');
+  btn.style.color = logged ? 'var(--color-good)' : 'var(--text-main)';
+}
+
+     
   function renderAds() {
     // Definimos los slots
     const slots = [
@@ -1455,6 +1506,30 @@ function trackMarketClick(superName, productName) {
      
     // Iniciar la app
     init();
+        async function loadSession() {
+        const { data } = await supabaseAuth.auth.getSession();
+        currentUser = data.session?.user || null;
+      
+        if (currentUser) {
+          await loadProfile();
+          updateUserIcon(true);
+        } else {
+          updateUserIcon(false);
+        }
+      }
+      
+      async function loadProfile() {
+        const { data } = await supabaseAuth
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+      
+        currentProfile = data;
+      }
+
+
+     
 </script>
 <!-- Modal de Registro/Login -->
 <div id="authModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; backdrop-filter: blur(5px); align-items: center; justify-content: center;">
