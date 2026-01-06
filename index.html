@@ -1549,34 +1549,29 @@ async function registerFree() {
   const password = document.getElementById('authPassword').value;
 
   if (!email || !password) {
-    alert("Por favor, completá todos los campos.");
+    alert("Completá email y contraseña");
     return;
   }
 
-  // 1. Crear el usuario en el sistema de Auth de Supabase
   const { data, error } = await supabaseAuth.auth.signUp({
     email,
     password
   });
 
   if (error) {
-    alert("Error al registrarse: " + error.message);
+    alert(error.message);
     return;
   }
 
-  if (data.user) {
-    // 2. Crear su perfil en tu tabla 'profiles'
-    const { error: profileError } = await supabaseAuth
-      .from('profiles')
-      .insert([
-        { id: data.user.id, email: email, plan: 'free' }
-      ]);
+  // CAMBIO AQUÍ: Usamos 'perfiles' en lugar de 'profiles'
+  await supabaseAuth.from('perfiles').insert({
+    id: data.user.id,
+    email: email,
+    plan: 'free'
+  });
 
-    if (profileError) console.error("Error creando perfil:", profileError);
-
-    alert("¡Cuenta creada! Revisá tu email para confirmar (si tenés la opción activada).");
-    closeAuthModal();
-  }
+  closeAuthModal();
+  if (typeof loadSession === "function") await loadSession();
 }
 
 // LOGIN DE USUARIOS EXISTENTES
