@@ -860,17 +860,26 @@ flatList = rows.map(r => {
     }
 
     function goHome() {
-        currentTab = 'home'; 
-        document.getElementById('tickerList').style.display = 'block';
-        document.getElementById('pageView').classList.remove('active');
-        document.getElementById('searchBarSection').style.display = 'block';
-        document.getElementById('heroSection').style.display = 'block';
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        const btnHome = document.getElementById('btn-home');
-        if(btnHome) btnHome.classList.add('active');
-        window.scrollTo(0,0);
-        renderView();
-    }
+    // 1. Limpiar filtros y búsqueda (Lo que faltaba)
+    currentTrendFilter = null; 
+    document.getElementById('searchInput').value = '';
+    document.getElementById('clearSearch').style.display = 'none';
+    document.getElementById('btnUp').classList.remove('active-up');
+    document.getElementById('btnDown').classList.remove('active-down');
+
+    // 2. Tu lógica actual (Se mantiene igual)
+    currentTab = 'home'; 
+    document.getElementById('tickerList').style.display = 'block';
+    document.getElementById('pageView').classList.remove('active');
+    document.getElementById('searchBarSection').style.display = 'block';
+    document.getElementById('heroSection').style.display = 'block';
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const btnHome = document.getElementById('btn-home');
+    if(btnHome) btnHome.classList.add('active');
+    
+    window.scrollTo(0,0);
+    renderView();
+}
 
     function clearInput() {
         const input = document.getElementById('searchInput');
