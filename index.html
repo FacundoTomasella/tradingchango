@@ -475,6 +475,37 @@
     .pv-content {
         padding: 30px 25px !important;
     }
+
+    #authModal {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: none; /* Se cambia a flex con JS */
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.auth-modal {
+  background: #1e222d; /* Color estilo TradingView */
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  color: white;
+}
+
+.auth-modal input {
+  width: 100%;
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #363a45;
+  background: #2a2e39;
+  color: white;
+}
+    
 }        
     </style>
 <meta http-equiv="Content-Security-Policy" content="
@@ -1451,20 +1482,65 @@ function trackMarketClick(superName, productName) {
     });
   }
 }
+async function registerFree() {
+  const email = document.getElementById('authEmail').value;
+  const password = document.getElementById('authPassword').value;
 
-function openAuth() {
+  if (!email || !password) {
+    alert("Completá email y contraseña");
+    return;
+  }
+
+  const { data, error } = await supabaseAuth.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  // CAMBIO AQUÍ: Usamos 'perfiles' en lugar de 'profiles'
+  await supabaseAuth.from('perfiles').insert({
+    id: data.user.id,
+    email: email,
+    plan: 'free'
+  });
+
+  closeAuthModal();
+  if (typeof loadSession === "function") await loadSession();
+}
+       
+async function openAuth() {
+  // SI NO HAY USUARIO: Abrimos el modal manual en lugar de Google
   if (!currentUser) {
-    supabaseAuth.auth.signInWithOAuth({
-      provider: 'google'
-    });
-  } else {
+    openAuthModal(); 
+  } 
+  // SI YA HAY USUARIO: Preguntamos si quiere cerrar sesión
+  else {
     if (confirm("¿Cerrar sesión?")) {
-      supabaseAuth.auth.signOut();
-      currentUser = null;
-      currentProfile = null;
-      updateUserIcon(false);
+      const { error } = await supabaseAuth.auth.signOut();
+      if (!error) {
+        currentUser = null;
+        currentProfile = null;
+        updateUserIcon(false);
+        // Opcional: recargar la página para limpiar estados
+        window.location.reload();
+      }
     }
   }
+}
+
+// Asegúrate de tener estas dos para el manejo visual:
+function openAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) modal.style.display = 'none';
 }
 
 function updateUserIcon(logged) {
