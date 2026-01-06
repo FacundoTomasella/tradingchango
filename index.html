@@ -1135,24 +1135,38 @@ flatList = rows.map(r => {
      
      
      function toggleFav(id, btn) {
-    // Si ya existe, lo borramos (sacar del chango)
-    if (favorites[id]) {
+    const isAlreadyFav = !!favorites[id];
+
+    // NIVEL 1: Si no está registrado
+    if (!currentUser) {
+        alert("❌ Debes iniciar sesión para agregar favoritos.");
+        openAuth(); // Abre el modal de login
+        return;
+    }
+
+    // NIVEL 2: Si está registrado pero es FREE
+    if (userProfile?.subscription === 'free' && !isAlreadyFav) {
+        const cantFavs = Object.keys(favorites).length;
+        if (cantFavs >= 5) {
+            alert("⚠️ Límite de 5 favoritos alcanzado. ¡Pasate a PRO para tener changos ilimitados!");
+            // Aquí podrías abrir una ventana de "Vender el Plan Pro"
+            return;
+        }
+    }
+
+    // NIVEL 3: El PRO no tiene límites (pasa directo acá)
+    if (isAlreadyFav) {
         delete favorites[id];
     } else {
-        // Si no existe, lo agregamos con cantidad 1
         favorites[id] = 1;
     }
     
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
     
-    if (currentTab === 'favs') {
-        renderView(); 
-    } else if (btn) {
-        // Cambiamos 'active' según si el ID existe como llave en el objeto
-        btn.classList.toggle('active', !!favorites[id]);
-    }
- }
+    if (currentTab === 'favs') renderView();
+    else if (btn) btn.classList.toggle('active', !!favorites[id]);
+}
 
     function updateCartBadge() {
     const b = document.getElementById('cartBadge');
