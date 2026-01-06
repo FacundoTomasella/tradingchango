@@ -1467,78 +1467,26 @@ function trackMarketClick(superName, productName) {
     
     });
 
-  let isSignUpMode = true;
-let userProfile = null; // Aquí guardaremos los datos de la tabla 'perfiles'
+let isSignUpMode = false; // Empezamos en modo Login por defecto
 
-// 1. EL BOTÓN DEL HEADER (Qué hace al tocarlo)
+// --- FUNCIÓN PARA ABRIR EL PERFIL ---
 function openAuth() {
     const modal = document.getElementById('authModal');
     modal.style.display = 'flex';
     
     if (currentUser) {
-        // Si está logueado, mostramos el área de perfil
         document.getElementById('authFormArea').style.display = 'none';
         document.getElementById('profileArea').style.display = 'block';
-        updateProfileUI();
+        document.getElementById('profileName').innerText = currentUser.email.split('@')[0];
+        document.getElementById('profileSub').innerText = (userProfile?.subscription === 'pro') ? "Plan Master Trader (PRO)" : "Plan Trader Junior (FREE)";
     } else {
-        // Si no está logueado, mostramos el login/registro
         document.getElementById('authFormArea').style.display = 'block';
         document.getElementById('profileArea').style.display = 'none';
     }
 }
 
-// 2. ACTUALIZAR LA INFO DEL PERFIL VISUALMENTE
-async function updateProfileUI() {
-    if (!currentUser) return;
-    
-    // Consultar el perfil en Supabase
-    const { data, error } = await supabase.from('perfiles').select('*').eq('id', currentUser.id).single();
-    userProfile = data;
-
-    const nameDisplay = userProfile?.nombre || currentUser.email.split('@')[0];
-    const subType = userProfile?.subscription || 'free';
-    const favCount = Object.keys(favorites).length;
-
-    document.getElementById('profileName').innerText = nameDisplay;
-    const badge = document.getElementById('badgeSubscription');
-    
-    if (subType === 'pro') {
-        badge.innerText = "Master Trader (Pro)";
-        badge.style.background = "var(--star-gold)";
-        badge.style.color = "black";
-        document.getElementById('changoLimitLabel').innerText = `${favCount} / ∞`;
-        document.getElementById('upgradeBtnArea').style.display = 'none';
-    } else {
-        badge.innerText = "Trader Junior (Free)";
-        badge.style.background = "var(--bg-card)";
-        badge.style.color = "var(--text-muted)";
-        document.getElementById('changoLimitLabel').innerText = `${favCount} / 5`;
-        document.getElementById('upgradeBtnArea').style.display = 'block';
-    }
-}
-
-// 3. ENVIAR FORMULARIO (Soporta Login y Registro)
-async function handleAuthSubmit(e) {
-    e.preventDefault();
-    const email = document.getElementById('authEmail').value;
-    const password = document.getElementById('authPass').value;
-
-    if (isSignUpMode) {
-        // REGISTRO
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) alert(error.message);
-        else {
-            // Creamos el perfil inicial en la tabla 'perfiles'
-            await supabase.from('perfiles').insert([{ id: data.user.id, email: email, subscription: 'free' }]);
-            alert("¡Registro exitoso! Verifica tu email.");
-            location.reload();
-        }
-    } else {
-        // LOGIN
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) alert(error.message);
-        else location.reload();
-    }
+function closeAuth() {
+    document.getElementById('authModal').style.display = 'none';
 }
 
 function toggleAuthMode() {
@@ -1546,6 +1494,69 @@ function toggleAuthMode() {
     document.getElementById('authTitle').innerText = isSignUpMode ? "Crear Cuenta" : "Iniciar Sesión";
     document.getElementById('authBtnLabel').innerText = isSignUpMode ? "REGISTRARME" : "INGRESAR";
     document.getElementById('authSwitch').innerText = isSignUpMode ? "¿Ya tenés cuenta? Iniciá Sesión" : "¿No tenés cuenta? Registrate gratis";
+}
+
+// --- LOGICA DE FAVORITOS (CORREGIDA) ---
+function toggleFav(id, btn) {
+    const isAlreadyFav = !!favorites[id];
+
+    // 1. Si NO está logueado, no puede agregar nada
+    if (!currentUser) {
+        alert("Iniciá sesión para guardar productos en tu chango.");
+        openAuth();
+        return;
+    }
+
+    // 2. Si es FREE y quiere agregar el 6to, bloqueamos
+    const count = Object.keys(favorites).length;
+    const isPro = userProfile?.subscription === 'pro';
+
+    if (!isPro && !isAlreadyFav && count >= 5) {
+        alert("Llegaste al límite de 5 productos del plan gratuito. ¡Pasate a PRO!");
+        openAuth();
+        return;
+    }
+
+    // 3. Agregar o Quitar
+    if (isAlreadyFav) {
+        delete favorites[id];
+    } else {
+        favorites[id] = 1;
+    }
+    
+    localStorage.setItem('fav_tickers', JSON.stringify(favorites));
+    updateCartBadge();
+    
+    if (currentTab === 'favs') {
+        renderView(); 
+    } else if (btn) {
+        btn.classList.toggle('active', !!favorites[id]);
+    }
+}
+
+// --- LOGIN Y REGISTRO ---
+async function handleAuthSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPass').value;
+
+    try {
+        if (isSignUpMode) {
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) throw error;
+            // Crear perfil inicial
+            await supabase.from('perfiles').insert([{ id: data.user.id, email: email, subscription: 'free' }]);
+            alert("¡Registro exitoso! Ya podés ingresar.");
+            isSignUpMode = false;
+            toggleAuthMode();
+        } else {
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            location.reload();
+        }
+    } catch (err) {
+        alert(err.message);
+    }
 }
 
 async function handleSignOut() {
