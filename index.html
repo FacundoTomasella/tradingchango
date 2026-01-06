@@ -771,7 +771,14 @@ if (Array.isArray(favorites)) {
 
     async function init() {
         try {
+           console.log("Iniciando componentes...");
+        
+        // Ejecutamos Auth pero sin dejar que un error acá trabe toda la web
+        try {
             await initAuth();
+        } catch (authError) {
+            console.error("Error en Auth, continuando como visita:", authError);
+        }
             // 1. Cargar Configuración (Legales, etc)
             const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
             const configRows = await resC.json();
