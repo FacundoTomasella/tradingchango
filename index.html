@@ -1454,9 +1454,19 @@ function trackMarketClick(superName, productName) {
 
 function openAuth() {
   if (!currentUser) {
-    supabaseAuth.auth.signInWithOAuth({
-      provider: 'google'
-    });
+    // En lugar de llamar a Google, abrimos el modal manual
+    openAuthModal(); 
+  }
+}
+
+function openAuthModal() {
+  document.getElementById('authModal').style.display = 'flex';
+}
+
+function closeAuthModal() {
+  document.getElementById('authModal').style.display = 'none';
+}
+    
   } else {
     if (confirm("¿Cerrar sesión?")) {
       supabaseAuth.auth.signOut();
