@@ -1487,29 +1487,44 @@ async function registerFree() {
   const password = document.getElementById('authPassword').value;
 
   if (!email || !password) {
-    alert("Completá email y contraseña");
+    alert("Por favor, completá email y contraseña");
     return;
   }
 
+  // 1. Crear el usuario en la sección de Autenticación
   const { data, error } = await supabaseAuth.auth.signUp({
     email,
     password
   });
 
   if (error) {
-    alert(error.message);
+    alert("Error de Auth: " + error.message);
     return;
   }
 
-  // CAMBIO AQUÍ: Usamos 'perfiles' en lugar de 'profiles'
-  await supabaseAuth.from('perfiles').insert({
-    id: data.user.id,
-    email: email,
-    plan: 'free'
-  });
+  if (data.user) {
+    // 2. Insertar en tu tabla 'perfiles' con tus columnas exactas
+    const { error: dbError } = await supabaseAuth
+      .from('perfiles')
+      .insert([
+        { 
+          id: data.user.id, 
+          email: email, 
+          subscription: 'free', // Usamos 'subscription' como se llama en tu tabla
+          nombre: '',           // Se dejan vacíos para que el usuario los complete después
+          apellido: '' 
+        }
+      ]);
 
-  closeAuthModal();
-  if (typeof loadSession === "function") await loadSession();
+    if (dbError) {
+      console.error("Error en tabla perfiles:", dbError);
+      alert("Usuario creado, pero hubo un error en la tabla perfiles: " + dbError.message);
+    } else {
+      alert("¡Cuenta creada con éxito!");
+      closeAuthModal();
+      if (typeof loadSession === "function") await loadSession();
+    }
+  }
 }
        
 async function openAuth() {
