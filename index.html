@@ -1175,45 +1175,7 @@ flatList = rows.map(r => {
 }
      
      
-     function getFavLimit() {
-  if (!currentUser) return 0; // no logueado
-  if (currentProfile?.plan === 'premium') return Infinity;
-  return 5; // free
-}
-
-     
-     function toggleFav(id, btn) {
-
-    // 🚫 NO logueado
-    if (!currentUser) {
-        alert("Registrate para usar el chango 🛒");
-        return;
-    }
-
-    const favCount = Object.keys(favorites).length;
-    const limit = getFavLimit();
-
-    // 🚫 Límite alcanzado
-    if (!favorites[id] && favCount >= limit) {
-        alert("Llegaste al límite de 5 favoritos. Pasate a Premium 🚀");
-        return;
-    }
-
-    // ✅ Lógica original (intacta)
-    if (favorites[id]) {
-        delete favorites[id];
-    } else {
-        favorites[id] = 1;
-    }
-
-    localStorage.setItem('fav_tickers', JSON.stringify(favorites));
-    updateCartBadge();
-
-    if (btn) {
-        btn.classList.toggle('active', !!favorites[id]);
-    }
-}
-
+    
 
     function updateCartBadge() {
     const b = document.getElementById('cartBadge');
@@ -1482,99 +1444,126 @@ function trackMarketClick(superName, productName) {
     });
   }
 }
-// --- FUNCIONES DE CIERRE ---
-function closeAuth() {
-    document.getElementById('authModal').style.display = 'none';
-    document.body.style.overflow = 'auto'; // Habilitar scroll
+let isSignUpMode = false;
+
+// 1. CONTROL DE VISTAS DENTRO DEL MODAL
+function showAuthStep(step) {
+    const welcome = document.getElementById('authWelcomeArea');
+    const form = document.getElementById('authFormArea');
+    const profile = document.getElementById('profileArea');
+
+    welcome.style.display = (step === 'welcome') ? 'block' : 'none';
+    form.style.display = (step === 'form') ? 'block' : 'none';
+    profile.style.display = (step === 'profile') ? 'block' : 'none';
 }
 
-function closeAuthOutside(e) {
-    // Si el click es en el fondo oscuro y no en el cuadro blanco, cerrar
-    if (e.target.id === "authModal") closeAuth();
+function showAuthForm(mode) {
+    isSignUpMode = (mode === 'register');
+    showAuthStep('form');
+    
+    document.getElementById('authTitle').innerText = isSignUpMode ? "Crear Cuenta" : "Iniciar Sesión";
+    document.getElementById('authBtnLabel').innerText = isSignUpMode ? "REGISTRARME" : "INGRESAR";
+    document.getElementById('registerFields').style.display = isSignUpMode ? "block" : "none";
 }
 
-// --- LÓGICA DE USUARIOS ---
-async function handleAuthState(session) {
-    const userBtn = document.getElementById('userBtn');
-    if (session) {
-        currentUser = session.user;
-        // Obtenemos los datos de la tabla 'perfiles' de Supabase
-        const { data, error } = await supabase.from('perfiles').select('*').eq('id', currentUser.id).single();
-        userProfile = data;
+function openAuth() {
+    document.getElementById('authModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 
-        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-user-check" style="color:var(--color-good)"></i>';
-        closeAuth();
+    if (currentUser) {
+        showAuthStep('profile');
+        // Rellenar datos del perfil
+        const nombre = userProfile?.nombre || "Usuario";
+        const apellido = userProfile?.apellido || "";
+        document.getElementById('profileName').innerText = `${nombre} ${apellido}`;
+        document.getElementById('profileEmail').innerText = currentUser.email;
+        document.getElementById('profileSub').innerText = userProfile?.subscription || 'FREE';
+        if(userProfile?.created_at) {
+            document.getElementById('profileDate').innerText = new Date(userProfile.created_at).toLocaleDateString();
+        }
     } else {
-        currentUser = null;
-        userProfile = null;
-        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user"></i>';
+        showAuthStep('welcome');
     }
 }
 
+function closeAuth() {
+    document.getElementById('authModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function closeAuthOutside(e) {
+    if (e.target.id === "authModal") closeAuth();
+}
+
+// 2. ENVIAR FORMULARIO (Auth + Tabla Perfiles)
 async function handleAuthSubmit(e) {
     e.preventDefault();
     const email = document.getElementById('authEmail').value;
     const password = document.getElementById('authPass').value;
 
     if (isSignUpMode) {
-        // 1. REGISTRO en Supabase Auth
         const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) { alert(error.message); return; }
         
-        if (error) { alert("Error: " + error.message); return; }
-
         if (data.user) {
-            // 2. INSERTAR en la tabla pública 'perfiles'
             const nombre = document.getElementById('regNombre').value;
             const apellido = document.getElementById('regApellido').value;
             const fecha = document.getElementById('regFecha').value;
 
-            const { error: profileError } = await supabase.from('perfiles').insert([{
-                id: data.user.id,
-                email: email,
-                nombre: nombre,
-                apellido: apellido,
-                fecha_nacimiento: fecha,
-                subscription: 'free'
+            const { error: pErr } = await supabase.from('perfiles').insert([{
+                id: data.user.id, email, nombre, apellido, fecha_nacimiento: fecha, subscription: 'free'
             }]);
-
-            if (profileError) console.error("Error Perfil:", profileError);
-            alert("¡Cuenta creada! Revisa tu email para confirmar.");
-            location.reload();
+            
+            if (pErr) console.error(pErr);
+            alert("¡Cuenta creada! Ya podés iniciar sesión.");
+            showAuthForm('login');
         }
     } else {
-        // LOGIN
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) alert("Error: " + error.message);
+        if (error) alert(error.message);
         else location.reload();
     }
 }
 
-// --- VISTA DEL PERFIL ---
-function openAuth() {
-    const modal = document.getElementById('authModal');
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // Bloquear scroll de fondo
-
-    if (currentUser) {
-        document.getElementById('authFormArea').style.display = 'none';
-        document.getElementById('profileArea').style.display = 'block';
-        
-        // Cargar datos en la UI
-        const nombreCompleto = userProfile ? `${userProfile.nombre} ${userProfile.apellido}` : "Usuario";
-        document.getElementById('profileName').innerText = nombreCompleto;
-        document.getElementById('profileEmail').innerText = currentUser.email;
-        document.getElementById('profileSub').innerText = (userProfile?.subscription === 'pro') ? 'MASTER TRADER (PRO)' : 'TRADER JUNIOR (FREE)';
-        
-        if(userProfile?.created_at) {
-            const date = new Date(userProfile.created_at);
-            document.getElementById('profileDate').innerText = date.toLocaleDateString();
-        }
-    } else {
-        document.getElementById('authFormArea').style.display = 'block';
-        document.getElementById('profileArea').style.display = 'none';
-    }
+async function handleSignOut() {
+    await supabase.auth.signOut();
+    location.reload();
 }
-function updateUserIcon(logged) {
+
+function getFavLimit() {
+  if (!currentUser) return 0; // no logueado
+  if (currentProfile?.plan === 'premium') return Infinity;
+  return 5; // free
+}
+       
+// 3. ACTUALIZAR FAVORITOS PARA QUE ABRA ESTA VENTANA
+function toggleFav(id, btn) {
+    const isAlreadyFav = !!favorites[id];
+
+    if (!currentUser) {
+        // En lugar de alert, abrimos la ventana de bienvenida directamente
+        openAuth();
+        return;
+    }
+
+    const count = Object.keys(favorites).length;
+    const isPro = userProfile?.subscription === 'pro';
+
+    if (!isPro && !isAlreadyFav && count >= 5) {
+        // Si llegó al límite, abrimos el perfil para que vea que es FREE
+        openAuth();
+        return;
+    }
+
+    if (isAlreadyFav) delete favorites[id];
+    else favorites[id] = 1;
+
+    localStorage.setItem('fav_tickers', JSON.stringify(favorites));
+    updateCartBadge();
+    if (currentTab === 'favs') renderView();
+    else if (btn) btn.classList.toggle('active', !!favorites[id]);
+}
+       function updateUserIcon(logged) {
   const btn = document.getElementById('userBtn');
   btn.style.color = logged ? 'var(--color-good)' : 'var(--text-main)';
 }
@@ -1645,39 +1634,48 @@ function updateUserIcon(logged) {
         <!-- Botón Cerrar -->
         <button onclick="closeAuth()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; z-index: 10;">&times;</button>
 
-        <!-- VISTA A: REGISTRO / LOGIN -->
-        <div id="authFormArea">
-            <h2 id="authTitle" style="font-weight: 800; margin-bottom: 10px;">Crear Cuenta</h2>
-            <p id="authSubtitle" style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px;">Registrate gratis para tener un chango ilimitado.</p>
+        <!-- 1. VISTA DE BIENVENIDA (Landing) -->
+        <div id="authWelcomeArea" style="text-align: center; display: block;">
+            <div style="font-size: 40px; margin-bottom: 15px;">🛒</div>
+            <h2 style="font-weight: 800; margin-bottom: 10px;">¡Hola, Trader!</h2>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 30px;">Registrate gratis para guardar productos ilimitados y recibir alertas de precios.</p>
+            
+            <button onclick="showAuthForm('register')" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800; cursor: pointer; margin-bottom: 12px;">CREAR CUENTA GRATIS</button>
+            <button onclick="showAuthForm('login')" style="width: 100%; padding: 15px; background: transparent; color: var(--text-main); border: 1px solid var(--border); border-radius: 12px; font-weight: 700; cursor: pointer;">YA TENGO CUENTA</button>
+        </div>
+
+        <!-- 2. VISTA DE FORMULARIOS (Registro / Login) -->
+        <div id="authFormArea" style="display: none;">
+            <h2 id="authTitle" style="font-weight: 800; margin-bottom: 20px;">Cuenta</h2>
             
             <form onsubmit="handleAuthSubmit(event)">
-                <!-- Campos extra para Perfiles -->
+                <!-- Campos exclusivos de Registro -->
                 <div id="registerFields">
                     <input type="text" id="regNombre" placeholder="Nombre" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
                     <input type="text" id="regApellido" placeholder="Apellido" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
-                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 600;">FECHA DE NACIMIENTO</label>
+                    <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 700; text-transform: uppercase;">Fecha de Nacimiento</label>
                     <input type="date" id="regFecha" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
                 </div>
 
                 <input type="email" id="authEmail" placeholder="Email" required style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
                 <input type="password" id="authPass" placeholder="Contraseña" required style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
                 
-                <button type="submit" id="authBtnLabel" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800; cursor: pointer;">REGISTRARME</button>
+                <button type="submit" id="authBtnLabel" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800; cursor: pointer;">CONTINUAR</button>
             </form>
             
-            <p id="authSwitch" onclick="toggleAuthMode()" style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--color-good); cursor: pointer; font-weight: 600;">¿Ya tenés cuenta? Iniciá Sesión</p>
+            <p onclick="showAuthStep('welcome')" style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted); cursor: pointer;">← Volver atrás</p>
         </div>
 
-        <!-- VISTA B: PERFIL DE USUARIO -->
+        <!-- 3. VISTA DE PERFIL (Logueado) -->
         <div id="profileArea" style="display: none; text-align: center;">
             <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
-            <h2 id="profileName" style="font-weight: 800; margin-bottom: 5px;">Cargando...</h2>
+            <h2 id="profileName" style="font-weight: 800; margin-bottom: 5px;">-</h2>
             <p id="profileEmail" style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;"></p>
             
             <div style="background: var(--bg-card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; text-align: left;">
                 <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
                     <span style="font-size: 12px; color: var(--text-muted);">Suscripción:</span>
-                    <span id="profileSub" style="font-size: 12px; font-weight: 800; color: var(--color-good);">FREE</span>
+                    <span id="profileSub" style="font-size: 12px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">-</span>
                 </div>
                 <div style="display:flex; justify-content: space-between;">
                     <span style="font-size: 12px; color: var(--text-muted);">Miembro desde:</span>
