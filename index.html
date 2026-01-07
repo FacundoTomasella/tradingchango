@@ -1510,7 +1510,7 @@ async function handleAuthSubmit(e) {
             return; 
         }
         
-// Dentro de handleAuthSubmit, en la parte de registro:
+        // Dentro de handleAuthSubmit, en la parte de registro:
 if (data.user) {
     // Agregamos un pequeño retraso o usamos directamente el ID del objeto 'data'
     const userId = data.user.id; 
@@ -1532,6 +1532,17 @@ if (data.user) {
         showAuthForm('login');
     }
 }
+     else {
+        // Login
+        const { error } = await supabaseAuth.auth.signInWithPassword({ email, password });
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            location.reload(); // Esto recarga la web y activa la sesión
+        }
+    }
+}
+
 
 async function handleSignOut() {
     await supabase.auth.signOut();
