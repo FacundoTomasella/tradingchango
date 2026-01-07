@@ -782,14 +782,12 @@
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const supabaseAuth = supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     
     let currentUser = null;
-    let userProfile = null;   
-    let currentProfile = null;
+    let userProfile = null;
+    let isSignUpMode = true;
 
 
     // 1. Reemplazá tu línea de declaración por estas:
@@ -1499,17 +1497,16 @@ function closeAuthOutside(e) {
 // 2. ENVIAR FORMULARIO (Auth + Tabla Perfiles)
 async function handleAuthSubmit(e) {
     e.preventDefault();
-    
+    console.log("Iniciando proceso de registro...");
+
     const email = document.getElementById('authEmail').value;
     const password = document.getElementById('authPass').value;
     const btn = document.getElementById('authBtnLabel');
-    
     btn.innerText = "PROCESANDO...";
-    btn.disabled = true;
 
     try {
         if (isSignUpMode) {
-            // 1. Crear usuario en el sistema de Autenticación
+            // 1. Crear el usuario en el sistema de Auth
             const { data, error } = await supabase.auth.signUp({
                 email: email,
                 password: password
@@ -1518,38 +1515,38 @@ async function handleAuthSubmit(e) {
             if (error) throw error;
 
             if (data.user) {
-                // 2. Insertar datos en tu tabla 'perfiles'
-                const nombre = document.getElementById('regNombre').value;
-                const apellido = document.getElementById('regApellido').value;
-                const fecha = document.getElementById('regFecha').value;
+                console.log("Usuario creado en Auth ID:", data.user.id);
 
+                // 2. Insertar los datos en tu tabla 'perfiles'
                 const { error: profileError } = await supabase.from('perfiles').insert([
                     { 
-                        id: data.user.id, // El ID debe ser el mismo que el de Auth
-                        nombre: nombre, 
-                        apellido: apellido, 
-                        fecha_nacimiento: fecha,
+                        id: data.user.id, // Sincronizamos el ID
                         email: email,
-                        subscription: 'free' 
+                        nombre: document.getElementById('regNombre').value,
+                        apellido: document.getElementById('regApellido').value,
+                        fecha_nacimiento: document.getElementById('regFecha').value,
+                        subscription: 'free'
                     }
                 ]);
 
-                if (profileError) throw profileError;
-
-                alert("✅ ¡Cuenta creada! Revisa tu email para confirmar.");
-                location.reload();
+                if (profileError) {
+                    console.error("Error al guardar en tabla perfiles:", profileError.message);
+                    alert("Usuario creado, pero hubo un error al guardar tus datos de perfil.");
+                } else {
+                    alert("✅ Registro exitoso. Revisá tu email para confirmar.");
+                    location.reload();
+                }
             }
         } else {
-            // LOGIN NORMAL
+            // Lógica de Login normal
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
             location.reload();
         }
     } catch (err) {
-        alert("❌ Error: " + err.message);
-    } finally {
-        btn.innerText = isSignUpMode ? "REGISTRARME" : "INGRESAR";
-        btn.disabled = false;
+        console.error("Error fatal:", err.message);
+        alert("Error: " + err.message);
+        btn.innerText = "REGISTRARME";
     }
 }
 
