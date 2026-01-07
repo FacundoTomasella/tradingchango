@@ -1617,23 +1617,26 @@ async function handleAuthSubmit(e) {
 
 async function handleSignOut() {
     try {
+        // 1. Cerrar sesión en Supabase
         await supabaseAuth.auth.signOut();
-        // Limpiamos variables de estado
+        
+        // 2. Limpiar variables globales
         currentUser = null;
         currentProfile = null;
-        favorites = {}; 
+        favorites = {};
         
-        // Limpiamos el almacenamiento del navegador
+        // 3. Limpiar almacenamiento local
         localStorage.removeItem('fav_tickers');
+        localStorage.clear(); // Limpia cualquier otro rastro de sesión
         
-        // Redirigimos al inicio de forma limpia
-        window.location.href = '/'; 
+        // 4. Redirección forzada (esto soluciona el problema en Desktop)
+        window.location.replace(window.location.origin + window.location.pathname);
+        
     } catch (err) {
-        console.error("Error al salir:", err);
-        location.reload();
+        console.error("Error al cerrar sesión:", err);
+        window.location.href = "/"; // Reintento de salida
     }
-}
-       
+}       
 function getFavLimit() {
   if (!currentUser) return 0; // no logueado
   if (currentProfile?.plan === 'premium') return Infinity;
@@ -1648,8 +1651,9 @@ function toggleFav(id, btn) {
     const count = Object.keys(favorites).length;
     const isPro = currentProfile?.subscription === 'pro';
 
-    // Si intenta agregar uno nuevo y ya tiene 5, sale la landing SIEMPRE
+    // Si no es PRO y quiere agregar un 6TO (o más)
     if (!isPro && !isAlreadyFav && count >= 5) {
+        console.log("Límite alcanzado, abriendo landing PRO...");
         openProModal(); 
         return;
     }
@@ -1662,7 +1666,8 @@ function toggleFav(id, btn) {
     
     if (currentTab === 'favs') renderView();
     else if (btn) btn.classList.toggle('active', !!favorites[id]);
-}       
+}
+       
     function updateUserIcon(logged) {
     const btn = document.getElementById('userBtn');
     btn.style.color = logged ? 'var(--color-good)' : 'var(--text-main)';
@@ -1671,67 +1676,62 @@ function toggleFav(id, btn) {
 
     function openProModal() {
     const modal = document.getElementById('authModal');
-    // Forzamos un tamaño más grande en escritorio para evitar scroll
-    const modalContent = modal.querySelector('.modal-content') || document.getElementById('authModalContent');
-    if(window.innerWidth >= 1024) {
-        modalContent.style.width = '600px';
-        modalContent.style.height = 'auto';
-        modalContent.style.maxHeight = '90vh';
+    // Aseguramos visibilidad del modal
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Ocultamos las otras áreas
+    const areas = ['authWelcomeArea', 'authFormArea', 'profileArea'];
+    areas.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.style.display = 'none';
+    });
+
+    // Buscamos el contenedor del contenido
+    const content = document.querySelector('.modal-content');
+    
+    // Si es escritorio, ensanchamos para que sea estilo TradingView
+    if(window.innerWidth > 1024) {
+        content.style.width = '550px';
+        content.style.maxWidth = '90vw';
     }
 
-    // Ocultamos las otras áreas de auth
-    document.querySelectorAll('#authWelcomeArea, #authFormArea, #profileArea').forEach(el => el.style.display = 'none');
+    // Insertamos la Landing Premium
+    content.innerHTML = `
+        <div class="pro-landing" style="color: var(--text-main); text-align: center; font-family: inherit;">
+            <div style="font-size: 45px; margin-bottom: 10px;">⚡</div>
+            <h2 style="font-weight: 900; color: #00c853; font-size: 26px; margin-bottom: 5px;">PASATE A PRO</h2>
+            <p style="font-size: 14px; opacity: 0.8; margin-bottom: 20px;">Accedé a herramientas exclusivas y maximizá tu ahorro.</p>
 
-    const proHTML = `
-        <div class="pro-landing-container">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <div style="font-size: 40px;">💎</div>
-                <h2 style="font-weight: 900; color: #00c853; font-size: 28px; margin: 10px 0;">TRADINGCHANGO PRO</h2>
-                <p style="opacity: 0.8; font-size: 14px;">Unite a los ahorradores inteligentes y tomá el control total.</p>
+            <div style="text-align: left; background: var(--bg-card); padding: 15px; border-radius: 16px; border: 1px solid #00c853; margin-bottom: 20px;">
+                <div style="margin-bottom: 10px; font-size: 13px;">✅ <b>Favoritos Ilimitados</b></div>
+                <div style="margin-bottom: 10px; font-size: 13px;">✅ <b>Alertas de Precio instantáneas</b></div>
+                <div style="margin-bottom: 10px; font-size: 13px;">✅ <b>Asistente IA para carritos inteligentes</b></div>
+                <div style="font-size: 13px;">✅ <b>Exportar lista de compra en 1-Click</b></div>
             </div>
 
-            <div style="margin-bottom: 25px;">
-                <div class="pro-feature-item"><span>🚀</span> <b>Favoritos Ilimitados</b></div>
-                <div class="pro-feature-item"><span>🔔</span> <b>Alertas de Precio Personalizadas</b></div>
-                <div class="pro-feature-item"><span>🤖</span> <b>Asistente IA de Carrito Optimizador</b></div>
-                <div class="pro-feature-item"><span>📋</span> <b>Lista de Super Interactiva</b></div>
-            </div>
-
-            <div style="display: flex; gap: 15px; margin-bottom: 25px;">
-                <div class="plan-card active" style="position: relative;">
-                    <div class="badge-promo">RECOMENDADO</div>
-                    <div style="font-size: 12px; font-weight: 700; opacity: 0.6;">PLAN ANUAL</div>
-                    <div style="font-size: 24px; font-weight: 900;">$18.000</div>
-                    <div style="font-size: 11px; color: #00c853;">Pago único (Bonificado)</div>
+            <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                <div style="flex:1; padding: 15px; border: 2px solid #00c853; border-radius: 15px; background: rgba(0,200,83,0.05); position: relative;">
+                    <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #00c853; color: white !important; padding: 2px 10px; border-radius: 10px; font-size: 9px; font-weight: 800;">RECOMENDADO</div>
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.7;">ANUAL</div>
+                    <div style="font-size: 22px; font-weight: 900;">$18.000</div>
+                    <div style="font-size: 10px; color: #00c853;">$1.500 /mes</div>
                 </div>
-                <div class="plan-card">
-                    <div style="font-size: 12px; font-weight: 700; opacity: 0.6;">MENSUAL</div>
-                    <div style="font-size: 24px; font-weight: 900;">$2.500</div>
-                    <div style="font-size: 11px;">Cancela cuando quieras</div>
+                <div style="flex:1; padding: 15px; border: 1px solid var(--border); border-radius: 15px;">
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.7;">MENSUAL</div>
+                    <div style="font-size: 22px; font-weight: 900;">$2.500</div>
+                    <div style="font-size: 10px;">Cancela siempre</div>
                 </div>
             </div>
 
-            <button class="btn-pro-action" onclick="goToCheckout()">
-                OBTENER ACCESO PRO
+            <button onclick="window.open('TU_LINK_DE_PAGO', '_blank')" 
+                style="width: 100%; padding: 18px; background: #00c853; color: white !important; border: none; border-radius: 15px; font-weight: 800; font-size: 16px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,200,83,0.3);">
+                SER PRO AHORA
             </button>
             
-            <p onclick="closeAuth()" style="text-align:center; margin-top:15px; font-size:12px; opacity:0.6; cursor:pointer;">
-                Seguir con versión limitada
-            </p>
+            <p onclick="location.reload()" style="margin-top: 15px; font-size: 12px; opacity: 0.6; cursor: pointer;">Volver atrás</p>
         </div>
     `;
-
-    // Buscamos un contenedor limpio para la landing
-    let container = document.getElementById('proLandingArea');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'proLandingArea';
-        modalContent.appendChild(container);
-    }
-    
-    container.innerHTML = proHTML;
-    container.style.display = 'block';
-    modal.style.display = 'flex';
 }      
        
   function renderAds() {
