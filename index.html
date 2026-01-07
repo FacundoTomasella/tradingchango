@@ -1472,19 +1472,19 @@ function openAuth() {
 
     if (currentUser) {
         showAuthStep('profile');
-        // Rellenar datos del perfil
-        const nombre = userProfile?.nombre || "Usuario";
-        const apellido = userProfile?.apellido || "";
-        document.getElementById('profileName').innerText = `${nombre} ${apellido}`;
+        // Rellenar campos del HTML
+        document.getElementById('profileName').innerText = currentProfile ? (currentProfile.nombre + " " + currentProfile.apellido) : "Usuario";
         document.getElementById('profileEmail').innerText = currentUser.email;
-        document.getElementById('profileSub').innerText = userProfile?.subscription || 'FREE';
-        if(userProfile?.created_at) {
-            document.getElementById('profileDate').innerText = new Date(userProfile.created_at).toLocaleDateString();
+        document.getElementById('profileSub').innerText = currentProfile?.subscription || 'FREE';
+        
+        if(currentProfile?.created_at) {
+            document.getElementById('profileDate').innerText = new Date(currentProfile.created_at).toLocaleDateString();
         }
     } else {
         showAuthStep('welcome');
     }
 }
+
 
 function closeAuth() {
     document.getElementById('authModal').style.display = 'none';
@@ -1502,28 +1502,44 @@ async function handleAuthSubmit(e) {
     const password = document.getElementById('authPass').value;
 
     if (isSignUpMode) {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) { alert(error.message); return; }
+        // Registro
+        const { data, error } = await supabaseAuth.auth.signUp({ email, password });
+        
+        if (error) { 
+            alert("Error: " + error.message); 
+            return; 
+        }
         
         if (data.user) {
-            const nombre = document.getElementById('regNombre').value;
-            const apellido = document.getElementById('regApellido').value;
-            const fecha = document.getElementById('regFecha').value;
-
-            const { error: pErr } = await supabase.from('perfiles').insert([{
-                id: data.user.id, email, nombre, apellido, fecha_nacimiento: fecha, subscription: 'free'
+            // INSERTAR EN LA TABLA PERFILES
+            const { error: pErr } = await supabaseAuth.from('perfiles').insert([{
+                id: data.user.id, 
+                email: email, 
+                nombre: document.getElementById('regNombre').value, 
+                apellido: document.getElementById('regApellido').value, 
+                fecha_nacimiento: document.getElementById('regFecha').value, 
+                subscription: 'free'
             }]);
             
-            if (pErr) console.error(pErr);
-            alert("¡Cuenta creada! Ya podés iniciar sesión.");
-            showAuthForm('login');
+            if (pErr) {
+                console.error(pErr);
+                alert("Usuario creado, pero hubo un error en los datos del perfil.");
+            } else {
+                alert("¡Cuenta creada! Revisa tu email o intenta ingresar.");
+                showAuthForm('login');
+            }
         }
     } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) alert(error.message);
-        else location.reload();
+        // Login
+        const { error } = await supabaseAuth.auth.signInWithPassword({ email, password });
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            location.reload(); // Esto recarga la web y activa la sesión
+        }
     }
 }
+
 
 async function handleSignOut() {
     await supabase.auth.signOut();
@@ -1615,14 +1631,18 @@ function toggleFav(id, btn) {
       }
       
       async function loadProfile() {
-        const { data } = await supabaseAuth
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
-      
+    // Cambié 'profiles' por 'perfiles' y 'supabase' por 'supabaseAuth'
+    const { data, error } = await supabaseAuth
+      .from('perfiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+  
+    if (!error) {
         currentProfile = data;
-      }
+    }
+}
+
 
 
      
