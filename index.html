@@ -781,14 +781,10 @@
    <script>
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
-    const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const _API = "https://api-tradingchango.facu-tomasella.workers.dev";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     
-    let currentUser = null;
-    let userProfile = null;
-    let isSignUpMode = true;
-
 
     // 1. Reemplazá tu línea de declaración por estas:
 let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
