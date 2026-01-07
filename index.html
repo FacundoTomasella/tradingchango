@@ -1572,19 +1572,17 @@ function getFavLimit() {
        
 // 3. ACTUALIZAR FAVORITOS PARA QUE ABRA ESTA VENTANA
 function toggleFav(id, btn) {
-    // Si no está logueado, abrimos el modal de una, sin alert()
-    if (!currentUser) {
-        openAuth(); 
-        return;
-    }
+    if (!currentUser) { openAuth(); return; }
 
     const isAlreadyFav = !!favorites[id];
     const count = Object.keys(favorites).length;
-    const isPremium = currentProfile?.subscription === 'premium' || currentProfile?.subscription === 'pro';
+    
+    // Verificamos si el usuario es PRO
+    const isPro = currentProfile?.subscription === 'pro';
 
-    // Límite de 5 solo para no-premium
-    if (!isPremium && !isAlreadyFav && count >= 5) {
-        alert("Límite de 5 productos alcanzado. ¡Pásate a Premium!");
+    // Si no es PRO y llegó al límite, mostramos la Landing en lugar de un alert
+    if (!isPro && !isAlreadyFav && count >= 5) {
+        openProModal(); 
         return;
     }
 
@@ -1596,8 +1594,7 @@ function toggleFav(id, btn) {
     
     if (currentTab === 'favs') renderView();
     else if (btn) btn.classList.toggle('active', !!favorites[id]);
-}      
-       
+}       
     function updateUserIcon(logged) {
     const btn = document.getElementById('userBtn');
     btn.style.color = logged ? 'var(--color-good)' : 'var(--text-main)';
@@ -1605,46 +1602,72 @@ function toggleFav(id, btn) {
 
 
     function openProModal() {
-    const modal = document.getElementById('authModal'); // Usamos el mismo contenedor de modal
-    showAuthStep('none'); // Ocultamos lo demás
+    const modal = document.getElementById('authModal');
+    const content = document.getElementById('authModalContent'); // Asegúrate de tener este ID en tu HTML
     
+    // Si no tienes authModalContent, usa el contenedor donde están los formularios
+    const container = document.getElementById('authFormArea').parentElement; 
+
+    // Ocultamos las secciones de login/perfil
+    document.getElementById('authWelcomeArea').style.display = 'none';
+    document.getElementById('authFormArea').style.display = 'none';
+    document.getElementById('profileArea').style.display = 'none';
+
     const proHTML = `
-        <div style="text-align: center; padding: 20px;">
-            <h1 style="font-weight: 800; color: var(--accent);">HOLA, PRO TRADER 🚀</h1>
-            <p style="font-size: 16px; margin-bottom: 25px;">Ahorrá miles de pesos optimizando tus compras con inteligencia.</p>
-            
-            <div style="text-align: left; background: var(--bg-card); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--accent);">
-                <ul style="list-style: none; padding: 0; font-size: 14px; line-height: 2;">
-                    <li>✅ <b>Favoritos Ilimitados:</b> Armá tu chango sin restricciones.</li>
-                    <li>✅ <b>Alertas Inteligentes:</b> Te avisamos cuando tu producto baja en Coto, Carrefour o el que elijas.</li>
-                    <li>✅ <b>Exportar Compra:</b> Tu lista lista para pedir en un click.</li>
-                    <li>✅ <b>Asistente IA:</b> Te armamos el carrito ideal (ej: "Arroz 1kg") buscando el precio más bajo real.</li>
-                    <li>✅ <b>Lista de Super:</b> Tachá productos mientras comprás en el local.</li>
-                </ul>
-            </div>
+        <div class="pro-landing" style="text-align: center; padding: 10px;">
+            <div style="font-size: 50px; margin-bottom: 10px;">🚀</div>
+            <h2 style="font-weight: 900; color: var(--accent); font-size: 24px; margin-bottom: 10px;">PASATE A PRO</h2>
+            <p style="font-size: 15px; color: var(--text-main); margin-bottom: 20px; font-weight: 600;">
+                Dejá de perder plata. Maximizá tu ahorro con herramientas inteligentes.
+            </p>
 
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <div class="plan-card" onclick="selectPlan('anual')" style="flex:1; padding: 15px; border: 2px solid var(--accent); border-radius: 12px; cursor: pointer;">
-                    <span style="font-size: 11px; font-weight: 800;">ANUAL</span><br>
-                    <span style="font-size: 20px; font-weight: 800;">$ 1.500</span><small>/mes</small>
-                    <div style="background: var(--accent); color: white; font-size: 9px; padding: 2px; border-radius: 5px; margin-top: 5px;">AHORRÁ 40%</div>
+            <div style="text-align: left; background: var(--bg-card); padding: 15px; border-radius: 15px; border: 1px solid var(--accent); margin-bottom: 20px;">
+                <div style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;">
+                    <span>✅</span> <span><b>Favoritos Ilimitados:</b> Armá el chango completo sin límites.</span>
                 </div>
-                <div class="plan-card" onclick="selectPlan('mensual')" style="flex:1; padding: 15px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer;">
-                    <span style="font-size: 11px; font-weight: 800;">MENSUAL</span><br>
-                    <span style="font-size: 20px; font-weight: 800;">$ 2.500</span><small>/mes</small>
+                <div style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;">
+                    <span>✅</span> <span><b>Alertas de Precio:</b> Avisos al celular si un producto baja en tu súper favorito.</span>
+                </div>
+                <div style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;">
+                    <span>✅</span> <span><b>Carrito Inteligente IA:</b> Armamos tu lista ideal (ej. "Arroz 1kg") con 1 click.</span>
+                </div>
+                <div style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;">
+                    <span>✅</span> <span><b>Exportar Compra:</b> Tu lista lista para pedir online o presencial.</span>
                 </div>
             </div>
 
-            <button onclick="subscribePro()" style="width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: 800; cursor: pointer;">
-                MEJORAR MI CUENTA AHORA
+            <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                <div class="plan-card" style="flex: 1; padding: 15px; border: 2px solid var(--accent); border-radius: 12px; position: relative; background: rgba(0,200,83,0.05);">
+                    <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 800;">RECOMENDADO</div>
+                    <span style="font-size: 12px; font-weight: 800; opacity: 0.7;">ANUAL</span>
+                    <div style="font-size: 22px; font-weight: 900;">$18.000</div>
+                    <span style="font-size: 11px; opacity: 0.8;">($1.500 x mes)</span>
+                </div>
+                <div class="plan-card" style="flex: 1; padding: 15px; border: 1px solid var(--border); border-radius: 12px;">
+                    <span style="font-size: 12px; font-weight: 800; opacity: 0.7;">MENSUAL</span>
+                    <div style="font-size: 22px; font-weight: 900;">$2.500</div>
+                    <span style="font-size: 11px; opacity: 0.8;">Sin permanencia</span>
+                </div>
+            </div>
+
+            <button onclick="window.open('TU_LINK_DE_PAGO', '_blank')" style="width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,200,83,0.3);">
+                SER PRO AHORA
             </button>
-            <p onclick="closeAuth()" style="margin-top: 15px; font-size: 12px; color: var(--text-muted); cursor: pointer;">Seguir como usuario gratuito</p>
+            
+            <p onclick="closeAuth()" style="margin-top: 15px; font-size: 13px; color: var(--text-muted); cursor: pointer;">Seguir como usuario gratuito</p>
         </div>
     `;
+
+    // Insertar el contenido. Si no tienes un contenedor de ID específico, 
+    // puedes crear uno dentro de tu modal en el HTML original.
+    const target = document.getElementById('authWelcomeArea').parentElement;
     
-    document.getElementById('authModalContent').innerHTML = proHTML;
+    // Guardamos el contenido original para poder volver si el usuario cierra la landing
+    if (!window.originalAuthContent) window.originalAuthContent = target.innerHTML;
+    
+    target.innerHTML = proHTML;
     modal.style.display = 'flex';
-}            
+}         
        
   function renderAds() {
     // Definimos los slots
