@@ -788,6 +788,7 @@
     );
     
     let currentUser = null;
+    let userProfile = null;   
     let currentProfile = null;
 
 
@@ -1498,8 +1499,7 @@ function closeAuthOutside(e) {
 // 2. ENVIAR FORMULARIO (Auth + Tabla Perfiles)
 async function handleAuthSubmit(e) {
     e.preventDefault();
-    console.log("🟢 Iniciando proceso de registro/login...");
-
+    
     const email = document.getElementById('authEmail').value;
     const password = document.getElementById('authPass').value;
     const btn = document.getElementById('authBtnLabel');
@@ -1509,8 +1509,7 @@ async function handleAuthSubmit(e) {
 
     try {
         if (isSignUpMode) {
-            console.log("📝 Intentando crear usuario en Auth...");
-            // 1. Crear el usuario en el sistema de Autenticación
+            // 1. Crear usuario en el sistema de Autenticación
             const { data, error } = await supabase.auth.signUp({
                 email: email,
                 password: password
@@ -1519,44 +1518,35 @@ async function handleAuthSubmit(e) {
             if (error) throw error;
 
             if (data.user) {
-                console.log("✅ Usuario creado en Auth. Sincronizando con tabla perfiles...");
-                
-                // 2. Extraer los datos extra del formulario
+                // 2. Insertar datos en tu tabla 'perfiles'
                 const nombre = document.getElementById('regNombre').value;
                 const apellido = document.getElementById('regApellido').value;
                 const fecha = document.getElementById('regFecha').value;
 
-                // 3. Insertar en tu tabla pública 'perfiles'
                 const { error: profileError } = await supabase.from('perfiles').insert([
                     { 
-                        id: data.user.id, // Vinculamos con el ID de Auth
+                        id: data.user.id, // El ID debe ser el mismo que el de Auth
                         nombre: nombre, 
                         apellido: apellido, 
-                        email: email,
                         fecha_nacimiento: fecha,
-                        subscription: 'free'
+                        email: email,
+                        subscription: 'free' 
                     }
                 ]);
 
-                if (profileError) {
-                    console.error("❌ Error al sincronizar perfil:", profileError.message);
-                    alert("Cuenta creada, pero hubo un problema con tus datos de perfil.");
-                } else {
-                    console.log("🚀 Sincronización exitosa.");
-                    alert("¡Cuenta creada! Revisá tu email para confirmar el registro.");
-                }
+                if (profileError) throw profileError;
+
+                alert("✅ ¡Cuenta creada! Revisa tu email para confirmar.");
                 location.reload();
             }
         } else {
             // LOGIN NORMAL
-            console.log("🔑 Intentando iniciar sesión...");
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
             location.reload();
         }
     } catch (err) {
-        console.error("❌ Error fatal:", err.message);
-        alert(err.message);
+        alert("❌ Error: " + err.message);
     } finally {
         btn.innerText = isSignUpMode ? "REGISTRARME" : "INGRESAR";
         btn.disabled = false;
