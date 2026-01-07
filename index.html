@@ -782,13 +782,10 @@
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const supabaseAuth = supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
-    
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     let currentUser = null;
-    let currentProfile = null;
+    let userProfile = null; // Unificamos el nombre a userProfile para que coincida con tus funciones
 
 
     // 1. Reemplazá tu línea de declaración por estas:
@@ -1502,26 +1499,46 @@ async function handleAuthSubmit(e) {
     const password = document.getElementById('authPass').value;
 
     if (isSignUpMode) {
+        // 1. Registro en Auth
         const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) { alert(error.message); return; }
+        
+        if (error) { 
+            alert("Error al registrar: " + error.message); 
+            return; 
+        }
         
         if (data.user) {
             const nombre = document.getElementById('regNombre').value;
             const apellido = document.getElementById('regApellido').value;
             const fecha = document.getElementById('regFecha').value;
 
+            // 2. Insertar en la tabla pública 'perfiles'
             const { error: pErr } = await supabase.from('perfiles').insert([{
-                id: data.user.id, email, nombre, apellido, fecha_nacimiento: fecha, subscription: 'free'
+                id: data.user.id, 
+                email: email, 
+                nombre: nombre, 
+                apellido: apellido, 
+                fecha_nacimiento: fecha, 
+                subscription: 'free'
             }]);
             
-            if (pErr) console.error(pErr);
-            alert("¡Cuenta creada! Ya podés iniciar sesión.");
-            showAuthForm('login');
+            if (pErr) {
+                console.error("Error en tabla perfiles:", pErr);
+                alert("Usuario creado pero hubo un error en el perfil.");
+            } else {
+                alert("¡Cuenta creada! Revisa tu email para confirmar (si tienes activada la confirmación).");
+                showAuthForm('login');
+            }
         }
     } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) alert(error.message);
-        else location.reload();
+        // Inicio de Sesión
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            // Recargamos para que init() detecte la nueva sesión
+            location.reload();
+        }
     }
 }
 
@@ -1603,26 +1620,30 @@ function toggleFav(id, btn) {
     // Iniciar la app
     init();
         async function loadSession() {
-        const { data } = await supabaseAuth.auth.getSession();
+        const { data } = await supabase.auth.getSession(); // Cambiado a 'supabase'
         currentUser = data.session?.user || null;
       
         if (currentUser) {
-          await loadProfile();
-          updateUserIcon(true);
+            await loadProfile();
+            updateUserIcon(true);
         } else {
-          updateUserIcon(false);
+            updateUserIcon(false);
         }
-      }
+    }
+    
+    async function loadProfile() {
+        const { data, error } = await supabase
+            .from('perfiles') // Asegúrate que se llama 'perfiles' y no 'profiles'
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
       
-      async function loadProfile() {
-        const { data } = await supabaseAuth
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
-      
-        currentProfile = data;
-      }
+        if (error) {
+            console.error("Error cargando perfil:", error);
+        } else {
+            userProfile = data; // Guardamos los datos (nombre, suscripción, etc)
+        }
+    }
 
 
      
