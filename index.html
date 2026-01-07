@@ -787,7 +787,7 @@
     
     let currentUser = null;
     let userProfile = null;
-    let isSignUpMode = null;
+    let isSignUpMode = true;
 
 
     // 1. Reemplazá tu línea de declaración por estas:
@@ -1548,11 +1548,6 @@ async function handleAuthSubmit(e) {
         alert("Error: " + err.message);
         btn.innerText = "REGISTRARME";
     }
-}
-
-async function handleSignOut() {
-    await supabase.auth.signOut();
-    location.reload();
 }
 
 function getFavLimit() {
