@@ -782,10 +782,13 @@
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    const supabaseAuth = supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+    
     let currentUser = null;
-    let userProfile = null; // Unificamos el nombre a userProfile para que coincida con tus funciones
+    let currentProfile = null;
 
 
     // 1. Reemplazá tu línea de declaración por estas:
@@ -1469,11 +1472,12 @@ function openAuth() {
 
     if (currentUser) {
         showAuthStep('profile');
-        // Rellenamos el HTML con la info de la DB
-        document.getElementById('profileName').innerText = userProfile ? `${userProfile.nombre} ${userProfile.apellido}` : "Usuario";
+        // Rellenar datos del perfil
+        const nombre = userProfile?.nombre || "Usuario";
+        const apellido = userProfile?.apellido || "";
+        document.getElementById('profileName').innerText = `${nombre} ${apellido}`;
         document.getElementById('profileEmail').innerText = currentUser.email;
         document.getElementById('profileSub').innerText = userProfile?.subscription || 'FREE';
-        
         if(userProfile?.created_at) {
             document.getElementById('profileDate').innerText = new Date(userProfile.created_at).toLocaleDateString();
         }
@@ -1493,48 +1497,31 @@ function closeAuthOutside(e) {
 
 // 2. ENVIAR FORMULARIO (Auth + Tabla Perfiles)
 async function handleAuthSubmit(e) {
-    e.preventDefault(); // Evita que la página se recargue
-    
+    e.preventDefault();
     const email = document.getElementById('authEmail').value;
     const password = document.getElementById('authPass').value;
-    const btn = e.target.querySelector('button');
-    const originalText = btn.innerText;
 
-    btn.innerText = "PROCESANDO...";
-    btn.disabled = true;
+    if (isSignUpMode) {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) { alert(error.message); return; }
+        
+        if (data.user) {
+            const nombre = document.getElementById('regNombre').value;
+            const apellido = document.getElementById('regApellido').value;
+            const fecha = document.getElementById('regFecha').value;
 
-    try {
-        if (isSignUpMode) {
-            // REGISTRO
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) throw error;
-
-            if (data.user) {
-                // Guardar datos extra en la tabla 'perfiles'
-                const { error: pErr } = await supabase.from('perfiles').insert([{
-                    id: data.user.id,
-                    email: email,
-                    nombre: document.getElementById('regNombre').value,
-                    apellido: document.getElementById('regApellido').value,
-                    fecha_nacimiento: document.getElementById('regFecha').value,
-                    subscription: 'free'
-                }]);
-                if (pErr) throw pErr;
-                
-                alert("¡Registro exitoso! Ya puedes ingresar.");
-                showAuthForm('login');
-            }
-        } else {
-            // LOGIN
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-            location.reload(); // Recarga para activar la sesión
+            const { error: pErr } = await supabase.from('perfiles').insert([{
+                id: data.user.id, email, nombre, apellido, fecha_nacimiento: fecha, subscription: 'free'
+            }]);
+            
+            if (pErr) console.error(pErr);
+            alert("¡Cuenta creada! Ya podés iniciar sesión.");
+            showAuthForm('login');
         }
-    } catch (err) {
-        alert("Error: " + err.message);
-    } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
+    } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else location.reload();
     }
 }
 
@@ -1616,27 +1603,26 @@ function toggleFav(id, btn) {
     // Iniciar la app
     init();
         async function loadSession() {
-        const { data } = await supabase.auth.getSession(); // Cambiado a 'supabase'
+        const { data } = await supabaseAuth.auth.getSession();
         currentUser = data.session?.user || null;
       
         if (currentUser) {
-            await loadProfile();
-            updateUserIcon(true);
+          await loadProfile();
+          updateUserIcon(true);
         } else {
-            updateUserIcon(false);
+          updateUserIcon(false);
         }
-    }
-    
-    async function loadProfile() {
-    if (!currentUser) return;
-    const { data, error } = await supabase
-        .from('perfiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
-    
-    if (!error) userProfile = data;
-}
+      }
+      
+      async function loadProfile() {
+        const { data } = await supabaseAuth
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+      
+        currentProfile = data;
+      }
 
 
      
