@@ -1444,92 +1444,51 @@ function trackMarketClick(superName, productName) {
     });
   }
 }
-let isSignUpMode = false;
-
-// 1. CONTROL DE VISTAS DENTRO DEL MODAL
-function showAuthStep(step) {
-    const welcome = document.getElementById('authWelcomeArea');
-    const form = document.getElementById('authFormArea');
-    const profile = document.getElementById('profileArea');
-
-    welcome.style.display = (step === 'welcome') ? 'block' : 'none';
-    form.style.display = (step === 'form') ? 'block' : 'none';
-    profile.style.display = (step === 'profile') ? 'block' : 'none';
-}
+// Variable global (asegurate de tenerla solo una vez)
+let isSignUpMode = false; 
 
 function showAuthForm(mode) {
+    console.log("Cambiando a modo:", mode);
     isSignUpMode = (mode === 'register');
-    showAuthStep('form');
+    
+    document.getElementById('authWelcomeArea').style.display = 'none';
+    document.getElementById('authFormArea').style.display = 'block';
     
     document.getElementById('authTitle').innerText = isSignUpMode ? "Crear Cuenta" : "Iniciar Sesión";
     document.getElementById('authBtnLabel').innerText = isSignUpMode ? "REGISTRARME" : "INGRESAR";
     document.getElementById('registerFields').style.display = isSignUpMode ? "block" : "none";
 }
 
-function openAuth() {
-    document.getElementById('authModal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-
-    if (currentUser) {
-        showAuthStep('profile');
-        // Rellenar datos del perfil
-        const nombre = userProfile?.nombre || "Usuario";
-        const apellido = userProfile?.apellido || "";
-        document.getElementById('profileName').innerText = `${nombre} ${apellido}`;
-        document.getElementById('profileEmail').innerText = currentUser.email;
-        document.getElementById('profileSub').innerText = userProfile?.subscription || 'FREE';
-        if(userProfile?.created_at) {
-            document.getElementById('profileDate').innerText = new Date(userProfile.created_at).toLocaleDateString();
-        }
-    } else {
-        showAuthStep('welcome');
-    }
-}
-
-function closeAuth() {
-    document.getElementById('authModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
-}
-
-function closeAuthOutside(e) {
-    if (e.target.id === "authModal") closeAuth();
-}
-
-// 2. ENVIAR FORMULARIO (Auth + Tabla Perfiles)
 async function handleAuthSubmit(e) {
-    e.preventDefault();
+    e.preventDefault(); // EVITA QUE LA PÁGINA SE RECARGUE
+    console.log("Intentando autenticación...");
+
     const email = document.getElementById('authEmail').value;
     const password = document.getElementById('authPass').value;
 
     if (isSignUpMode) {
+        console.log("Registrando a:", email);
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) { alert(error.message); return; }
         
-        if (data.user) {
-            const nombre = document.getElementById('regNombre').value;
-            const apellido = document.getElementById('regApellido').value;
-            const fecha = document.getElementById('regFecha').value;
-
-            const { error: pErr } = await supabase.from('perfiles').insert([{
-                id: data.user.id, email, nombre, apellido, fecha_nacimiento: fecha, subscription: 'free'
-            }]);
-            
-            if (pErr) console.error(pErr);
-            alert("¡Cuenta creada! Ya podés iniciar sesión.");
-            showAuthForm('login');
-        }
+        // Crear perfil en tabla 'perfiles'
+        const nombre = document.getElementById('regNombre').value;
+        const apellido = document.getElementById('regApellido').value;
+        await supabase.from('perfiles').insert([{ 
+            id: data.user.id, 
+            nombre, 
+            apellido, 
+            email, 
+            subscription: 'free' 
+        }]);
+        alert("¡Cuenta creada! Revisá tu mail.");
     } else {
+        console.log("Iniciando sesión con:", email);
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) alert(error.message);
         else location.reload();
-    }
+    
 }
-
-async function handleSignOut() {
-    await supabase.auth.signOut();
-    location.reload();
-}
-
 function getFavLimit() {
   if (!currentUser) return 0; // no logueado
   if (currentProfile?.plan === 'premium') return Infinity;
