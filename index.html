@@ -1555,28 +1555,41 @@ function getFavLimit() {
 function toggleFav(id, btn) {
     const isAlreadyFav = !!favorites[id];
 
+    // 1. RESTRICCIÓN: Si no está logueado, 0 favoritos
     if (!currentUser) {
-        // En lugar de alert, abrimos la ventana de bienvenida directamente
-        openAuth();
+        alert("Debes iniciar sesión para agregar productos a tu chango.");
+        openAuth(); // Abre el modal de login/registro
         return;
     }
 
+    // 2. OBTENER ESTADO DEL USUARIO
     const count = Object.keys(favorites).length;
-    const isPro = userProfile?.subscription === 'pro';
+    // Verificamos si es premium (asumiendo que en tu tabla 'perfiles' la columna es 'subscription')
+    const isPremium = currentProfile?.subscription === 'premium' || currentProfile?.subscription === 'pro';
 
-    if (!isPro && !isAlreadyFav && count >= 5) {
-        // Si llegó al límite, abrimos el perfil para que vea que es FREE
-        openAuth();
+    // 3. RESTRICCIÓN: Máximo 5 para cuentas gratuitas
+    if (!isPremium && !isAlreadyFav && count >= 5) {
+        alert("Has alcanzado el límite de 5 productos en tu cuenta gratuita. ¡Pásate a Premium para agregar ilimitados!");
+        // Opcional: openAuth() para que vea su perfil o botones de pago
         return;
     }
 
-    if (isAlreadyFav) delete favorites[id];
-    else favorites[id] = 1;
+    // 4. EJECUTAR ACCIÓN
+    if (isAlreadyFav) {
+        delete favorites[id];
+    } else {
+        favorites[id] = 1;
+    }
 
+    // 5. GUARDAR Y ACTUALIZAR VISTA
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
-    if (currentTab === 'favs') renderView();
-    else if (btn) btn.classList.toggle('active', !!favorites[id]);
+    
+    if (currentTab === 'favs') {
+        renderView();
+    } else if (btn) {
+        btn.classList.toggle('active', !!favorites[id]);
+    }
 }
        function updateUserIcon(logged) {
   const btn = document.getElementById('userBtn');
@@ -1630,18 +1643,19 @@ function toggleFav(id, btn) {
       }
       
       async function loadProfile() {
-    // Cambié 'profiles' por 'perfiles' y 'supabase' por 'supabaseAuth'
+    if (!currentUser) return;
+    
     const { data, error } = await supabaseAuth
       .from('perfiles')
       .select('*')
       .eq('id', currentUser.id)
       .single();
   
-    if (!error) {
-        currentProfile = data;
+    if (!error && data) {
+        currentProfile = data; 
+        console.log("Perfil cargado:", currentProfile);
     }
 }
-
 
 
      
