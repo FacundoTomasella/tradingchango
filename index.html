@@ -1510,26 +1510,29 @@ async function handleAuthSubmit(e) {
             return; 
         }
         
-        if (data.user) {
-            // INSERTAR EN LA TABLA PERFILES
-            const { error: pErr } = await supabaseAuth.from('perfiles').insert([{
-                id: data.user.id, 
-                email: email, 
-                nombre: document.getElementById('regNombre').value, 
-                apellido: document.getElementById('regApellido').value, 
-                fecha_nacimiento: document.getElementById('regFecha').value, 
-                subscription: 'free'
-            }]);
-            
-            if (pErr) {
-                console.error(pErr);
-                alert("Usuario creado, pero hubo un error en los datos del perfil.");
-            } else {
-                alert("¡Cuenta creada! Revisa tu email o intenta ingresar.");
-                showAuthForm('login');
-            }
-        }
+        // Dentro de handleAuthSubmit, en la parte de registro:
+if (data.user) {
+    // Agregamos un pequeño retraso o usamos directamente el ID del objeto 'data'
+    const userId = data.user.id; 
+
+    const { error: pErr } = await supabaseAuth.from('perfiles').insert([{
+        id: userId, // Asegúrate de que este ID no sea null
+        email: email,
+        nombre: document.getElementById('regNombre').value,
+        apellido: document.getElementById('regApellido').value,
+        fecha_nacimiento: document.getElementById('regFecha').value,
+        subscription: 'free'
+    }]);
+
+    if (pErr) {
+        console.log("Error detallado:", pErr); // Esto te mostrará el error en la consola
+        alert("Error en perfil: " + pErr.message);
     } else {
+        alert("¡Cuenta creada exitosamente!");
+        showAuthForm('login');
+    }
+}
+     else {
         // Login
         const { error } = await supabaseAuth.auth.signInWithPassword({ email, password });
         if (error) {
