@@ -1498,30 +1498,68 @@ function closeAuthOutside(e) {
 // 2. ENVIAR FORMULARIO (Auth + Tabla Perfiles)
 async function handleAuthSubmit(e) {
     e.preventDefault();
+    console.log("🟢 Iniciando proceso de registro/login...");
+
     const email = document.getElementById('authEmail').value;
     const password = document.getElementById('authPass').value;
+    const btn = document.getElementById('authBtnLabel');
+    
+    btn.innerText = "PROCESANDO...";
+    btn.disabled = true;
 
-    if (isSignUpMode) {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) { alert(error.message); return; }
-        
-        if (data.user) {
-            const nombre = document.getElementById('regNombre').value;
-            const apellido = document.getElementById('regApellido').value;
-            const fecha = document.getElementById('regFecha').value;
+    try {
+        if (isSignUpMode) {
+            console.log("📝 Intentando crear usuario en Auth...");
+            // 1. Crear el usuario en el sistema de Autenticación
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: password
+            });
 
-            const { error: pErr } = await supabase.from('perfiles').insert([{
-                id: data.user.id, email, nombre, apellido, fecha_nacimiento: fecha, subscription: 'free'
-            }]);
-            
-            if (pErr) console.error(pErr);
-            alert("¡Cuenta creada! Ya podés iniciar sesión.");
-            showAuthForm('login');
+            if (error) throw error;
+
+            if (data.user) {
+                console.log("✅ Usuario creado en Auth. Sincronizando con tabla perfiles...");
+                
+                // 2. Extraer los datos extra del formulario
+                const nombre = document.getElementById('regNombre').value;
+                const apellido = document.getElementById('regApellido').value;
+                const fecha = document.getElementById('regFecha').value;
+
+                // 3. Insertar en tu tabla pública 'perfiles'
+                const { error: profileError } = await supabase.from('perfiles').insert([
+                    { 
+                        id: data.user.id, // Vinculamos con el ID de Auth
+                        nombre: nombre, 
+                        apellido: apellido, 
+                        email: email,
+                        fecha_nacimiento: fecha,
+                        subscription: 'free'
+                    }
+                ]);
+
+                if (profileError) {
+                    console.error("❌ Error al sincronizar perfil:", profileError.message);
+                    alert("Cuenta creada, pero hubo un problema con tus datos de perfil.");
+                } else {
+                    console.log("🚀 Sincronización exitosa.");
+                    alert("¡Cuenta creada! Revisá tu email para confirmar el registro.");
+                }
+                location.reload();
+            }
+        } else {
+            // LOGIN NORMAL
+            console.log("🔑 Intentando iniciar sesión...");
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            location.reload();
         }
-    } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) alert(error.message);
-        else location.reload();
+    } catch (err) {
+        console.error("❌ Error fatal:", err.message);
+        alert(err.message);
+    } finally {
+        btn.innerText = isSignUpMode ? "REGISTRARME" : "INGRESAR";
+        btn.disabled = false;
     }
 }
 
