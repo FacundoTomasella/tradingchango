@@ -781,10 +781,15 @@
    <script>
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
-    const _API = "https://api-tradingchango.facu-tomasella.workers.dev";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const supabaseAuth = supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
     
+    let currentUser = null;
+    let currentProfile = null;
+
 
     // 1. Reemplazá tu línea de declaración por estas:
 let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
@@ -1493,57 +1498,36 @@ function closeAuthOutside(e) {
 // 2. ENVIAR FORMULARIO (Auth + Tabla Perfiles)
 async function handleAuthSubmit(e) {
     e.preventDefault();
-    console.log("Iniciando proceso de registro...");
-
     const email = document.getElementById('authEmail').value;
     const password = document.getElementById('authPass').value;
-    const btn = document.getElementById('authBtnLabel');
-    btn.innerText = "PROCESANDO...";
 
-    try {
-        if (isSignUpMode) {
-            // 1. Crear el usuario en el sistema de Auth
-            const { data, error } = await supabase.auth.signUp({
-                email: email,
-                password: password
-            });
+    if (isSignUpMode) {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) { alert(error.message); return; }
+        
+        if (data.user) {
+            const nombre = document.getElementById('regNombre').value;
+            const apellido = document.getElementById('regApellido').value;
+            const fecha = document.getElementById('regFecha').value;
 
-            if (error) throw error;
-
-            if (data.user) {
-                console.log("Usuario creado en Auth ID:", data.user.id);
-
-                // 2. Insertar los datos en tu tabla 'perfiles'
-                const { error: profileError } = await supabase.from('perfiles').insert([
-                    { 
-                        id: data.user.id, // Sincronizamos el ID
-                        email: email,
-                        nombre: document.getElementById('regNombre').value,
-                        apellido: document.getElementById('regApellido').value,
-                        fecha_nacimiento: document.getElementById('regFecha').value,
-                        subscription: 'free'
-                    }
-                ]);
-
-                if (profileError) {
-                    console.error("Error al guardar en tabla perfiles:", profileError.message);
-                    alert("Usuario creado, pero hubo un error al guardar tus datos de perfil.");
-                } else {
-                    alert("✅ Registro exitoso. Revisá tu email para confirmar.");
-                    location.reload();
-                }
-            }
-        } else {
-            // Lógica de Login normal
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-            location.reload();
+            const { error: pErr } = await supabase.from('perfiles').insert([{
+                id: data.user.id, email, nombre, apellido, fecha_nacimiento: fecha, subscription: 'free'
+            }]);
+            
+            if (pErr) console.error(pErr);
+            alert("¡Cuenta creada! Ya podés iniciar sesión.");
+            showAuthForm('login');
         }
-    } catch (err) {
-        console.error("Error fatal:", err.message);
-        alert("Error: " + err.message);
-        btn.innerText = "REGISTRARME";
+    } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else location.reload();
     }
+}
+
+async function handleSignOut() {
+    await supabase.auth.signOut();
+    location.reload();
 }
 
 function getFavLimit() {
