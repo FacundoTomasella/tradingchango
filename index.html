@@ -810,10 +810,15 @@ if (Array.isArray(favorites)) {
     // Función para generar URLs limpias
     const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
-    async function init() {
-        try {
-            await loadSession();
-
+            async function init() {
+            try {
+                await loadSession();
+                // AGREGA ESTO AQUÍ: Si no hay usuario, ignoramos lo que haya en localStorage
+                if (!currentUser) {
+                    favorites = {};
+                    localStorage.removeItem('fav_tickers');
+                }
+            
             // 1. Cargar Configuración (Legales, etc)
             const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
             const configRows = await resC.json();
@@ -1541,10 +1546,24 @@ async function handleAuthSubmit(e) {
 } 
 
 async function handleSignOut() {
-    await supabase.auth.signOut();
-    location.reload();
+    try {
+        await supabaseAuth.auth.signOut();
+        // Limpiamos variables de estado
+        currentUser = null;
+        currentProfile = null;
+        favorites = {}; 
+        
+        // Limpiamos el almacenamiento del navegador
+        localStorage.removeItem('fav_tickers');
+        
+        // Redirigimos al inicio de forma limpia
+        window.location.href = '/'; 
+    } catch (err) {
+        console.error("Error al salir:", err);
+        location.reload();
+    }
 }
-
+       
 function getFavLimit() {
   if (!currentUser) return 0; // no logueado
   if (currentProfile?.plan === 'premium') return Infinity;
@@ -1553,48 +1572,36 @@ function getFavLimit() {
        
 // 3. ACTUALIZAR FAVORITOS PARA QUE ABRA ESTA VENTANA
 function toggleFav(id, btn) {
-    const isAlreadyFav = !!favorites[id];
-
-    // 1. RESTRICCIÓN: Si no está logueado, 0 favoritos
+    // Si no está logueado, abrimos el modal de una, sin alert()
     if (!currentUser) {
-        alert("Debes iniciar sesión para agregar productos a tu chango.");
-        openAuth(); // Abre el modal de login/registro
+        openAuth(); 
         return;
     }
 
-    // 2. OBTENER ESTADO DEL USUARIO
+    const isAlreadyFav = !!favorites[id];
     const count = Object.keys(favorites).length;
-    // Verificamos si es premium (asumiendo que en tu tabla 'perfiles' la columna es 'subscription')
     const isPremium = currentProfile?.subscription === 'premium' || currentProfile?.subscription === 'pro';
 
-    // 3. RESTRICCIÓN: Máximo 5 para cuentas gratuitas
+    // Límite de 5 solo para no-premium
     if (!isPremium && !isAlreadyFav && count >= 5) {
-        alert("Has alcanzado el límite de 5 productos en tu cuenta gratuita. ¡Pásate a Premium para agregar ilimitados!");
-        // Opcional: openAuth() para que vea su perfil o botones de pago
+        alert("Límite de 5 productos alcanzado. ¡Pásate a Premium!");
         return;
     }
 
-    // 4. EJECUTAR ACCIÓN
-    if (isAlreadyFav) {
-        delete favorites[id];
-    } else {
-        favorites[id] = 1;
-    }
+    if (isAlreadyFav) delete favorites[id];
+    else favorites[id] = 1;
 
-    // 5. GUARDAR Y ACTUALIZAR VISTA
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
     
-    if (currentTab === 'favs') {
-        renderView();
-    } else if (btn) {
-        btn.classList.toggle('active', !!favorites[id]);
+    if (currentTab === 'favs') renderView();
+    else if (btn) btn.classList.toggle('active', !!favorites[id]);
+}      
+       
+    function updateUserIcon(logged) {
+    const btn = document.getElementById('userBtn');
+    btn.style.color = logged ? 'var(--color-good)' : 'var(--text-main)';
     }
-}
-       function updateUserIcon(logged) {
-  const btn = document.getElementById('userBtn');
-  btn.style.color = logged ? 'var(--color-good)' : 'var(--text-main)';
-}
 
      
   function renderAds() {
