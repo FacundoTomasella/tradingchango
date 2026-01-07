@@ -1482,82 +1482,98 @@ function trackMarketClick(superName, productName) {
     });
   }
 }
-async function registerFree() {
-  const email = document.getElementById('authEmail').value;
-  const password = document.getElementById('authPassword').value;
+// --- FUNCIONES DE CIERRE ---
+function closeAuth() {
+    document.getElementById('authModal').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Habilitar scroll
+}
 
-  if (!email || !password) {
-    alert("Por favor, completá email y contraseña");
-    return;
-  }
+function closeAuthOutside(e) {
+    // Si el click es en el fondo oscuro y no en el cuadro blanco, cerrar
+    if (e.target.id === "authModal") closeAuth();
+}
 
-  // 1. Crear el usuario en la sección de Autenticación
-  const { data, error } = await supabaseAuth.auth.signUp({
-    email,
-    password
-  });
+// --- LÓGICA DE USUARIOS ---
+async function handleAuthState(session) {
+    const userBtn = document.getElementById('userBtn');
+    if (session) {
+        currentUser = session.user;
+        // Obtenemos los datos de la tabla 'perfiles' de Supabase
+        const { data, error } = await supabase.from('perfiles').select('*').eq('id', currentUser.id).single();
+        userProfile = data;
 
-  if (error) {
-    alert("Error de Auth: " + error.message);
-    return;
-  }
-
-  if (data.user) {
-    // 2. Insertar en tu tabla 'perfiles' con tus columnas exactas
-    const { error: dbError } = await supabaseAuth
-      .from('perfiles')
-      .insert([
-        { 
-          id: data.user.id, 
-          email: email, 
-          subscription: 'free', // Usamos 'subscription' como se llama en tu tabla
-          nombre: '',           // Se dejan vacíos para que el usuario los complete después
-          apellido: '' 
-        }
-      ]);
-
-    if (dbError) {
-      console.error("Error en tabla perfiles:", dbError);
-      alert("Usuario creado, pero hubo un error en la tabla perfiles: " + dbError.message);
+        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-user-check" style="color:var(--color-good)"></i>';
+        closeAuth();
     } else {
-      alert("¡Cuenta creada con éxito!");
-      closeAuthModal();
-      if (typeof loadSession === "function") await loadSession();
-    }
-  }
-}
-       
-async function openAuth() {
-  // SI NO HAY USUARIO: Abrimos el modal manual en lugar de Google
-  if (!currentUser) {
-    openAuthModal(); 
-  } 
-  // SI YA HAY USUARIO: Preguntamos si quiere cerrar sesión
-  else {
-    if (confirm("¿Cerrar sesión?")) {
-      const { error } = await supabaseAuth.auth.signOut();
-      if (!error) {
         currentUser = null;
-        currentProfile = null;
-        updateUserIcon(false);
-        // Opcional: recargar la página para limpiar estados
-        window.location.reload();
-      }
+        userProfile = null;
+        if (userBtn) userBtn.innerHTML = '<i class="fa-solid fa-circle-user"></i>';
     }
-  }
 }
 
-// Asegúrate de tener estas dos para el manejo visual:
-function openAuthModal() {
-  const modal = document.getElementById('authModal');
-  if (modal) modal.style.display = 'flex';
+async function handleAuthSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPass').value;
+
+    if (isSignUpMode) {
+        // 1. REGISTRO en Supabase Auth
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        
+        if (error) { alert("Error: " + error.message); return; }
+
+        if (data.user) {
+            // 2. INSERTAR en la tabla pública 'perfiles'
+            const nombre = document.getElementById('regNombre').value;
+            const apellido = document.getElementById('regApellido').value;
+            const fecha = document.getElementById('regFecha').value;
+
+            const { error: profileError } = await supabase.from('perfiles').insert([{
+                id: data.user.id,
+                email: email,
+                nombre: nombre,
+                apellido: apellido,
+                fecha_nacimiento: fecha,
+                subscription: 'free'
+            }]);
+
+            if (profileError) console.error("Error Perfil:", profileError);
+            alert("¡Cuenta creada! Revisa tu email para confirmar.");
+            location.reload();
+        }
+    } else {
+        // LOGIN
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert("Error: " + error.message);
+        else location.reload();
+    }
 }
 
-function closeAuthModal() {
-  const modal = document.getElementById('authModal');
-  if (modal) modal.style.display = 'none';
-}
+// --- VISTA DEL PERFIL ---
+function openAuth() {
+    const modal = document.getElementById('authModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Bloquear scroll de fondo
 
+    if (currentUser) {
+        document.getElementById('authFormArea').style.display = 'none';
+        document.getElementById('profileArea').style.display = 'block';
+        
+        // Cargar datos en la UI
+        const nombreCompleto = userProfile ? `${userProfile.nombre} ${userProfile.apellido}` : "Usuario";
+        document.getElementById('profileName').innerText = nombreCompleto;
+        document.getElementById('profileEmail').innerText = currentUser.email;
+        document.getElementById('profileSub').innerText = (userProfile?.subscription === 'pro') ? 'MASTER TRADER (PRO)' : 'TRADER JUNIOR (FREE)';
+        
+        if(userProfile?.created_at) {
+            const date = new Date(userProfile.created_at);
+            document.getElementById('profileDate').innerText = date.toLocaleDateString();
+        }
+    } else {
+        document.getElementById('authFormArea').style.display = 'block';
+        document.getElementById('profileArea').style.display = 'none';
+    }
+}
 function updateUserIcon(logged) {
   const btn = document.getElementById('userBtn');
   btn.style.color = logged ? 'var(--color-good)' : 'var(--text-main)';
@@ -1622,23 +1638,56 @@ function updateUserIcon(logged) {
 
      
 </script>
-<!-- Modal de Registro/Login -->
-<div id="authModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; backdrop-filter: blur(5px); align-items: center; justify-content: center;">
-    <div style="background: var(--bg-app); padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; position: relative;">
-        <button onclick="closeAuth()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; color: var(--text-main); cursor: pointer;">&times;</button>
-        <h2 id="authTitle" style="font-weight: 800; margin-bottom: 20px;">Crear Cuenta</h2>
+<!-- Modal de Autenticación / Perfil -->
+<div id="authModal" onclick="closeAuthOutside(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
+    <div id="authContainer" style="background: var(--bg-app); padding: 30px; border-radius: 24px; width: 100%; max-width: 400px; position: relative; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
         
-        <form onsubmit="handleSignUp(event)">
-            <div id="registerFields">
-                <input type="text" id="regName" placeholder="Nombre" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
-            </div>
-            <input type="email" id="regEmail" placeholder="Email" required style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
-            <input type="password" id="regPass" placeholder="Contraseña" required style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
-            <button type="submit" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 8px; font-weight: 800; cursor: pointer;">CONTINUAR</button>
-        </form>
-    </div>
-    
-</div>
+        <!-- Botón Cerrar -->
+        <button onclick="closeAuth()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; z-index: 10;">&times;</button>
 
+        <!-- VISTA A: REGISTRO / LOGIN -->
+        <div id="authFormArea">
+            <h2 id="authTitle" style="font-weight: 800; margin-bottom: 10px;">Crear Cuenta</h2>
+            <p id="authSubtitle" style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px;">Registrate gratis para tener un chango ilimitado.</p>
+            
+            <form onsubmit="handleAuthSubmit(event)">
+                <!-- Campos extra para Perfiles -->
+                <div id="registerFields">
+                    <input type="text" id="regNombre" placeholder="Nombre" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
+                    <input type="text" id="regApellido" placeholder="Apellido" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 600;">FECHA DE NACIMIENTO</label>
+                    <input type="date" id="regFecha" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
+                </div>
+
+                <input type="email" id="authEmail" placeholder="Email" required style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
+                <input type="password" id="authPass" placeholder="Contraseña" required style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
+                
+                <button type="submit" id="authBtnLabel" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800; cursor: pointer;">REGISTRARME</button>
+            </form>
+            
+            <p id="authSwitch" onclick="toggleAuthMode()" style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--color-good); cursor: pointer; font-weight: 600;">¿Ya tenés cuenta? Iniciá Sesión</p>
+        </div>
+
+        <!-- VISTA B: PERFIL DE USUARIO -->
+        <div id="profileArea" style="display: none; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+            <h2 id="profileName" style="font-weight: 800; margin-bottom: 5px;">Cargando...</h2>
+            <p id="profileEmail" style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;"></p>
+            
+            <div style="background: var(--bg-card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; text-align: left;">
+                <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 12px; color: var(--text-muted);">Suscripción:</span>
+                    <span id="profileSub" style="font-size: 12px; font-weight: 800; color: var(--color-good);">FREE</span>
+                </div>
+                <div style="display:flex; justify-content: space-between;">
+                    <span style="font-size: 12px; color: var(--text-muted);">Miembro desde:</span>
+                    <span id="profileDate" style="font-size: 12px; font-weight: 600;">-</span>
+                </div>
+            </div>
+
+            <button onclick="handleSignOut()" style="width: 100%; padding: 12px; background: transparent; color: var(--color-bad); border: 1px solid var(--color-bad); border-radius: 12px; font-weight: 800; cursor: pointer;">CERRAR SESIÓN</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
