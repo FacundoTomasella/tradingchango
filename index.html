@@ -513,6 +513,7 @@
     justify-content: space-between;
     height: 100%;
     color: var(--text-main);
+    min-height: 450px;
 }
 
 .pro-feature-item {
@@ -1683,10 +1684,8 @@ function toggleFav(id, btn) {
     const modal = document.getElementById('authModal');
     const container = document.getElementById('authContainer');
     
-    // 1. Ocultar las otras vistas
+    // 1. Ocultar el resto y preparar el contenedor
     showAuthStep('none'); 
-
-    // 2. Buscar o crear el área PRO
     let proArea = document.getElementById('proLandingArea');
     if (!proArea) {
         proArea = document.createElement('div');
@@ -1695,44 +1694,48 @@ function toggleFav(id, btn) {
     }
     proArea.style.display = 'block';
 
-    // 3. Diseño Premium (Ancho en escritorio, colores fijos en botones)
+    // 2. Ajuste de tamaño para escritorio
     if (window.innerWidth >= 1024) {
-        container.style.maxWidth = '650px';
+        container.style.maxWidth = '600px';
         container.style.padding = '40px';
     }
 
+    // 3. Inyectar el HTML usando TUS clases de CSS
     proArea.innerHTML = `
-        <div style="text-align: center; font-family: sans-serif; color: var(--text-main);">
-            <div style="font-size: 50px; margin-bottom: 10px;">💎</div>
-            <h1 style="font-weight: 900; color: #00c853; font-size: 32px; margin-bottom: 10px;">TRADINGCHANGO PRO</h1>
-            <p style="font-size: 16px; margin-bottom: 30px; opacity: 0.9;">Tomá el control total de tus ahorros con herramientas inteligentes.</p>
-            
-            <div style="text-align: left; background: var(--bg-card); padding: 25px; border-radius: 20px; border: 1px solid #00c853; margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div style="font-size: 14px;">✅ <b>Favoritos Ilimitados</b></div>
-                <div style="font-size: 14px;">✅ <b>Alertas de Precio Real</b></div>
-                <div style="font-size: 14px;">✅ <b>Asistente IA Optimizador</b></div>
-                <div style="font-size: 14px;">✅ <b>Exportar lista en 1-click</b></div>
+        <div class="pro-landing-container">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 50px; margin-bottom: 10px;">💎</div>
+                <h1 style="font-weight: 900; color: #00c853; font-size: 30px; margin-bottom: 5px;">TRADINGCHANGO PRO</h1>
+                <p style="opacity: 0.8; font-size: 14px;">La versión más potente para ahorrar en serio.</p>
             </div>
 
-            <div style="display: flex; gap: 20px; margin-bottom: 30px;">
-                <div style="flex: 1; padding: 25px; border: 2px solid #00c853; border-radius: 20px; background: rgba(0, 200, 83, 0.05); position: relative;">
-                    <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #00c853; color: white !important; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; white-space: nowrap;">MÁS POPULAR</div>
-                    <div style="font-size: 11px; font-weight: 800; opacity: 0.6; margin-bottom: 5px;">PLAN ANUAL</div>
-                    <div style="font-size: 28px; font-weight: 900; color: var(--text-main);">$ 18.000</div>
-                    <div style="font-size: 12px; color: #00c853; font-weight: 700;">$ 1.500 / mes</div>
+            <div style="margin-bottom: 25px;">
+                <div class="pro-feature-item"><span>✅</span> <b>Favoritos Ilimitados</b></div>
+                <div class="pro-feature-item"><span>✅</span> <b>Alertas de Precio Personalizadas</b></div>
+                <div class="pro-feature-item"><span>✅</span> <b>Asistente IA Optimizador de Carrito</b></div>
+                <div class="pro-feature-item"><span>✅</span> <b>Exportar Compra en un Click</b></div>
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                <div class="plan-card active" style="position: relative;">
+                    <div class="badge-promo">RECOMENDADO</div>
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6; margin-bottom: 5px;">PLAN ANUAL</div>
+                    <div style="font-size: 26px; font-weight: 900;">$ 18.000</div>
+                    <div style="font-size: 11px; color: #00c853; font-weight: 700;">$ 1.500 / mes</div>
                 </div>
-                <div style="flex: 1; padding: 25px; border: 1px solid var(--border); border-radius: 20px;">
-                    <div style="font-size: 11px; font-weight: 800; opacity: 0.6; margin-bottom: 5px;">MENSUAL</div>
-                    <div style="font-size: 28px; font-weight: 900; color: var(--text-main);">$ 2.500</div>
-                    <div style="font-size: 12px; opacity: 0.7;">Sin permanencia</div>
+                
+                <div class="plan-card">
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6; margin-bottom: 5px;">MENSUAL</div>
+                    <div style="font-size: 26px; font-weight: 900;">$ 2.500</div>
+                    <div style="font-size: 11px; opacity: 0.7;">Sin compromiso</div>
                 </div>
             </div>
 
-            <button onclick="goToCheckout()" style="width: 100%; padding: 20px; background: #00c853; color: white !important; border: none; border-radius: 16px; font-weight: 800; font-size: 18px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,200,83,0.3);">
+            <button class="btn-pro-action" onclick="goToCheckout()">
                 MEJORAR MI CUENTA AHORA
             </button>
             
-            <p onclick="closeAuth()" style="margin-top: 20px; font-size: 13px; color: var(--text-muted); cursor: pointer; text-decoration: underline;">
+            <p onclick="closeAuth()" style="text-align: center; margin-top: 20px; font-size: 13px; opacity: 0.6; cursor: pointer; text-decoration: underline;">
                 Seguir con la versión limitada
             </p>
         </div>
