@@ -1510,7 +1510,6 @@ let isSignUpMode = false;
 
 // 1. CONTROL DE VISTAS DENTRO DEL MODAL
 function showAuthStep(step) {
-    // Estos son los IDs de los divs que pusimos en el HTML
     const areas = ['authWelcomeArea', 'authFormArea', 'profileArea', 'proLandingArea'];
     
     areas.forEach(id => {
@@ -1519,6 +1518,14 @@ function showAuthStep(step) {
             el.style.display = (id === step) ? 'block' : 'none';
         }
     });
+
+    // Ajustamos el ancho del contenedor si es la landing PRO
+    const container = document.getElementById('authContainer');
+    if (step === 'proLandingArea') {
+        container.style.maxWidth = '450px'; 
+    } else {
+        container.style.maxWidth = '400px';
+    }
 }
        
 function showAuthStep(stepId) {
@@ -1668,9 +1675,8 @@ function getFavLimit() {
        
 // 3. ACTUALIZAR FAVORITOS PARA QUE ABRA ESTA VENTANA
 function toggleFav(id, btn) {
-    // REGLA 1: Sin login -> Abrir el modal en la bienvenida (HOLA TRADER)
     if (!currentUser) {
-        openAuth(); 
+        openAuth();
         return;
     }
 
@@ -1678,75 +1684,56 @@ function toggleFav(id, btn) {
     const count = Object.keys(favorites).length;
     const isPro = currentProfile?.subscription === 'pro' || currentProfile?.subscription === 'premium';
 
-    // REGLA 2: Si no es PRO, no es favorito ya y tiene 5 o más -> Mostrar Landing PRO
+    // Si NO es pro, NO es favorito ya, y YA tiene 5: mostrar landing PRO
     if (!isPro && !isAlreadyFav && count >= 5) {
         const modal = document.getElementById('authModal');
         modal.style.display = 'flex';
-        renderProLanding(); // Genera el contenido PRO
-        showAuthStep('proLandingArea'); // Muestra la sección PRO
+        
+        // PRIMERO: Generamos el contenido
+        renderProLanding(); 
+        // SEGUNDO: Mostramos esa sección
+        showAuthStep('proLandingArea'); 
         return;
     }
 
-    // Lógica normal de guardado/borrado
+    // ... resto de tu lógica para guardar favoritos (supabase, localStorage, etc.)
     if (isAlreadyFav) {
         delete favorites[id];
     } else {
         favorites[id] = 1;
     }
-
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
-    
-    // Refresco visual
-    if (currentTab === 'favs') {
-        renderView();
-    } else if (btn) {
-        btn.classList.toggle('active', !!favorites[id]);
-    }
+    if (currentTab === 'favs') renderView();
+    else if (btn) btn.classList.toggle('active', !!favorites[id]);
 }
        
 function renderProLanding() {
-    const container = document.getElementById('authContainer');
-    const proArea = document.getElementById('proLandingArea');
-    
-    // Ajuste escritorio
-    if (window.innerWidth >= 1024) {
-        container.style.maxWidth = '600px';
-    }
+    const container = document.getElementById('proLandingArea');
+    if (!container) return;
 
-    proArea.innerHTML = `
-        <div style="text-align: center; color: var(--text-main);">
-            <div style="font-size: 50px; margin-bottom: 10px;">💎</div>
-            <h1 style="font-weight: 900; color: #00c853; font-size: 28px; margin-bottom: 5px;">MEJORAR MI CUENTA AHORA</h1>
-            <p style="font-size: 14px; opacity: 0.8; margin-bottom: 25px;">Ahorrá con herramientas inteligentes y favoritos ilimitados.</p>
-
-            <div style="text-align: left; background: var(--bg-card); padding: 20px; border-radius: 18px; border: 1px solid #00c853; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div style="font-size: 13px;">✅ Favoritos Ilimitados</div>
-                <div style="font-size: 13px;">✅ Alertas de Precio</div>
-                <div style="font-size: 13px;">✅ Asistente IA</div>
-                <div style="font-size: 13px;">✅ Exportar Listas</div>
-            </div>
-
-            <div style="display: flex; gap: 15px; margin-bottom: 25px;">
-                <div style="flex: 1; padding: 20px; border: 2px solid #00c853; border-radius: 16px; background: rgba(0, 200, 83, 0.05); position: relative;">
-                    <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #00c853; color: white !important; padding: 2px 10px; border-radius: 10px; font-size: 9px; font-weight: 800;">RECOMENDADO</div>
-                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6;">ANUAL</div>
-                    <div style="font-size: 24px; font-weight: 900;">$ 18.000</div>
-                    <div style="font-size: 10px; color: #00c853;">$ 1.500 / mes</div>
-                </div>
-                <div style="flex: 1; padding: 20px; border: 1px solid var(--border); border-radius: 16px;">
-                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6;">MENSUAL</div>
-                    <div style="font-size: 24px; font-weight: 900;">$ 2.500</div>
-                </div>
-            </div>
-
-            <button onclick="window.open('https://mpago.la/tu-link', '_blank')" style="width: 100%; padding: 18px; background: #00c853; color: white !important; border: none; border-radius: 15px; font-weight: 800; font-size: 16px; cursor: pointer;">
-                SER PRO AHORA
-            </button>
-            
-            <p onclick="closeAuth()" style="margin-top: 20px; font-size: 13px; opacity: 0.6; cursor: pointer; text-decoration: underline;">
-                Seguir con versión limitada
+    container.innerHTML = `
+        <div style="text-align: center; padding: 10px 0;">
+            <div style="font-size: 50px; margin-bottom: 15px;">💎</div>
+            <h2 style="font-weight: 800; color: var(--text-main); margin-bottom: 10px;">Pasate a PRO</h2>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px;">
+                Has alcanzado el límite de 5 favoritos. Suscribite para guardar productos ilimitados y recibir alertas exclusivas.
             </p>
+            
+            <div style="background: var(--bg-card); border: 2px solid var(--accent); padding: 20px; border-radius: 20px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px;">Plan Mensual</h3>
+                <div style="font-size: 32px; font-weight: 800; margin-bottom: 10px;">$9.99<span style="font-size: 16px; color: var(--text-muted);">/mes</span></div>
+                <ul style="text-align: left; font-size: 13px; color: var(--text-muted); margin-bottom: 20px; list-style: none; padding: 0;">
+                    <li style="margin-bottom: 8px;">✅ Favoritos Ilimitados</li>
+                    <li style="margin-bottom: 8px;">✅ Alertas en tiempo real</li>
+                    <li style="margin-bottom: 8px;">✅ Soporte VIP</li>
+                </ul>
+                <button onclick="window.location.href='TU_LINK_DE_PAGO_AQUI'" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800; cursor: pointer;">
+                    MEJORAR AHORA
+                </button>
+            </div>
+            
+            <p onclick="showAuthStep('profileArea')" style="color: var(--text-muted); cursor: pointer; font-size: 12px;">Tal vez más tarde</p>
         </div>
     `;
 }
