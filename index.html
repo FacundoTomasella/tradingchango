@@ -1510,25 +1510,19 @@ let isSignUpMode = false;
 
 // 1. CONTROL DE VISTAS DENTRO DEL MODAL
 function showAuthStep(step) {
-    // Definimos todas las áreas posibles
     const areas = ['authWelcomeArea', 'authFormArea', 'profileArea', 'proLandingArea'];
     const container = document.getElementById('authContainer');
 
     areas.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            // Solo el 'step' solicitado recibe 'block', los demás 'none'
             el.style.display = (id === step) ? 'block' : 'none';
         }
     });
 
-    // Ajuste dinámico de tamaño para escritorio
+    // Ajuste de tamaño para la landing PRO (que es más ancha)
     if (container) {
-        if (step === 'proLandingArea') {
-            container.style.maxWidth = window.innerWidth >= 1024 ? '600px' : '450px';
-        } else {
-            container.style.maxWidth = '400px';
-        }
+        container.style.maxWidth = (step === 'proLandingArea') ? '600px' : '400px';
     }
 }
        
@@ -1686,24 +1680,23 @@ function getFavLimit() {
 // 3. ACTUALIZAR FAVORITOS PARA QUE ABRA ESTA VENTANA
 function toggleFav(id, btn) {
     if (!currentUser) {
-        openAuth(); // Abre "Hola Trader"
+        openAuth();
         return;
     }
 
     const isAlreadyFav = !!favorites[id];
     const count = Object.keys(favorites).length;
-    // Si no tiene suscripción 'pro' en su perfil de Supabase
-    const isPro = currentProfile?.subscription === 'pro';
+    const isPro = currentProfile?.subscription === 'pro' || currentProfile?.subscription === 'premium';
 
+    // Límite de 5 para usuarios gratuitos
     if (!isPro && !isAlreadyFav && count >= 5) {
-        // Abrimos el modal y forzamos la vista PRO
         document.getElementById('authModal').style.display = 'flex';
-        renderProLanding();
-        showAuthStep('proLandingArea');
+        renderProLanding(); // 1. Primero inyectamos el HTML
+        showAuthStep('proLandingArea'); // 2. Luego lo hacemos visible
         return;
     }
 
-    // Lógica normal de guardado...
+    // Lógica normal de favoritos
     if (isAlreadyFav) delete favorites[id];
     else favorites[id] = 1;
 
@@ -1827,65 +1820,23 @@ function renderProLanding() {
 
      
 </script>
-<!-- Modal de Autenticación / Perfil -->
-<div id="authModal" onclick="closeAuthOutside(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
-    <div id="authContainer" style="background: var(--bg-app); padding: 30px; border-radius: 24px; width: 100%; max-width: 400px; position: relative; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
-        
-        <!-- Botón Cerrar -->
-        <button onclick="closeAuth()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; z-index: 10;">&times;</button>
-
-        <!-- 1. VISTA DE BIENVENIDA (Landing) -->
-        <div id="authWelcomeArea" style="text-align: center; display: block;">
-            <div style="font-size: 40px; margin-bottom: 15px;">🛒</div>
-            <h2 style="font-weight: 800; margin-bottom: 10px;">¡Hola, Trader!</h2>
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 30px;">Registrate gratis para guardar productos ilimitados y recibir alertas de precios.</p>
-            
-            <button onclick="showAuthForm('register')" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800; cursor: pointer; margin-bottom: 12px;">CREAR CUENTA GRATIS</button>
-            <button onclick="showAuthForm('login')" style="width: 100%; padding: 15px; background: transparent; color: var(--text-main); border: 1px solid var(--border); border-radius: 12px; font-weight: 700; cursor: pointer;">YA TENGO CUENTA</button>
+<div id="profileArea" style="display: none; text-align: center;">
+    <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+    <h2 id="profileName" style="font-weight: 800; margin-bottom: 5px;">-</h2>
+    <p id="profileEmail" style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;"></p>
+    
+    <div style="background: var(--bg-card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; text-align: left;">
+        <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 12px; color: var(--text-muted);">Suscripción:</span>
+            <span id="profileSub" style="font-size: 12px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">-</span>
         </div>
-
-        <!-- 2. VISTA DE FORMULARIOS (Registro / Login) -->
-        <div id="authFormArea" style="display: none;">
-            <h2 id="authTitle" style="font-weight: 800; margin-bottom: 20px;">Cuenta</h2>
-            
-            <form onsubmit="handleAuthSubmit(event)">
-                <!-- Campos exclusivos de Registro -->
-                <div id="registerFields">
-                    <input type="text" id="regNombre" placeholder="Nombre" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
-                    <input type="text" id="regApellido" placeholder="Apellido" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
-                    <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 700; text-transform: uppercase;">Fecha de Nacimiento</label>
-                    <input type="date" id="regFecha" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
-                </div>
-
-                <input type="email" id="authEmail" placeholder="Email" required style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
-                <input type="password" id="authPass" placeholder="Contraseña" required style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit;">
-                
-                <button type="submit" id="authBtnLabel" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800; cursor: pointer;">CONTINUAR</button>
-            </form>
-            
-            <p onclick="currentUser ? showAuthStep('profileArea') : showAuthStep('authWelcomeArea')" style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted); cursor: pointer;">← Volver atrás</p>
-        </div>
-
-        <!-- 3. VISTA DE PERFIL (Logueado) -->
-        <div id="profileArea" style="display: none; text-align: center;">
-            <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
-            <h2 id="profileName" style="font-weight: 800; margin-bottom: 5px;">-</h2>
-            <p id="profileEmail" style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;"></p>
-            
-            <div style="background: var(--bg-card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; text-align: left;">
-                <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-size: 12px; color: var(--text-muted);">Suscripción:</span>
-                    <span id="profileSub" style="font-size: 12px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">-</span>
-                </div>
-                <div style="display:flex; justify-content: space-between;">
-                    <span style="font-size: 12px; color: var(--text-muted);">Miembro desde:</span>
-                    <span id="profileDate" style="font-size: 12px; font-weight: 600;">-</span>
-                </div>
-            </div>
-            <div id="proLandingArea" style="display: none;"></div>
-            <button onclick="handleSignOut()" style="width: 100%; padding: 12px; background: transparent; color: var(--color-bad); border: 1px solid var(--color-bad); border-radius: 12px; font-weight: 800; cursor: pointer;">CERRAR SESIÓN</button>
+        <div style="display:flex; justify-content: space-between;">
+            <span style="font-size: 12px; color: var(--text-muted);">Miembro desde:</span>
+            <span id="profileDate" style="font-size: 12px; font-weight: 600;">-</span>
         </div>
     </div>
+    <button onclick="handleSignOut()" style="width: 100%; padding: 12px; background: transparent; color: var(--color-bad); border: 1px solid var(--color-bad); border-radius: 12px; font-weight: 800; cursor: pointer;">CERRAR SESIÓN</button>
 </div>
-</body>
+
+<div id="proLandingArea" style="display: none;"></div></body>
 </html>
