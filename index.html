@@ -1510,15 +1510,9 @@ let isSignUpMode = false;
 
 // 1. CONTROL DE VISTAS DENTRO DEL MODAL
 function showAuthStep(step) {
+    // Estos son los IDs de los divs que pusimos en el HTML
     const areas = ['authWelcomeArea', 'authFormArea', 'profileArea', 'proLandingArea'];
     
-    // Reset de estilos del contenedor para que no se quede "grande" si venimos de PRO
-    const container = document.getElementById('authContainer');
-    if (container) {
-        container.style.maxWidth = '400px';
-        container.style.padding = '30px';
-    }
-
     areas.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -1546,24 +1540,30 @@ function showAuthStep(stepId) {
        
 function openAuth() {
     const modal = document.getElementById('authModal');
+    if (!modal) return;
+    
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
     if (currentUser) {
-        // Si hay usuario, mostramos sus datos de perfil
-        showAuthStep('profileArea'); 
+        // Si está logueado, mostramos perfil y cargamos sus datos
+        showAuthStep('profileArea');
         
-        // Rellenamos los datos del perfil en el HTML
-        document.getElementById('profileName').innerText = 
-            (currentProfile?.nombre ? `${currentProfile.nombre} ${currentProfile.apellido}` : "Trader");
-        document.getElementById('profileEmail').innerText = currentUser.email;
-        document.getElementById('profileSub').innerText = currentProfile?.subscription || 'free';
-        
-        const fecha = new Date(currentUser.created_at).toLocaleDateString();
-        document.getElementById('profileDate').innerText = fecha;
+        // Cargar datos en los campos del perfil
+        const nameEl = document.getElementById('profileName');
+        const emailEl = document.getElementById('profileEmail');
+        const subEl = document.getElementById('profileSub');
+        const dateEl = document.getElementById('profileDate');
+
+        if (nameEl) nameEl.innerText = currentProfile?.nombre ? `${currentProfile.nombre} ${currentProfile.apellido}` : "Trader";
+        if (emailEl) emailEl.innerText = currentUser.email;
+        if (subEl) subEl.innerText = currentProfile?.subscription || 'free';
+        if (dateEl && currentUser.created_at) {
+            dateEl.innerText = new Date(currentUser.created_at).toLocaleDateString();
+        }
     } else {
-        // Si no está logueado, mostramos la landing de "HOLA, TRADER"
-        showAuthStep('authWelcomeArea'); 
+        // Si NO está logueado, mostramos la landing de bienvenida
+        showAuthStep('authWelcomeArea');
     }
 }
        
@@ -1621,6 +1621,26 @@ async function handleAuthSubmit(e) {
     }
 } 
 
+     function showAuthForm(mode) {
+    authMode = mode; // Guardamos si es 'login' o 'register'
+    const regFields = document.getElementById('registerFields');
+    const authTitle = document.getElementById('authTitle');
+    const authBtnLabel = document.getElementById('authBtnLabel');
+
+    if (mode === 'register') {
+        authTitle.innerText = 'Crear Cuenta';
+        authBtnLabel.innerText = 'REGISTRARME';
+        if (regFields) regFields.style.display = 'block';
+    } else {
+        authTitle.innerText = 'Iniciar Sesión';
+        authBtnLabel.innerText = 'ENTRAR';
+        if (regFields) regFields.style.display = 'none';
+    }
+
+    // Una vez configurado el formulario, mostramos el área del formulario
+    showAuthStep('authFormArea');
+}  
+       
 async function handleSignOut() {
     try {
         await supabaseAuth.auth.signOut();
