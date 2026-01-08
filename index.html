@@ -1527,25 +1527,43 @@ function showAuthStep(step) {
     });
 }
        
-function showAuthForm(mode) {
-    isSignUpMode = (mode === 'register');
-    showAuthStep('form');
+function showAuthStep(stepId) {
+    const steps = ['authWelcomeArea', 'authFormArea', 'profileArea', 'proLandingArea'];
     
-    document.getElementById('authTitle').innerText = isSignUpMode ? "Crear Cuenta" : "Iniciar Sesión";
-    document.getElementById('authBtnLabel').innerText = isSignUpMode ? "REGISTRARME" : "INGRESAR";
-    document.getElementById('registerFields').style.display = isSignUpMode ? "block" : "none";
-}
+    steps.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = (id === stepId) ? 'block' : 'none';
+    });
 
+    // Ajuste de tamaño del contenedor para la landing PRO (que es más grande)
+    const container = document.getElementById('authContainer');
+    if (stepId === 'proLandingArea' && window.innerWidth >= 1024) {
+        container.style.maxWidth = '600px';
+    } else {
+        container.style.maxWidth = '400px';
+    }
+}
+       
 function openAuth() {
     const modal = document.getElementById('authModal');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
     if (currentUser) {
-        showAuthStep('profile');
-        // (Aquí va tu código de rellenar profileName, profileEmail, etc.)
+        // Si hay usuario, mostramos sus datos de perfil
+        showAuthStep('profileArea'); 
+        
+        // Rellenamos los datos del perfil en el HTML
+        document.getElementById('profileName').innerText = 
+            (currentProfile?.nombre ? `${currentProfile.nombre} ${currentProfile.apellido}` : "Trader");
+        document.getElementById('profileEmail').innerText = currentUser.email;
+        document.getElementById('profileSub').innerText = currentProfile?.subscription || 'free';
+        
+        const fecha = new Date(currentUser.created_at).toLocaleDateString();
+        document.getElementById('profileDate').innerText = fecha;
     } else {
-        showAuthStep('welcome'); // Esto muestra "HOLA, TRADER"
+        // Si no está logueado, mostramos la landing de "HOLA, TRADER"
+        showAuthStep('authWelcomeArea'); 
     }
 }
        
@@ -1630,7 +1648,7 @@ function getFavLimit() {
        
 // 3. ACTUALIZAR FAVORITOS PARA QUE ABRA ESTA VENTANA
 function toggleFav(id, btn) {
-    // REGLA 1: Sin login -> Mandar a HOLA TRADER
+    // REGLA 1: Sin login -> Abrir el modal en la bienvenida (HOLA TRADER)
     if (!currentUser) {
         openAuth(); 
         return;
@@ -1638,25 +1656,35 @@ function toggleFav(id, btn) {
 
     const isAlreadyFav = !!favorites[id];
     const count = Object.keys(favorites).length;
-    const isPro = currentProfile?.subscription === 'pro';
+    const isPro = currentProfile?.subscription === 'pro' || currentProfile?.subscription === 'premium';
 
-    // REGLA 2: Usuario Logueado (Gratis) llegó a 5 -> Mandar a MEJORAR CUENTA
+    // REGLA 2: Si no es PRO, no es favorito ya y tiene 5 o más -> Mostrar Landing PRO
     if (!isPro && !isAlreadyFav && count >= 5) {
-        renderProLanding(); // Inyectamos el contenido
-        showAuthStep('proLandingArea'); // Mostramos el área
+        const modal = document.getElementById('authModal');
+        modal.style.display = 'flex';
+        renderProLanding(); // Genera el contenido PRO
+        showAuthStep('proLandingArea'); // Muestra la sección PRO
         return;
     }
 
-    // Lógica normal de guardado
-    if (isAlreadyFav) delete favorites[id];
-    else favorites[id] = 1;
+    // Lógica normal de guardado/borrado
+    if (isAlreadyFav) {
+        delete favorites[id];
+    } else {
+        favorites[id] = 1;
+    }
 
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
-    if (currentTab === 'favs') renderView();
-    else if (btn) btn.classList.toggle('active', !!favorites[id]);
+    
+    // Refresco visual
+    if (currentTab === 'favs') {
+        renderView();
+    } else if (btn) {
+        btn.classList.toggle('active', !!favorites[id]);
+    }
 }
-
+       
 function renderProLanding() {
     const container = document.getElementById('authContainer');
     const proArea = document.getElementById('proLandingArea');
