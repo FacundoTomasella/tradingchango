@@ -1642,27 +1642,38 @@ function getFavLimit() {
        
 // 3. ACTUALIZAR FAVORITOS PARA QUE ABRA ESTA VENTANA
 function toggleFav(id, btn) {
-    if (!currentUser) { openAuth(); return; }
+    // 1. Si no hay usuario, abrir el modal de bienvenida (HOLA TRADER)
+    if (!currentUser) {
+        openAuth(); 
+        return;
+    }
 
     const isAlreadyFav = !!favorites[id];
     const count = Object.keys(favorites).length;
+    
+    // Verificamos si el usuario es PRO (según tu tabla de Supabase)
     const isPro = currentProfile?.subscription === 'pro';
 
-    // Si intenta agregar uno nuevo y ya tiene 5, sale la landing SIEMPRE
+    // 2. Si NO es PRO y quiere agregar un 6to producto (o más)
     if (!isPro && !isAlreadyFav && count >= 5) {
         openProModal(); 
         return;
     }
 
-    if (isAlreadyFav) delete favorites[id];
-    else favorites[id] = 1;
+    // 3. Lógica normal de agregar/quitar
+    if (isAlreadyFav) {
+        delete favorites[id];
+    } else {
+        favorites[id] = 1;
+    }
 
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
     
     if (currentTab === 'favs') renderView();
     else if (btn) btn.classList.toggle('active', !!favorites[id]);
-}       
+}
+       
     function updateUserIcon(logged) {
     const btn = document.getElementById('userBtn');
     btn.style.color = logged ? 'var(--color-good)' : 'var(--text-main)';
@@ -1671,67 +1682,57 @@ function toggleFav(id, btn) {
 
     function openProModal() {
     const modal = document.getElementById('authModal');
-    // Forzamos un tamaño más grande en escritorio para evitar scroll
-    const modalContent = modal.querySelector('.modal-content') || document.getElementById('authModalContent');
-    if(window.innerWidth >= 1024) {
-        modalContent.style.width = '600px';
-        modalContent.style.height = 'auto';
-        modalContent.style.maxHeight = '90vh';
+    const container = document.getElementById('authContainer');
+    
+    if (!container) return;
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Diseño estilo TradingView adaptado a tu web
+    if (window.innerWidth >= 1024) {
+        container.style.maxWidth = '600px';
+        container.style.padding = '40px';
     }
 
-    // Ocultamos las otras áreas de auth
-    document.querySelectorAll('#authWelcomeArea, #authFormArea, #profileArea').forEach(el => el.style.display = 'none');
+    container.innerHTML = `
+        <button onclick="location.reload()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; z-index: 10;">&times;</button>
+        
+        <div style="text-align: center; color: var(--text-main); font-family: inherit;">
+            <div style="font-size: 45px; margin-bottom: 10px;">💎</div>
+            <h1 style="font-weight: 900; color: #00c853; font-size: 26px; margin-bottom: 5px;">MEJORAR MI CUENTA AHORA</h1>
+            <p style="font-size: 14px; opacity: 0.8; margin-bottom: 25px;">Accedé a herramientas exclusivas y ahorrá más dinero.</p>
 
-    const proHTML = `
-        <div class="pro-landing-container">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <div style="font-size: 40px;">💎</div>
-                <h2 style="font-weight: 900; color: #00c853; font-size: 28px; margin: 10px 0;">TRADINGCHANGO PRO</h2>
-                <p style="opacity: 0.8; font-size: 14px;">Unite a los ahorradores inteligentes y tomá el control total.</p>
-            </div>
-
-            <div style="margin-bottom: 25px;">
-                <div class="pro-feature-item"><span>🚀</span> <b>Favoritos Ilimitados</b></div>
-                <div class="pro-feature-item"><span>🔔</span> <b>Alertas de Precio Personalizadas</b></div>
-                <div class="pro-feature-item"><span>🤖</span> <b>Asistente IA de Carrito Optimizador</b></div>
-                <div class="pro-feature-item"><span>📋</span> <b>Lista de Super Interactiva</b></div>
+            <div style="text-align: left; background: var(--bg-card); padding: 20px; border-radius: 18px; border: 1px solid #00c853; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="font-size: 13px;">✅ <b>Favoritos Ilimitados</b></div>
+                <div style="font-size: 13px;">✅ <b>Alertas de Precio</b></div>
+                <div style="font-size: 13px;">✅ <b>Asistente IA Optimizador</b></div>
+                <div style="font-size: 13px;">✅ <b>Exportar Listas</b></div>
             </div>
 
             <div style="display: flex; gap: 15px; margin-bottom: 25px;">
-                <div class="plan-card active" style="position: relative;">
-                    <div class="badge-promo">RECOMENDADO</div>
-                    <div style="font-size: 12px; font-weight: 700; opacity: 0.6;">PLAN ANUAL</div>
-                    <div style="font-size: 24px; font-weight: 900;">$18.000</div>
-                    <div style="font-size: 11px; color: #00c853;">Pago único (Bonificado)</div>
+                <div style="flex: 1; padding: 20px; border: 2px solid #00c853; border-radius: 16px; background: rgba(0, 200, 83, 0.05); position: relative;">
+                    <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #00c853; color: white !important; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; white-space: nowrap;">MÁS POPULAR</div>
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6; margin-bottom: 5px;">PLAN ANUAL</div>
+                    <div style="font-size: 24px; font-weight: 900; margin: 5px 0;">$ 18.000</div>
+                    <div style="font-size: 10px; color: #00c853; font-weight: 700;">$ 1.500 / mes</div>
                 </div>
-                <div class="plan-card">
-                    <div style="font-size: 12px; font-weight: 700; opacity: 0.6;">MENSUAL</div>
-                    <div style="font-size: 24px; font-weight: 900;">$2.500</div>
-                    <div style="font-size: 11px;">Cancela cuando quieras</div>
+                <div style="flex: 1; padding: 20px; border: 1px solid var(--border); border-radius: 16px;">
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6; margin-bottom: 5px;">MENSUAL</div>
+                    <div style="font-size: 24px; font-weight: 900; margin: 5px 0;">$ 2.500</div>
+                    <div style="font-size: 10px; opacity: 0.6;">Cancela cuando quieras</div>
                 </div>
             </div>
 
-            <button class="btn-pro-action" onclick="goToCheckout()">
-                OBTENER ACCESO PRO
+            <button onclick="window.open('https://mpago.la/tu-link-aqui', '_blank')" style="width: 100%; padding: 18px; background: #00c853; color: white !important; border: none; border-radius: 15px; font-weight: 800; font-size: 18px; cursor: pointer; box-shadow: 0 5px 20px rgba(0, 200, 83, 0.4);">
+                SER PRO AHORA
             </button>
             
-            <p onclick="closeAuth()" style="text-align:center; margin-top:15px; font-size:12px; opacity:0.6; cursor:pointer;">
-                Seguir con versión limitada
+            <p onclick="location.reload()" style="margin-top: 20px; font-size: 13px; opacity: 0.6; cursor: pointer; text-decoration: underline;">
+                Seguir con la versión limitada
             </p>
         </div>
     `;
-
-    // Buscamos un contenedor limpio para la landing
-    let container = document.getElementById('proLandingArea');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'proLandingArea';
-        modalContent.appendChild(container);
-    }
-    
-    container.innerHTML = proHTML;
-    container.style.display = 'block';
-    modal.style.display = 'flex';
 }      
        
   function renderAds() {
