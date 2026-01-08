@@ -1617,30 +1617,26 @@ function toggleFav(id, btn) {
     const modal = document.getElementById('authModal');
     const container = document.getElementById('authContainer');
     
-    // Ocultamos las áreas de login/perfil
-    document.getElementById('authWelcomeArea').style.display = 'none';
-    document.getElementById('authFormArea').style.display = 'none';
-    document.getElementById('profileArea').style.display = 'none';
+    if (!container) return; // Seguridad
 
-    // Ajuste de tamaño para Escritorio
+    // 1. Mostrar Modal
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // 2. Ajuste de tamaño para Escritorio (Estilo TradingView)
     if (window.innerWidth >= 1024) {
         container.style.maxWidth = '600px';
+        container.style.padding = '40px';
     }
 
-    // Inyectamos un nuevo div limpio para la landing
-    let proArea = document.getElementById('proLandingArea');
-    if (!proArea) {
-        proArea = document.createElement('div');
-        proArea.id = 'proLandingArea';
-        container.appendChild(proArea);
-    }
-    proArea.style.display = 'block';
-
-    proArea.innerHTML = `
+    // 3. Inyectar la Landing Directamente (Sin IDs intermedios)
+    container.innerHTML = `
+        <button onclick="closeAuth()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; z-index: 10;">&times;</button>
+        
         <div style="text-align: center; color: var(--text-main); font-family: inherit;">
-            <div style="font-size: 50px; margin-bottom: 10px;">💎</div>
-            <h1 style="font-weight: 900; color: #00c853; font-size: 28px; margin-bottom: 10px;">MEJORAR MI CUENTA AHORA</h1>
-            <p style="font-size: 15px; opacity: 0.8; margin-bottom: 25px;">Unite a los Traders que ya están ahorrando de verdad.</p>
+            <div style="font-size: 45px; margin-bottom: 10px;">⚡</div>
+            <h1 style="font-weight: 900; color: #00c853; font-size: 26px; margin-bottom: 5px;">MEJORAR MI CUENTA AHORA</h1>
+            <p style="font-size: 14px; opacity: 0.8; margin-bottom: 25px;">Unite a los Traders que ya están ahorrando de verdad.</p>
 
             <div style="text-align: left; background: var(--bg-card); padding: 20px; border-radius: 18px; border: 1px solid #00c853; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div style="font-size: 13px;">✅ <b>Favoritos Ilimitados</b></div>
@@ -1652,14 +1648,14 @@ function toggleFav(id, btn) {
             <div style="display: flex; gap: 15px; margin-bottom: 25px;">
                 <div style="flex: 1; padding: 20px; border: 2px solid #00c853; border-radius: 16px; background: rgba(0, 200, 83, 0.05); position: relative;">
                     <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #00c853; color: white !important; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; white-space: nowrap;">MÁS POPULAR</div>
-                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6;">PLAN ANUAL</div>
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6; margin-bottom: 5px;">PLAN ANUAL</div>
                     <div style="font-size: 24px; font-weight: 900; margin: 5px 0;">$ 18.000</div>
                     <div style="font-size: 11px; color: #00c853; font-weight: 700;">$ 1.500 / mes</div>
                 </div>
-                <div style="flex: 1; padding: 20px; border: 1px solid var(--border); border-radius: 16px;">
-                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6;">MENSUAL</div>
+                <div style="flex: 1; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--bg-card);">
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6; margin-bottom: 5px;">MENSUAL</div>
                     <div style="font-size: 24px; font-weight: 900; margin: 5px 0;">$ 2.500</div>
-                    <div style="font-size: 11px; opacity: 0.6;">Cancela cuando quieras</div>
+                    <div style="font-size: 11px; opacity: 0.6;">Sin permanencia</div>
                 </div>
             </div>
 
@@ -1667,13 +1663,11 @@ function toggleFav(id, btn) {
                 SER PRO AHORA
             </button>
             
-            <p onclick="closeAuth()" style="margin-top: 20px; font-size: 13px; opacity: 0.6; cursor: pointer; text-decoration: underline;">
+            <p onclick="location.reload()" style="margin-top: 20px; font-size: 13px; opacity: 0.6; cursor: pointer; text-decoration: underline;">
                 Seguir con la versión limitada
             </p>
         </div>
     `;
-
-    modal.style.display = 'flex';
 }      
        
   function renderAds() {
