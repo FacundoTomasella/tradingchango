@@ -1514,13 +1514,15 @@ function showAuthStep(step) {
     const areas = ['authWelcomeArea', 'authFormArea', 'profileArea', 'proLandingArea'];
     areas.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.style.display = (id === step) ? 'block' : 'none';
+        if (el) {
+            el.style.display = (id === step) ? 'block' : 'none';
+        }
     });
 
-    // Reset de tamaño por si venimos de la landing PRO
+    // Reset de tamaño del contenedor para escritorio
     const container = document.getElementById('authContainer');
     if (container) {
-        container.style.maxWidth = '400px';
+        container.style.maxWidth = '400px'; 
         container.style.padding = '30px';
     }
 }
@@ -1539,34 +1541,27 @@ function openAuth() {
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    // 1. Ocultar la landing PRO por si quedó abierta de un intento previo de favorito
+    // 1. Limpiamos cualquier rastro de la landing PRO o formularios
     const proArea = document.getElementById('proLandingArea');
     if (proArea) proArea.style.display = 'none';
 
     if (currentUser) {
-        // 2. Si está logueado, mostrar Perfil
+        // 2. MOSTRAR PERFIL (Cerrar sesión, datos, etc.)
         showAuthStep('profile');
         
-        // Rellenar campos del HTML
         document.getElementById('profileName').innerText = currentProfile ? (currentProfile.nombre + " " + currentProfile.apellido) : "Usuario";
         document.getElementById('profileEmail').innerText = currentUser.email;
-        
-        const subEl = document.getElementById('profileSub');
-        const subType = currentProfile?.subscription || 'FREE';
-        subEl.innerText = subType;
-        
-        // Estilo visual según suscripción
-        subEl.style.color = subType.toLowerCase() === 'pro' ? 'var(--star-gold)' : 'var(--color-good)';
+        document.getElementById('profileSub').innerText = currentProfile?.subscription || 'FREE';
         
         if(currentProfile?.created_at) {
             document.getElementById('profileDate').innerText = new Date(currentProfile.created_at).toLocaleDateString();
         }
     } else {
-        // 3. Si es visita, mostrar "HOLA, TRADER" (Login/Register)
+        // 3. MOSTRAR HOLA, TRADER (Login/Registro)
         showAuthStep('welcome');
     }
 }
-
+       
 function closeAuth() {
     document.getElementById('authModal').style.display = 'none';
     document.body.style.overflow = 'auto';
@@ -1651,21 +1646,28 @@ function getFavLimit() {
        
 // 3. ACTUALIZAR FAVORITOS PARA QUE ABRA ESTA VENTANA
 function toggleFav(id, btn) {
-    if (!currentUser) { openAuth(); return; }
+    // 1. SI ES VISITA (Sin usuario): Abrir HOLA, TRADER
+    if (!currentUser) {
+        openAuth(); // Esto abre el modal en 'welcome'
+        return;
+    }
 
     const isAlreadyFav = !!favorites[id];
     const count = Object.keys(favorites).length;
     const isPro = currentProfile?.subscription === 'pro';
 
-    // Si no es PRO y quiere agregar un 6TO (o más)
+    // 2. SI ES GRATIS Y LLEGÓ AL 6TO: Abrir Landing PRO
     if (!isPro && !isAlreadyFav && count >= 5) {
-        console.log("Límite alcanzado, abriendo landing PRO...");
         openProModal(); 
         return;
     }
 
-    if (isAlreadyFav) delete favorites[id];
-    else favorites[id] = 1;
+    // 3. LOGICA NORMAL DE AGREGAR/QUITAR
+    if (isAlreadyFav) {
+        delete favorites[id];
+    } else {
+        favorites[id] = 1;
+    }
 
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
@@ -1673,6 +1675,7 @@ function toggleFav(id, btn) {
     if (currentTab === 'favs') renderView();
     else if (btn) btn.classList.toggle('active', !!favorites[id]);
 }
+       
        
     function updateUserIcon(logged) {
     const btn = document.getElementById('userBtn');
@@ -1684,63 +1687,52 @@ function toggleFav(id, btn) {
     const modal = document.getElementById('authModal');
     const container = document.getElementById('authContainer');
     
-    // 1. Ocultar el resto y preparar el contenedor
-    showAuthStep('none'); 
-    let proArea = document.getElementById('proLandingArea');
-    if (!proArea) {
-        proArea = document.createElement('div');
-        proArea.id = 'proLandingArea';
-        container.appendChild(proArea);
-    }
-    proArea.style.display = 'block';
+    // Ocultamos todo lo demás
+    showAuthStep('proLandingArea');
 
-    // 2. Ajuste de tamaño para escritorio
+    // Estilo escritorio estilo TradingView
     if (window.innerWidth >= 1024) {
         container.style.maxWidth = '600px';
         container.style.padding = '40px';
     }
 
-    // 3. Inyectar el HTML usando TUS clases de CSS
+    const proArea = document.getElementById('proLandingArea');
     proArea.innerHTML = `
         <div class="pro-landing-container">
             <div style="text-align: center; margin-bottom: 20px;">
                 <div style="font-size: 50px; margin-bottom: 10px;">💎</div>
-                <h1 style="font-weight: 900; color: #00c853; font-size: 30px; margin-bottom: 5px;">TRADINGCHANGO PRO</h1>
-                <p style="opacity: 0.8; font-size: 14px;">La versión más potente para ahorrar en serio.</p>
+                <h1 style="font-weight: 900; color: #00c853; font-size: 28px;">MEJORAR MI CUENTA AHORA</h1>
+                <p style="opacity: 0.8; font-size: 14px;">Unite a la élite de ahorradores pro.</p>
             </div>
 
-            <div style="margin-bottom: 25px;">
-                <div class="pro-feature-item"><span>✅</span> <b>Favoritos Ilimitados</b></div>
-                <div class="pro-feature-item"><span>✅</span> <b>Alertas de Precio Personalizadas</b></div>
-                <div class="pro-feature-item"><span>✅</span> <b>Asistente IA Optimizador de Carrito</b></div>
-                <div class="pro-feature-item"><span>✅</span> <b>Exportar Compra en un Click</b></div>
+            <div style="margin-bottom: 20px;">
+                <div class="pro-feature-item"><span>✅</span> Favoritos Ilimitados</div>
+                <div class="pro-feature-item"><span>✅</span> Alertas de Precio</div>
+                <div class="pro-feature-item"><span>✅</span> Carrito Inteligente IA</div>
             </div>
 
             <div style="display: flex; gap: 15px; margin-bottom: 25px;">
                 <div class="plan-card active" style="position: relative;">
                     <div class="badge-promo">RECOMENDADO</div>
-                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6; margin-bottom: 5px;">PLAN ANUAL</div>
-                    <div style="font-size: 26px; font-weight: 900;">$ 18.000</div>
-                    <div style="font-size: 11px; color: #00c853; font-weight: 700;">$ 1.500 / mes</div>
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6;">ANUAL</div>
+                    <div style="font-size: 24px; font-weight: 900;">$ 18.000</div>
+                    <div style="font-size: 11px; color: #00c853;">$ 1.500 / mes</div>
                 </div>
-                
                 <div class="plan-card">
-                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6; margin-bottom: 5px;">MENSUAL</div>
-                    <div style="font-size: 26px; font-weight: 900;">$ 2.500</div>
-                    <div style="font-size: 11px; opacity: 0.7;">Sin compromiso</div>
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6;">MENSUAL</div>
+                    <div style="font-size: 24px; font-weight: 900;">$ 2.500</div>
                 </div>
             </div>
 
             <button class="btn-pro-action" onclick="goToCheckout()">
-                MEJORAR MI CUENTA AHORA
+                SER PRO AHORA
             </button>
             
-            <p onclick="closeAuth()" style="text-align: center; margin-top: 20px; font-size: 13px; opacity: 0.6; cursor: pointer; text-decoration: underline;">
-                Seguir con la versión limitada
+            <p onclick="closeAuth()" style="text-align: center; margin-top: 20px; font-size: 12px; opacity: 0.6; cursor: pointer;">
+                Seguir con versión gratuita
             </p>
         </div>
     `;
-
     modal.style.display = 'flex';
 }      
        
