@@ -505,66 +505,7 @@
   background: #2a2e39;
   color: white;
 }
-    
-/* Estilos para la Landing PRO */
-.pro-landing-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    color: var(--text-main);
-    min-height: 450px;
-}
-
-.pro-feature-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
-
-.plan-card {
-    flex: 1;
-    padding: 20px;
-    border-radius: 16px;
-    border: 2px solid var(--border);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    text-align: center;
-    background: var(--bg-card);
-}
-
-.plan-card.active {
-    border-color: #00c853;
-    background: rgba(0, 200, 83, 0.05);
-}
-
-.badge-promo {
-    background: #00c853;
-    color: #ffffff !important; /* Siempre blanco para legibilidad */
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 800;
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.btn-pro-action {
-    width: 100%;
-    padding: 16px;
-    background: #00c853;
-    color: #ffffff !important; /* Siempre blanco */
-    border: none;
-    border-radius: 14px;
-    font-weight: 800;
-    font-size: 16px;
-    cursor: pointer;
-    box-shadow: 0 4px 20px rgba(0, 200, 83, 0.4);
-}        
+            
     </style>
 <meta http-equiv="Content-Security-Policy" content="
     default-src 'self'; 
@@ -1541,24 +1482,17 @@ function openAuth() {
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    // 1. Limpiamos cualquier rastro de la landing PRO o formularios
-    const proArea = document.getElementById('proLandingArea');
-    if (proArea) proArea.style.display = 'none';
+    // Aseguramos que el contenedor tenga el tamaño estándar de login
+    const container = document.getElementById('authContainer');
+    container.style.maxWidth = '400px';
 
     if (currentUser) {
-        // 2. MOSTRAR PERFIL (Cerrar sesión, datos, etc.)
         showAuthStep('profile');
-        
         document.getElementById('profileName').innerText = currentProfile ? (currentProfile.nombre + " " + currentProfile.apellido) : "Usuario";
         document.getElementById('profileEmail').innerText = currentUser.email;
         document.getElementById('profileSub').innerText = currentProfile?.subscription || 'FREE';
-        
-        if(currentProfile?.created_at) {
-            document.getElementById('profileDate').innerText = new Date(currentProfile.created_at).toLocaleDateString();
-        }
     } else {
-        // 3. MOSTRAR HOLA, TRADER (Login/Registro)
-        showAuthStep('welcome');
+        showAuthStep('welcome'); // Aquí aparece el "HOLA, TRADER"
     }
 }
        
@@ -1646,9 +1580,9 @@ function getFavLimit() {
        
 // 3. ACTUALIZAR FAVORITOS PARA QUE ABRA ESTA VENTANA
 function toggleFav(id, btn) {
-    // 1. SI ES VISITA (Sin usuario): Abrir HOLA, TRADER
+    // 1. Visita sin cuenta -> Abre HOLA, TRADER
     if (!currentUser) {
-        openAuth(); // Esto abre el modal en 'welcome'
+        openAuth(); 
         return;
     }
 
@@ -1656,22 +1590,18 @@ function toggleFav(id, btn) {
     const count = Object.keys(favorites).length;
     const isPro = currentProfile?.subscription === 'pro';
 
-    // 2. SI ES GRATIS Y LLEGÓ AL 6TO: Abrir Landing PRO
+    // 2. Usuario Gratis con 5 productos -> Abre Landing PRO
     if (!isPro && !isAlreadyFav && count >= 5) {
         openProModal(); 
         return;
     }
 
-    // 3. LOGICA NORMAL DE AGREGAR/QUITAR
-    if (isAlreadyFav) {
-        delete favorites[id];
-    } else {
-        favorites[id] = 1;
-    }
+    // 3. Lógica normal
+    if (isAlreadyFav) delete favorites[id];
+    else favorites[id] = 1;
 
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
-    
     if (currentTab === 'favs') renderView();
     else if (btn) btn.classList.toggle('active', !!favorites[id]);
 }
@@ -1687,52 +1617,62 @@ function toggleFav(id, btn) {
     const modal = document.getElementById('authModal');
     const container = document.getElementById('authContainer');
     
-    // Ocultamos todo lo demás
-    showAuthStep('proLandingArea');
+    // Ocultamos las áreas de login/perfil
+    document.getElementById('authWelcomeArea').style.display = 'none';
+    document.getElementById('authFormArea').style.display = 'none';
+    document.getElementById('profileArea').style.display = 'none';
 
-    // Estilo escritorio estilo TradingView
+    // Ajuste de tamaño para Escritorio
     if (window.innerWidth >= 1024) {
         container.style.maxWidth = '600px';
-        container.style.padding = '40px';
     }
 
-    const proArea = document.getElementById('proLandingArea');
-    proArea.innerHTML = `
-        <div class="pro-landing-container">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <div style="font-size: 50px; margin-bottom: 10px;">💎</div>
-                <h1 style="font-weight: 900; color: #00c853; font-size: 28px;">MEJORAR MI CUENTA AHORA</h1>
-                <p style="opacity: 0.8; font-size: 14px;">Unite a la élite de ahorradores pro.</p>
-            </div>
+    // Inyectamos un nuevo div limpio para la landing
+    let proArea = document.getElementById('proLandingArea');
+    if (!proArea) {
+        proArea = document.createElement('div');
+        proArea.id = 'proLandingArea';
+        container.appendChild(proArea);
+    }
+    proArea.style.display = 'block';
 
-            <div style="margin-bottom: 20px;">
-                <div class="pro-feature-item"><span>✅</span> Favoritos Ilimitados</div>
-                <div class="pro-feature-item"><span>✅</span> Alertas de Precio</div>
-                <div class="pro-feature-item"><span>✅</span> Carrito Inteligente IA</div>
+    proArea.innerHTML = `
+        <div style="text-align: center; color: var(--text-main); font-family: inherit;">
+            <div style="font-size: 50px; margin-bottom: 10px;">💎</div>
+            <h1 style="font-weight: 900; color: #00c853; font-size: 28px; margin-bottom: 10px;">MEJORAR MI CUENTA AHORA</h1>
+            <p style="font-size: 15px; opacity: 0.8; margin-bottom: 25px;">Unite a los Traders que ya están ahorrando de verdad.</p>
+
+            <div style="text-align: left; background: var(--bg-card); padding: 20px; border-radius: 18px; border: 1px solid #00c853; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="font-size: 13px;">✅ <b>Favoritos Ilimitados</b></div>
+                <div style="font-size: 13px;">✅ <b>Alertas de Precio</b></div>
+                <div style="font-size: 13px;">✅ <b>Asistente IA Optimizador</b></div>
+                <div style="font-size: 13px;">✅ <b>Exportar Listas</b></div>
             </div>
 
             <div style="display: flex; gap: 15px; margin-bottom: 25px;">
-                <div class="plan-card active" style="position: relative;">
-                    <div class="badge-promo">RECOMENDADO</div>
-                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6;">ANUAL</div>
-                    <div style="font-size: 24px; font-weight: 900;">$ 18.000</div>
-                    <div style="font-size: 11px; color: #00c853;">$ 1.500 / mes</div>
+                <div style="flex: 1; padding: 20px; border: 2px solid #00c853; border-radius: 16px; background: rgba(0, 200, 83, 0.05); position: relative;">
+                    <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #00c853; color: white !important; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; white-space: nowrap;">MÁS POPULAR</div>
+                    <div style="font-size: 11px; font-weight: 700; opacity: 0.6;">PLAN ANUAL</div>
+                    <div style="font-size: 24px; font-weight: 900; margin: 5px 0;">$ 18.000</div>
+                    <div style="font-size: 11px; color: #00c853; font-weight: 700;">$ 1.500 / mes</div>
                 </div>
-                <div class="plan-card">
+                <div style="flex: 1; padding: 20px; border: 1px solid var(--border); border-radius: 16px;">
                     <div style="font-size: 11px; font-weight: 700; opacity: 0.6;">MENSUAL</div>
-                    <div style="font-size: 24px; font-weight: 900;">$ 2.500</div>
+                    <div style="font-size: 24px; font-weight: 900; margin: 5px 0;">$ 2.500</div>
+                    <div style="font-size: 11px; opacity: 0.6;">Cancela cuando quieras</div>
                 </div>
             </div>
 
-            <button class="btn-pro-action" onclick="goToCheckout()">
+            <button onclick="goToCheckout()" style="width: 100%; padding: 18px; background: #00c853; color: white !important; border: none; border-radius: 15px; font-weight: 800; font-size: 18px; cursor: pointer; box-shadow: 0 5px 20px rgba(0, 200, 83, 0.4);">
                 SER PRO AHORA
             </button>
             
-            <p onclick="closeAuth()" style="text-align: center; margin-top: 20px; font-size: 12px; opacity: 0.6; cursor: pointer;">
-                Seguir con versión gratuita
+            <p onclick="closeAuth()" style="margin-top: 20px; font-size: 13px; opacity: 0.6; cursor: pointer; text-decoration: underline;">
+                Seguir con la versión limitada
             </p>
         </div>
     `;
+
     modal.style.display = 'flex';
 }      
        
