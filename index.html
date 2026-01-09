@@ -1835,7 +1835,60 @@ function renderProLanding() {
     });
 }
      
-     
+    // Abrir el modal de selección
+async function openMembresiaSelector() {
+    const modal = document.getElementById('membresiaSelectorModal');
+    const list = document.getElementById('selectorList');
+    modal.style.display = 'flex';
+    
+    const { data: catalogo } = await supabaseAuth.from('catalogo_membresias').select('*');
+    
+    // Agrupar por categoría
+    const categorias = [...new Set(catalogo.map(m => m.categoria))];
+    
+    list.innerHTML = categorias.map(cat => `
+        <div style="margin-top:15px; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6;">${cat}</div>
+        ${catalogo.filter(m => m.categoria === cat).map(m => `
+            <div onclick="selectMembresiaDetalle('${m.slug}')" style="display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid var(--border); cursor:pointer;">
+                <img src="${m.logo_url}" style="width:24px; height:24px; object-fit:contain;">
+                <span style="font-size:14px; font-weight:600;">${m.nombre}</span>
+            </div>
+        `).join('')}
+    `).join('');
+}
+
+// Función para cuando eligen, por ejemplo, "Galicia"
+async function selectMembresiaDetalle(slug) {
+    const { data: membresia } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
+    
+    // Si el banco tiene opciones (Débito, Crédito, etc.) en la columna JSONB
+    const opcion = prompt(`¿Qué tipo de ${membresia.nombre} tenés?\nEj: ${membresia.opciones.join(', ')}`);
+    
+    if (opcion) {
+        await addMembresiaToUser(slug, opcion);
+        closeMembresiaSelector();
+    }
+}
+
+async function addMembresiaToUser(slug, tipo) {
+    let actuales = Array.isArray(currentProfile.membresias) ? [...currentProfile.membresias] : [];
+    
+    // Guardamos como objeto para el carrito
+    actuales.push({ slug, tipo });
+    
+    currentProfile.membresias = actuales;
+    await supabaseAuth.from('perfiles').update({ membresias: actuales }).eq('id', currentUser.id);
+    renderWallet();
+}
+
+// Función para quitar membresía (clic en la tarjeta activa)
+async function removeMembresia(index) {
+    if (!confirm("¿Eliminar esta membresía?")) return;
+    currentProfile.membresias.splice(index, 1);
+    await supabaseAuth.from('perfiles').update({ membresias: currentProfile.membresias }).eq('id', currentUser.id);
+    renderWallet();
+}
+       
     // Iniciar la app
     init();
         async function loadSession() {
@@ -1868,28 +1921,20 @@ function renderProLanding() {
 let catalogoMembresias = []; // Se llena desde la DB
 
 async function renderWallet() {
-    const container = document.getElementById('walletContainer');
+    const container = document.getElementById('activeMembresias');
     if (!container) return;
 
-    // 1. Traer el catálogo de Supabase si no lo tenemos
-    if (catalogoMembresias.length === 0) {
-        const { data, error } = await supabaseAuth
-            .from('catalogo_membresias')
-            .select('*')
-            .order('nombre', { ascending: true });
-        if (!error) catalogoMembresias = data;
-    }
-
-    // 2. Obtener las membresías del usuario (asumimos que están en currentProfile.membresias)
+    const { data: catalogo } = await supabaseAuth.from('catalogo_membresias').select('*');
     const misMembresias = currentProfile?.membresias || [];
 
-    // 3. Dibujar
-    container.innerHTML = catalogoMembresias.map(m => {
-        const isActive = misMembresias.includes(m.slug);
+    container.innerHTML = misMembresias.map((m, index) => {
+        const info = catalogo.find(c => c.slug === m.slug);
         return `
-            <div class="benefit-card ${isActive ? 'active' : ''}" onclick="toggleMembresia('${m.slug}')">
-                <img src="${m.logo_url}" alt="${m.nombre}" onerror="this.src='https://via.placeholder.com/24'">
-                <span>${m.nombre}</span>
+            <div class="benefit-card active" onclick="removeMembresia(${index})">
+                <img src="${info?.logo_url}" alt="${info?.nombre}">
+                <span style="font-size:8px; line-height:1;">${info?.nombre}</span>
+                <span style="font-size:7px; opacity:0.7;">${m.tipo}</span>
+                <div class="benefit-check" style="background:var(--color-bad);"><i class="fa-solid fa-xmark"></i></div>
             </div>
         `;
     }).join('');
@@ -1965,13 +2010,23 @@ async function toggleMembresia(slug) {
     </div>
 
     <div style="text-align: left; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;">
-        <span class="pv-market-title" style="margin-bottom: 15px; display: block; font-size: 11px; font-weight: 800; text-transform: uppercase;">Mis Membresías</span>
-        
-        <div id="walletContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 25px;">
-            </div>
+    <span class="pv-market-title" style="margin-bottom: 15px; display: block;">Mis Membresías</span>
+    
+    <div id="walletContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+        <div class="benefit-card add-card" onclick="openMembresiaSelector()" style="border: 2px dashed var(--border); opacity: 1; filter: none;">
+            <i class="fa-solid fa-plus" style="color: var(--color-good);"></i>
+            <span style="color: var(--color-good);">Agregar</span>
+        </div>
+        <div id="activeMembresias" style="display: contents;"></div>
     </div>
+</div>
 
-    <button onclick="handleSignOut()" style="width: 100%; padding: 12px; background: transparent; color: var(--color-bad); border: 1px solid var(--color-bad); border-radius: 12px; font-weight: 800; cursor: pointer;">CERRAR SESIÓN</button>
+<div id="membresiaSelectorModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10001; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-app); width:90%; max-width:400px; padding:20px; border-radius:20px; max-height:80vh; overflow-y:auto;">
+        <h3 style="margin-bottom:15px; font-weight:800;">Seleccionar Membresía</h3>
+        <div id="selectorList"></div>
+        <button onclick="closeMembresiaSelector()" style="width:100%; margin-top:20px; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-main);">Cerrar</button>
+    </div>
 </div>
 
         <div id="proLandingArea" style="display: none;"></div>
