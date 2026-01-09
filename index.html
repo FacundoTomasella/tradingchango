@@ -1889,35 +1889,43 @@ async function openMembresiaSelector() {
 
 async function renderEntidadesPorCategoria(categoria) {
     const list = document.getElementById('selectorList');
-    
-    // Traemos solo los que pertenecen a esa categoría
     const { data: entidades } = await supabaseAuth
         .from('catalogo_membresias')
         .select('*')
         .eq('categoria', categoria)
         .order('nombre');
 
+    // Traemos las que ya tiene el usuario para poner el tilde verde ✓
+    const actuales = Array.isArray(currentProfile.membresias) ? currentProfile.membresias : [];
+
     list.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
-            <button onclick="openMembresiaSelector()" style="background:none; border:none; color:var(--text-main); cursor:pointer; font-size:18px;">
-                <i class="fa-solid fa-arrow-left"></i>
-            </button>
-            <h3 style="font-size:16px; font-weight:800;">${categoria}</h3>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; color: var(--text-main);">
+            <i class="fa-solid fa-arrow-left" onclick="openMembresiaSelector()" style="cursor:pointer; color: var(--color-good);"></i>
+            <h4 style="font-weight:800; margin:0;">${categoria}</h4>
         </div>
         
         <div style="display: flex; flex-direction: column; gap: 5px;">
-            ${entidades.map(m => `
-                <div onclick="selectMembresiaDetalle('${m.slug}')" style="
-                    display:flex; 
-                    align-items:center; 
-                    gap:12px; 
-                    padding:12px; 
-                    border-bottom:1px solid var(--border); 
-                    cursor:pointer;">
-                    <img src="${m.logo_url}" style="width:24px; height:24px; object-fit:contain;" onerror="this.src='https://via.placeholder.com/24'">
-                    <div style="font-size:14px; font-weight:700;">${m.nombre}</div>
-                </div>
-            `).join('')}
+            ${entidades.map(m => {
+                // Verificamos si ya tiene esta entidad guardada
+                const yaTieneAlguna = actuales.some(userM => userM.slug === m.slug);
+                
+                return `
+                    <div onclick="selectMembresiaDetalle('${m.slug}')" style="
+                        display:flex; align-items:center; gap:12px; padding:12px; 
+                        border-radius: 8px; border: 1px solid var(--border);
+                        cursor:pointer; transition: 0.2s;
+                        background: ${yaTieneAlguna ? 'rgba(0, 200, 83, 0.05)' : 'var(--bg-card)'};
+                    ">
+                        <img src="${m.logo_url}" style="width:24px; height:24px; object-fit:contain;" onerror="this.src='https://via.placeholder.com/24'">
+                        <div style="flex-grow: 1;">
+                            <div style="font-size:14px; font-weight:700; color: ${yaTieneAlguna ? 'var(--color-good)' : 'var(--text-main)'};">
+                                ${m.nombre} ${yaTieneAlguna ? '✓' : ''}
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right" style="font-size: 10px; opacity: 0.3; color: var(--text-main);"></i>
+                    </div>
+                `;
+            }).join('')}
         </div>
     `;
 }
@@ -1927,12 +1935,27 @@ async function renderEntidadesPorCategoria(categoria) {
 }
 // Función para cuando eligen, por ejemplo, "Galicia"
 async function selectMembresiaDetalle(slug) {
-    const list = document.getElementById('selectorList');
     const { data: membresia } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
     if (!membresia) return;
 
-    const opciones = membresia.opciones || ["Débito", "Crédito"];
+    // 1. Verificamos si tiene opciones cargadas en la base de datos
+    const tieneOpciones = membresia.opciones && membresia.opciones.length > 0;
+
+    if (!tieneOpciones) {
+        // FLUJO DIRECTO: No necesita elegir nada más (Categoría -> Entidad)
+        await confirmarMembresia(slug, null); 
+        // Cerramos el selector si es una sola opción para mejorar la UX
+        closeMembresiaSelector(); 
+    } else {
+        // FLUJO CON DETALLE: Llamamos a la función que renderiza los botones
+        renderSelectorOpciones(membresia);
+    }
+}
+
+function renderSelectorOpciones(membresia) {
+    const list = document.getElementById('selectorList');
     const actuales = Array.isArray(currentProfile.membresias) ? currentProfile.membresias : [];
+    const opciones = membresia.opciones;
 
     list.innerHTML = `
         <div style="text-align:center; padding: 10px; color: var(--text-main);">
@@ -1940,10 +1963,10 @@ async function selectMembresiaDetalle(slug) {
             <h4 style="margin-bottom:20px; font-size:16px;">¿Qué tipo de ${membresia.nombre} tenés?</h4>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 ${opciones.map(opt => {
-                    const yaLoTiene = actuales.some(m => m.slug === slug && m.tipo === opt);
+                    const yaLoTiene = actuales.some(m => m.slug === membresia.slug && m.tipo === opt);
                     return `
-                        <button onclick="confirmarMembresia('${slug}', '${opt}')" style="
-                            padding: 15px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s;
+                        <button onclick="confirmarMembresia('${membresia.slug}', '${opt}')" style="
+                            padding: 15px; border-radius: 12px; font-weight: 700; cursor: pointer;
                             border: 2px solid ${yaLoTiene ? 'var(--color-good)' : 'var(--border)'}; 
                             background: ${yaLoTiene ? 'rgba(0, 200, 83, 0.15)' : 'var(--bg-card)'}; 
                             color: var(--text-main);
@@ -1953,24 +1976,13 @@ async function selectMembresiaDetalle(slug) {
                     `;
                 }).join('')}
             </div>
-            
-            <p onclick="renderEntidadesPorCategoria('${membresia.categoria}')" style="
-                margin-top:25px; 
-                font-size:13px; 
-                font-weight: 700;
-                color: var(--color-good); 
-                cursor:pointer; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
-                gap: 8px;
-            ">
-                <i class="fa-solid fa-arrow-left"></i> Volver a ${membresia.categoria}
+            <p onclick="renderEntidadesPorCategoria('${membresia.categoria}')" style="margin-top:25px; font-size:13px; color: var(--color-good); cursor:pointer; font-weight:700;">
+                <i class="fa-solid fa-arrow-left"></i> Volver
             </p>
         </div>
     `;
 }
-
+       
      async function confirmarMembresia(slug, tipo) {
     let actuales = Array.isArray(currentProfile.membresias) ? [...currentProfile.membresias] : [];
     
