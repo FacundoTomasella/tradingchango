@@ -1551,18 +1551,12 @@ let isSignUpMode = false;
 function showAuthStep(step) {
     const areas = ['authWelcomeArea', 'authFormArea', 'profileArea', 'proLandingArea'];
     const container = document.getElementById('authContainer');
-
     areas.forEach(id => {
         const el = document.getElementById(id);
-        if (el) {
-            el.style.display = (id === step) ? 'block' : 'none';
-        }
+        if (el) el.style.display = (id === step) ? 'block' : 'none';
     });
-
-    // Ajuste de tamaño para la landing PRO (que es más ancha)
-    if (container) {
-        container.style.maxWidth = (step === 'proLandingArea') ? '600px' : '400px';
-    }
+    // Ajuste de tamaño para Landing PRO
+    if (container) container.style.maxWidth = (step === 'proLandingArea') ? '600px' : '400px';
 }
        
 function showAuthStep(stepId) {
@@ -1736,15 +1730,13 @@ function toggleFav(id, btn) {
     const count = Object.keys(favorites).length;
     const isPro = currentProfile?.subscription === 'pro' || currentProfile?.subscription === 'premium';
 
-    // Límite de 5 para usuarios gratuitos
     if (!isPro && !isAlreadyFav && count >= 5) {
         document.getElementById('authModal').style.display = 'flex';
-        renderProLanding(); // 1. Primero inyectamos el HTML
-        showAuthStep('proLandingArea'); // 2. Luego lo hacemos visible
+        renderProLanding(); // <--- ESTO LLENA EL HTML
+        showAuthStep('proLandingArea'); // <--- ESTO LO MUESTRA
         return;
     }
 
-    // Lógica normal de favoritos
     if (isAlreadyFav) delete favorites[id];
     else favorites[id] = 1;
 
@@ -1839,33 +1831,39 @@ function renderProLanding() {
 async function openMembresiaSelector() {
     const modal = document.getElementById('membresiaSelectorModal');
     const list = document.getElementById('selectorList');
-    modal.style.display = 'flex';
+    modal.style.display = 'block';
     
-    const { data: catalogo } = await supabaseAuth.from('catalogo_membresias').select('*');
+    const { data: catalogo } = await supabaseAuth.from('catalogo_membresias').select('*').order('categoria');
     
-    // Agrupar por categoría
-    const categorias = [...new Set(catalogo.map(m => m.categoria))];
-    
-    list.innerHTML = categorias.map(cat => `
-        <div style="margin-top:15px; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6;">${cat}</div>
-        ${catalogo.filter(m => m.categoria === cat).map(m => `
-            <div onclick="selectMembresiaDetalle('${m.slug}')" style="display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid var(--border); cursor:pointer;">
-                <img src="${m.logo_url}" style="width:24px; height:24px; object-fit:contain;">
-                <span style="font-size:14px; font-weight:600;">${m.nombre}</span>
+    list.innerHTML = catalogo.map(m => `
+        <div onclick="selectMembresiaDetalle('${m.slug}')" style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:pointer;">
+            <img src="${m.logo_url}" style="width:24px; height:24px; object-fit:contain;">
+            <div>
+                <div style="font-size:14px; font-weight:700;">${m.nombre}</div>
+                <div style="font-size:10px; color:var(--text-muted);">${m.categoria}</div>
             </div>
-        `).join('')}
+        </div>
     `).join('');
 }
 
+      function closeMembresiaSelector() {
+    document.getElementById('membresiaSelectorModal').style.display = 'none';
+}
 // Función para cuando eligen, por ejemplo, "Galicia"
 async function selectMembresiaDetalle(slug) {
     const { data: membresia } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
     
-    // Si el banco tiene opciones (Débito, Crédito, etc.) en la columna JSONB
-    const opcion = prompt(`¿Qué tipo de ${membresia.nombre} tenés?\nEj: ${membresia.opciones.join(', ')}`);
+    // Si no tienes configurada la columna 'opciones' aún, usamos este prompt genérico
+    const opciones = membresia.opciones || ["Débito", "Crédito"];
+    const tipo = prompt(`¿Qué tipo de ${membresia.nombre} tenés?\n(${opciones.join(' / ')})`);
     
-    if (opcion) {
-        await addMembresiaToUser(slug, opcion);
+    if (tipo) {
+        let actuales = Array.isArray(currentProfile.membresias) ? [...currentProfile.membresias] : [];
+        actuales.push({ slug, tipo });
+        
+        currentProfile.membresias = actuales;
+        await supabaseAuth.from('perfiles').update({ membresias: actuales }).eq('id', currentUser.id);
+        renderWallet();
         closeMembresiaSelector();
     }
 }
@@ -1927,14 +1925,16 @@ async function renderWallet() {
     const { data: catalogo } = await supabaseAuth.from('catalogo_membresias').select('*');
     const misMembresias = currentProfile?.membresias || [];
 
+    // Limpiamos y filtramos solo membresías que existen en el catálogo para evitar "undefined"
     container.innerHTML = misMembresias.map((m, index) => {
         const info = catalogo.find(c => c.slug === m.slug);
+        if (!info) return ''; // Si no hay info, no dibujamos nada
         return `
-            <div class="benefit-card active" onclick="removeMembresia(${index})">
-                <img src="${info?.logo_url}" alt="${info?.nombre}">
-                <span style="font-size:8px; line-height:1;">${info?.nombre}</span>
-                <span style="font-size:7px; opacity:0.7;">${m.tipo}</span>
-                <div class="benefit-check" style="background:var(--color-bad);"><i class="fa-solid fa-xmark"></i></div>
+            <div class="benefit-card active" onclick="removeMembresia(${index})" style="background: var(--bg-card); border: 1px solid var(--color-good); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                <img src="${info.logo_url}" style="width: 24px; height: 24px; object-fit: contain; margin-bottom: 4px;">
+                <span style="font-size: 8px; font-weight: 800; text-align: center;">${info.nombre}</span>
+                <span style="font-size: 7px; opacity: 0.7;">${m.tipo || ''}</span>
+                <div style="position: absolute; top: -5px; right: -5px; background: var(--color-bad); color: white; width: 14px; height: 14px; border-radius: 50%; font-size: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></div>
             </div>
         `;
     }).join('');
@@ -1967,65 +1967,68 @@ async function toggleMembresia(slug) {
 </script>
 <div id="authModal" onclick="closeAuthOutside(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
     <div id="authContainer" style="background: var(--bg-app); padding: 30px; border-radius: 24px; width: 100%; max-width: 400px; position: relative; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
+    
+    <button onclick="closeAuth()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; z-index: 10;">&times;</button>
+
+    <div id="authWelcomeArea" style="display: none; text-align: center;">
+        <div style="font-size: 40px; margin-bottom: 15px;">🛒</div>
+        <h2 style="font-weight: 800; margin-bottom: 10px;">¡Hola, Trader!</h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 30px;">Registrate gratis para guardar productos ilimitados.</p>
+        <button onclick="showAuthForm('register')" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800; cursor: pointer; margin-bottom: 12px;">CREAR CUENTA GRATIS</button>
+        <button onclick="showAuthForm('login')" style="width: 100%; padding: 15px; background: transparent; color: var(--text-main); border: 1px solid var(--border); border-radius: 12px; font-weight: 700; cursor: pointer;">YA TENGO CUENTA</button>
+    </div>
+
+    <div id="authFormArea" style="display: none;">
+        <h2 id="authTitle" style="font-weight: 800; margin-bottom: 20px;">Cuenta</h2>
+        <form onsubmit="handleAuthSubmit(event)">
+            <div id="registerFields">
+                <input type="text" id="regNombre" placeholder="Nombre" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
+                <input type="text" id="regApellido" placeholder="Apellido" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
+                <input type="date" id="regFecha" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
+            </div>
+            <input type="email" id="authEmail" placeholder="Email" required style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
+            <input type="password" id="authPass" placeholder="Contraseña" required style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
+            <button type="submit" id="authBtnLabel" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800;">CONTINUAR</button>
+        </form>
+        <p onclick="currentUser ? showAuthStep('profileArea') : showAuthStep('authWelcomeArea')" style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted); cursor: pointer;">← Volver atrás</p>
+    </div>
+
+    <div id="profileArea" style="display: none; text-align: center;">
+        <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+        <h2 id="profileName" style="font-weight: 800; margin-bottom: 5px;">-</h2>
+        <p id="profileEmail" style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;"></p>
         
-        <button onclick="closeAuth()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; z-index: 10;">&times;</button>
-
-        <div id="authWelcomeArea" style="display: none; text-align: center;">
-            <div style="font-size: 40px; margin-bottom: 15px;">🛒</div>
-            <h2 style="font-weight: 800; margin-bottom: 10px;">¡Hola, Trader!</h2>
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 30px;">Registrate gratis para guardar productos ilimitados.</p>
-            <button onclick="showAuthForm('register')" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800; cursor: pointer; margin-bottom: 12px;">CREAR CUENTA GRATIS</button>
-            <button onclick="showAuthForm('login')" style="width: 100%; padding: 15px; background: transparent; color: var(--text-main); border: 1px solid var(--border); border-radius: 12px; font-weight: 700; cursor: pointer;">YA TENGO CUENTA</button>
+        <div style="background: var(--bg-card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; text-align: left;">
+            <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 12px; color: var(--text-muted);">Suscripción:</span>
+                <span id="profileSub" style="font-size: 12px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">-</span>
+            </div>
+            <div style="display:flex; justify-content: space-between;">
+                <span style="font-size: 12px; color: var(--text-muted);">Miembro desde:</span>
+                <span id="profileDate" style="font-size: 12px; font-weight: 600;">-</span>
+            </div>
         </div>
 
-        <div id="authFormArea" style="display: none;">
-            <h2 id="authTitle" style="font-weight: 800; margin-bottom: 20px;">Cuenta</h2>
-            <form onsubmit="handleAuthSubmit(event)">
-                <div id="registerFields">
-                    <input type="text" id="regNombre" placeholder="Nombre" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
-                    <input type="text" id="regApellido" placeholder="Apellido" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
-                    <input type="date" id="regFecha" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
+        <div style="text-align: left; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;">
+            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 15px;">Mis Membresías</span>
+            <div id="walletContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <div onclick="openMembresiaSelector()" style="border: 2px dashed var(--border); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+                    <i class="fa-solid fa-plus" style="color: var(--color-good);"></i>
+                    <span style="font-size: 10px; color: var(--color-good); font-weight: 700;">Agregar</span>
                 </div>
-                <input type="email" id="authEmail" placeholder="Email" required style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
-                <input type="password" id="authPass" placeholder="Contraseña" required style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
-                <button type="submit" id="authBtnLabel" style="width: 100%; padding: 15px; background: var(--accent); color: var(--bg-app); border: none; border-radius: 12px; font-weight: 800;">CONTINUAR</button>
-            </form>
-            <p onclick="currentUser ? showAuthStep('profileArea') : showAuthStep('authWelcomeArea')" style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted); cursor: pointer;">← Volver atrás</p>
+                <div id="activeMembresias" style="display: contents;"></div>
+            </div>
         </div>
 
-        <div id="profileArea" style="display: none; text-align: center;">
-    <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
-    <h2 id="profileName" style="font-weight: 800; margin-bottom: 5px;">-</h2>
-    <p id="profileEmail" style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;"></p>
-    
-    <div style="background: var(--bg-card); padding: 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 25px; text-align: left;">
-        <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
-            <span style="font-size: 12px; color: var(--text-muted);">Suscripción:</span>
-            <span id="profileSub" style="font-size: 12px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">-</span>
-        </div>
-        <div style="display:flex; justify-content: space-between;">
-            <span style="font-size: 12px; color: var(--text-muted);">Miembro desde:</span>
-            <span id="profileDate" style="font-size: 12px; font-weight: 600;">-</span>
-        </div>
+        <button onclick="handleSignOut()" style="width: 100%; margin-top: 25px; padding: 12px; background: transparent; color: var(--color-bad); border: 1px solid var(--color-bad); border-radius: 12px; font-weight: 800; cursor: pointer;">CERRAR SESIÓN</button>
     </div>
 
-    <div style="text-align: left; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;">
-    <span class="pv-market-title" style="margin-bottom: 15px; display: block;">Mis Membresías</span>
-    
-    <div id="walletContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-        <div class="benefit-card add-card" onclick="openMembresiaSelector()" style="border: 2px dashed var(--border); opacity: 1; filter: none;">
-            <i class="fa-solid fa-plus" style="color: var(--color-good);"></i>
-            <span style="color: var(--color-good);">Agregar</span>
-        </div>
-        <div id="activeMembresias" style="display: contents;"></div>
-    </div>
-</div>
+    <div id="proLandingArea" style="display: none;"></div>
 
-<div id="membresiaSelectorModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10001; align-items:center; justify-content:center;">
-    <div style="background:var(--bg-app); width:90%; max-width:400px; padding:20px; border-radius:20px; max-height:80vh; overflow-y:auto;">
-        <h3 style="margin-bottom:15px; font-weight:800;">Seleccionar Membresía</h3>
-        <div id="selectorList"></div>
-        <button onclick="closeMembresiaSelector()" style="width:100%; margin-top:20px; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-main);">Cerrar</button>
+    <div id="membresiaSelectorModal" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:var(--bg-app); z-index:100; padding:20px;">
+        <h3 style="margin-bottom:15px; font-weight:800;">Agregar Membresía</h3>
+        <div id="selectorList" style="max-height: 70%; overflow-y: auto;"></div>
+        <button onclick="closeMembresiaSelector()" style="width:100%; margin-top:20px; padding:12px; border-radius:10px; background:var(--bg-card); border:1px solid var(--border); font-weight:700;">Cerrar</button>
     </div>
 </div>
 
