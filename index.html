@@ -1935,36 +1935,21 @@ async function renderEntidadesPorCategoria(categoria) {
 }
 // Función para cuando eligen, por ejemplo, "Galicia"
 async function selectMembresiaDetalle(slug) {
-    const { data: membresia, error } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
-    
-    if (error || !membresia) {
-        console.error("Error al obtener membresía:", error);
-        return;
-    }
+    const { data: membresia } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
+    if (!membresia) return;
 
-    // Verificación ultra-segura de opciones
-    let opcionesValidas = [];
-    if (membresia.opciones) {
-        if (Array.isArray(membresia.opciones)) {
-            opcionesValidas = membresia.opciones;
-        } else {
-            // Por si acaso Supabase lo devuelve como string JSON
-            try { opcionesValidas = JSON.parse(membresia.opciones); } catch(e) { opcionesValidas = []; }
-        }
-    }
+    // Detectamos si el array de opciones está vacío (como en tus Prepagas [])
+    const tieneOpciones = membresia.opciones && membresia.opciones.length > 0;
 
-    if (opcionesValidas.length === 0) {
-        // CASO DIRECTO (Sin Débito/Crédito)
-        // Guardamos con un tipo genérico para que no diga "null" en el perfil
-        await confirmarMembresia(slug, "Activa"); 
+    if (!tieneOpciones) {
+        // CASO PREPAGAS: Guardamos con tipo "Directa" para saber que no lleva subtítulo
+        await confirmarMembresia(slug, "Directa"); 
         closeMembresiaSelector(); 
     } else {
-        // CASO CON DETALLE (Muestra Débito/Crédito)
-        // Le pasamos las opciones limpias a la función de renderizado
-        renderSelectorOpciones(membresia, opcionesValidas);
+        // CASO BANCOS: Abrimos el selector con ["Débito", "Crédito Visa", etc.]
+        renderSelectorOpciones(membresia, membresia.opciones);
     }
 }
-
 // Agregamos 'opciones' como parámetro para asegurar que siempre use datos limpios
 function renderSelectorOpciones(membresia, opciones) {
     const list = document.getElementById('selectorList');
@@ -2130,21 +2115,14 @@ async function renderWallet() {
         const info = catalogo.find(c => c.slug === m.slug);
         if (!info) return ''; 
 
-        // Lógica condicional para el texto inferior
-        const mostrarSubtitulo = m.tipo && m.tipo !== "Directa";
+        // Si el tipo es "Directa", ocultamos el subtítulo
+        const tieneSubtitulo = m.tipo && m.tipo !== "Directa";
 
         return `
             <div class="benefit-card active" onclick="removeMembresia(${index})" style="
-                display: flex; 
-                flex-direction: column; 
-                align-items: center; 
-                position: relative;
-                min-height: 65px;
-                justify-content: center;
-                background: var(--bg-card);
-                border: 1px solid var(--color-good);
-                border-radius: 12px;
-                padding: 8px;">
+                display: flex; flex-direction: column; align-items: center; position: relative;
+                min-height: 65px; justify-content: center; background: var(--bg-card);
+                border: 1px solid var(--color-good); border-radius: 12px; padding: 8px;">
                 
                 <img src="${info.logo_url}" style="width: 22px; height: 22px; object-fit: contain;">
                 
@@ -2152,7 +2130,7 @@ async function renderWallet() {
                     ${info.nombre}
                 </span>
                 
-                ${mostrarSubtitulo ? `
+                ${tieneSubtitulo ? `
                     <span style="font-size: 7px; opacity: 0.7; text-align:center; color: var(--text-main);">
                         ${m.tipo}
                     </span>
@@ -2165,7 +2143,7 @@ async function renderWallet() {
         `;
     }).join('');
 }
-
+       
 async function toggleMembresia(slug) {
     if (!currentUser) return;
 
