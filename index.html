@@ -602,6 +602,18 @@
     display: block;
     line-height: 1;
 }
+        #membresiaSelectorModal i {
+        color: var(--text-main); /* Por defecto siguen al texto del tema */
+    }
+    
+    #membresiaSelectorModal .fa-arrow-left {
+        color: var(--color-good); /* La flecha de volver siempre verde */
+    }
+    
+    #membresiaSelectorModal .fa-check {
+        color: var(--color-good); /* El tilde siempre verde */
+    }
+
     
     </style>
 <meta http-equiv="Content-Security-Policy" content="
@@ -1916,43 +1928,44 @@ async function renderEntidadesPorCategoria(categoria) {
 // Función para cuando eligen, por ejemplo, "Galicia"
 async function selectMembresiaDetalle(slug) {
     const list = document.getElementById('selectorList');
-    
-    // 1. Buscamos la info de la membresía
     const { data: membresia } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
     if (!membresia) return;
 
     const opciones = membresia.opciones || ["Débito", "Crédito"];
-    
-    // 2. Obtenemos las membresías que el usuario YA tiene para comparar
     const actuales = Array.isArray(currentProfile.membresias) ? currentProfile.membresias : [];
 
     list.innerHTML = `
-        <div style="text-align:center; padding: 10px;">
+        <div style="text-align:center; padding: 10px; color: var(--text-main);">
             <img src="${membresia.logo_url}" style="width:40px; margin-bottom:10px; object-fit:contain;">
             <h4 style="margin-bottom:20px; font-size:16px;">¿Qué tipo de ${membresia.nombre} tenés?</h4>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 ${opciones.map(opt => {
-                    // VERIFICACIÓN: ¿Ya tiene este banco con este tipo de tarjeta?
                     const yaLoTiene = actuales.some(m => m.slug === slug && m.tipo === opt);
-                    
                     return `
                         <button onclick="confirmarMembresia('${slug}', '${opt}')" style="
-                            padding: 15px; 
-                            border-radius: 12px; 
-                            font-weight: 700;
-                            cursor: pointer;
-                            transition: 0.3s;
+                            padding: 15px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s;
                             border: 2px solid ${yaLoTiene ? 'var(--color-good)' : 'var(--border)'}; 
                             background: ${yaLoTiene ? 'rgba(0, 200, 83, 0.15)' : 'var(--bg-card)'}; 
-                            color: ${yaLoTiene ? 'var(--color-good)' : 'var(--text-main)'};
+                            color: var(--text-main);
                         ">
                             ${opt} ${yaLoTiene ? '✓' : ''}
                         </button>
                     `;
                 }).join('')}
             </div>
-            <p onclick="renderEntidadesPorCategoria('${membresia.categoria}')" style="margin-top:20px; font-size:12px; color:var(--text-muted); cursor:pointer; text-decoration:underline;">
-                ← Volver
+            
+            <p onclick="renderEntidadesPorCategoria('${membresia.categoria}')" style="
+                margin-top:25px; 
+                font-size:13px; 
+                font-weight: 700;
+                color: var(--color-good); 
+                cursor:pointer; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                gap: 8px;
+            ">
+                <i class="fa-solid fa-arrow-left"></i> Volver a ${membresia.categoria}
             </p>
         </div>
     `;
@@ -2170,11 +2183,17 @@ async function toggleMembresia(slug) {
 
     <div id="proLandingArea" style="display: none;"></div>
 
-    <div id="membresiaSelectorModal" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:var(--bg-app); z-index:100; padding:20px;">
-        <h3 style="margin-bottom:15px; font-weight:800;">Agregar Membresía</h3>
-        <div id="selectorList" style="max-height: 70%; overflow-y: auto;"></div>
-        <button onclick="closeMembresiaSelector()" style="width:100%; margin-top:20px; padding:12px; border-radius:10px; background:var(--bg-card); border:1px solid var(--border); font-weight:700;">Cerrar</button>
+    <div id="membresiaSelectorModal" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:var(--bg-app); z-index:100; padding:20px; color: var(--text-main);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="font-weight:800; margin: 0;">Agregar Membresía</h3>
+        <i class="fa-solid fa-xmark" onclick="closeMembresiaSelector()" style="cursor: pointer; font-size: 20px; color: var(--text-main); opacity: 0.6;"></i>
     </div>
+    
+    <div id="selectorList" style="max-height: 75%; overflow-y: auto;"></div>
+    
+    <button onclick="closeMembresiaSelector()" style="width:100%; margin-top:20px; padding:12px; border-radius:10px; background:var(--bg-card); border:1px solid var(--border); color:var(--text-main); font-weight:700; cursor: pointer;">
+        Cerrar
+    </button>
 </div>
 
         <div id="proLandingArea" style="display: none;"></div>
