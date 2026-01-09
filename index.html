@@ -2022,27 +2022,32 @@ function renderSelectorOpciones(membresia, opciones) {
      async function confirmarMembresia(slug, tipo) {
     let actuales = Array.isArray(currentProfile.membresias) ? [...currentProfile.membresias] : [];
     
-    // Buscamos si ya existe
-    const index = actuales.findIndex(m => m.slug === slug && m.tipo === tipo);
+    // Si 'tipo' llega como null o undefined, es una membresía de Categoría -> X
+    const valorTipo = tipo || "Directa";
+
+    // Buscamos si ya existe para hacer el efecto de "marcar/desmarcar"
+    const index = actuales.findIndex(m => m.slug === slug && m.tipo === valorTipo);
 
     if (index > -1) {
-        // Si ya existe, la quitamos (opcional, para que funcione como toggle)
-        actuales.splice(index, 1);
+        actuales.splice(index, 1); // Quitar si ya existe
     } else {
-        // Si no existe, la agregamos
-        actuales.push({ slug, tipo });
+        actuales.push({ slug, tipo: valorTipo }); // Agregar si es nueva
     }
     
     currentProfile.membresias = actuales;
     
-    // Guardamos en Supabase
-    const { error } = await supabaseAuth.from('perfiles').update({ membresias: actuales }).eq('id', currentUser.id);
+    const { error } = await supabaseAuth
+        .from('perfiles')
+        .update({ membresias: actuales })
+        .eq('id', currentUser.id);
     
     if (!error) {
-        // Actualizamos el modal de opciones para que cambie el color del botón al instante
-        selectMembresiaDetalle(slug); 
-        // Actualizamos las tarjetas en el perfil de fondo
-        renderWallet();
+        renderWallet(); // Actualiza las tarjetas en el perfil
+        // Si estamos en el selector de opciones, lo refrescamos para mostrar el tilde verde
+        const { data: membresia } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
+        if (membresia && membresia.opciones?.length > 0) {
+            renderSelectorOpciones(membresia, membresia.opciones);
+        }
     }
 }  
        
@@ -2125,20 +2130,35 @@ async function renderWallet() {
         const info = catalogo.find(c => c.slug === m.slug);
         if (!info) return ''; 
 
+        // Lógica condicional para el texto inferior
+        const mostrarSubtitulo = m.tipo && m.tipo !== "Directa";
+
         return `
             <div class="benefit-card active" onclick="removeMembresia(${index})" style="
-                background: var(--bg-card); 
-                border: 1px solid var(--color-good); 
-                border-radius: 10px; 
-                padding: 6px; 
                 display: flex; 
                 flex-direction: column; 
                 align-items: center; 
-                position: relative;">
-                <img src="${info.logo_url}" style="width: 20px; height: 20px; object-fit: contain;">
-                <span style="font-size: 8px; font-weight: 800; margin-top:3px; text-align:center;">${info.nombre}</span>
-                <span style="font-size: 7px; opacity: 0.6; text-align:center;">${m.tipo}</span>
-                <div style="position: absolute; top: -5px; right: -5px; background: var(--color-bad); color: white; width: 14px; height: 14px; border-radius: 50%; font-size: 8px; display: flex; align-items: center; justify-content: center;">
+                position: relative;
+                min-height: 65px;
+                justify-content: center;
+                background: var(--bg-card);
+                border: 1px solid var(--color-good);
+                border-radius: 12px;
+                padding: 8px;">
+                
+                <img src="${info.logo_url}" style="width: 22px; height: 22px; object-fit: contain;">
+                
+                <span style="font-size: 8px; font-weight: 800; margin-top:5px; text-align:center; color: var(--text-main);">
+                    ${info.nombre}
+                </span>
+                
+                ${mostrarSubtitulo ? `
+                    <span style="font-size: 7px; opacity: 0.7; text-align:center; color: var(--text-main);">
+                        ${m.tipo}
+                    </span>
+                ` : ''}
+                
+                <div style="position: absolute; top: -5px; right: -5px; background: var(--color-bad); color: white; width: 14px; height: 14px; border-radius: 50%; font-size: 8px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg-app);">
                     <i class="fa-solid fa-xmark"></i>
                 </div>
             </div>
