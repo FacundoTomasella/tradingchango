@@ -1831,62 +1831,105 @@ function renderProLanding() {
 async function openMembresiaSelector() {
     const modal = document.getElementById('membresiaSelectorModal');
     const list = document.getElementById('selectorList');
+    if (!modal || !list) return;
+
     modal.style.display = 'block';
+    list.innerHTML = '<div style="text-align:center; padding:20px; opacity:0.6;">Cargando categorías...</div>';
     
-    const { data: catalogo } = await supabaseAuth.from('catalogo_membresias').select('*').order('categoria');
+    // 1. Traemos el catálogo de Supabase
+    const { data: catalogo } = await supabaseAuth.from('catalogo_membresias').select('*');
     
-    list.innerHTML = catalogo.map(m => `
-        <div onclick="selectMembresiaDetalle('${m.slug}')" style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:pointer;">
-            <img src="${m.logo_url}" style="width:24px; height:24px; object-fit:contain;">
-            <div>
-                <div style="font-size:14px; font-weight:700;">${m.nombre}</div>
-                <div style="font-size:10px; color:var(--text-muted);">${m.categoria}</div>
-            </div>
+    if (!catalogo) return;
+
+    // 2. Obtenemos categorías únicas
+    const categorias = [...new Set(catalogo.map(m => m.categoria))];
+
+    // 3. Dibujamos los botones de categorías
+    list.innerHTML = `
+        <h3 style="font-size:16px; font-weight:800; margin-bottom:15px; text-align:center;">Elegí una categoría</h3>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+            ${categorias.map(cat => `
+                <button onclick="renderEntidadesPorCategoria('${cat}')" style="
+                    padding: 18px; 
+                    border-radius: 15px; 
+                    border: 1px solid var(--border); 
+                    background: var(--bg-card); 
+                    color: var(--text-main); 
+                    font-weight: 700; 
+                    text-align: left;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;">
+                    ${cat}
+                    <i class="fa-solid fa-chevron-right" style="opacity:0.3; font-size:12px;"></i>
+                </button>
+            `).join('')}
         </div>
-    `).join('');
+    `;
 }
 
+async function renderEntidadesPorCategoria(categoria) {
+    const list = document.getElementById('selectorList');
+    
+    // Traemos solo los que pertenecen a esa categoría
+    const { data: entidades } = await supabaseAuth
+        .from('catalogo_membresias')
+        .select('*')
+        .eq('categoria', categoria)
+        .order('nombre');
+
+    list.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+            <button onclick="openMembresiaSelector()" style="background:none; border:none; color:var(--text-main); cursor:pointer; font-size:18px;">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h3 style="font-size:16px; font-weight:800;">${categoria}</h3>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            ${entidades.map(m => `
+                <div onclick="selectMembresiaDetalle('${m.slug}')" style="
+                    display:flex; 
+                    align-items:center; 
+                    gap:12px; 
+                    padding:12px; 
+                    border-bottom:1px solid var(--border); 
+                    cursor:pointer;">
+                    <img src="${m.logo_url}" style="width:24px; height:24px; object-fit:contain;" onerror="this.src='https://via.placeholder.com/24'">
+                    <div style="font-size:14px; font-weight:700;">${m.nombre}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+       
       function closeMembresiaSelector() {
     document.getElementById('membresiaSelectorModal').style.display = 'none';
 }
 // Función para cuando eligen, por ejemplo, "Galicia"
 async function selectMembresiaDetalle(slug) {
-    // 1. Traemos la info de la membresía para ver sus opciones
-    const { data: membresia, error } = await supabaseAuth
-        .from('catalogo_membresias')
-        .select('*')
-        .eq('slug', slug)
-        .single();
+    const list = document.getElementById('selectorList');
+    
+    const { data: membresia } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
+    if (!membresia) return;
 
-    if (error || !membresia) return;
-
-    // 2. Obtenemos las opciones de la columna JSONB (o usamos genéricas si está vacío)
     const opciones = membresia.opciones || ["Débito", "Crédito"];
 
-    // 3. Cambiamos el contenido del modal para que elijan la tarjeta
-    const list = document.getElementById('selectorList');
     list.innerHTML = `
         <div style="text-align:center; padding: 10px;">
-            <img src="${membresia.logo_url}" style="width:40px; margin-bottom:10px; object-fit:contain;">
-            <h4 style="margin-bottom:20px; font-size:16px;">¿Qué tipo de ${membresia.nombre} tenés?</h4>
+            <img src="${membresia.logo_url}" style="width:40px; margin-bottom:10px;">
+            <h4 style="margin-bottom:20px;">¿Qué tipo de ${membresia.nombre} tenés?</h4>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 ${opciones.map(opt => `
-                    <button onclick="confirmarSeleccion('${slug}', '${opt}')" style="
-                        padding: 15px; 
-                        border-radius: 12px; 
-                        border: 1px solid var(--border); 
-                        background: var(--bg-card); 
-                        color: var(--text-main); 
-                        font-weight: 700;
-                        cursor: pointer;
-                        font-family: inherit;">
+                    <button onclick="confirmarMembresia('${slug}', '${opt}')" style="
+                        padding: 15px; border-radius: 12px; border: 1px solid var(--border); 
+                        background: var(--bg-card); color: var(--text-main); font-weight: 700; cursor: pointer;">
                         ${opt}
                     </button>
                 `).join('')}
             </div>
-            <p onclick="openMembresiaSelector()" style="margin-top:20px; font-size:12px; color:var(--text-muted); cursor:pointer; text-decoration:underline;">
-                ← Volver al listado
-            </p>
+            <p onclick="renderEntidadesPorCategoria('${membresia.categoria}')" style="margin-top:20px; font-size:12px; color:var(--text-muted); cursor:pointer;">← Volver</p>
         </div>
     `;
 }
