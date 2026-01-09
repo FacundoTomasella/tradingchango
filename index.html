@@ -1550,13 +1550,13 @@ let isSignUpMode = false;
 // 1. CONTROL DE VISTAS DENTRO DEL MODAL
 function showAuthStep(step) {
     const areas = ['authWelcomeArea', 'authFormArea', 'profileArea', 'proLandingArea'];
-    const container = document.getElementById('authContainer');
     areas.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = (id === step) ? 'block' : 'none';
     });
-    // Ajuste de tamaño para Landing PRO
-    if (container) container.style.maxWidth = (step === 'proLandingArea') ? '600px' : '400px';
+
+    // IMPORTANTE: Si cambiamos de sección, ocultamos el selector de membresías
+    closeMembresiaSelector();
 }
        
 function showAuthStep(stepId) {
@@ -1615,14 +1615,20 @@ function openAuth() {
 }
        
 function closeAuth() {
-    document.getElementById('authModal').style.display = 'none';
+    const modal = document.getElementById('authModal');
+    modal.style.display = 'none';
     document.body.style.overflow = 'auto';
+    
+    // RESET: Cerramos el selector de membresías para que no quede "flotando" la próxima vez
+    closeMembresiaSelector(); 
 }
 
-function closeAuthOutside(e) {
-    if (e.target.id === "authModal") closeAuth();
+// Si usas una función para cerrar haciendo clic afuera:
+function closeAuthOutside(event) {
+    if (event.target.id === 'authModal') {
+        closeAuth();
+    }
 }
-
 // 2. ENVIAR FORMULARIO (Auth + Tabla Perfiles)
 async function handleAuthSubmit(e) {
     e.preventDefault();
