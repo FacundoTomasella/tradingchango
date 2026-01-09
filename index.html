@@ -1935,38 +1935,63 @@ async function renderEntidadesPorCategoria(categoria) {
 }
 // Función para cuando eligen, por ejemplo, "Galicia"
 async function selectMembresiaDetalle(slug) {
-    const { data: membresia } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
-    if (!membresia) return;
+    const { data: membresia, error } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
+    
+    if (error || !membresia) {
+        console.error("Error al obtener membresía:", error);
+        return;
+    }
 
-    // 1. Verificamos si tiene opciones cargadas en la base de datos
-    const tieneOpciones = membresia.opciones && membresia.opciones.length > 0;
+    // Verificación ultra-segura de opciones
+    let opcionesValidas = [];
+    if (membresia.opciones) {
+        if (Array.isArray(membresia.opciones)) {
+            opcionesValidas = membresia.opciones;
+        } else {
+            // Por si acaso Supabase lo devuelve como string JSON
+            try { opcionesValidas = JSON.parse(membresia.opciones); } catch(e) { opcionesValidas = []; }
+        }
+    }
 
-    if (!tieneOpciones) {
-        // FLUJO DIRECTO: No necesita elegir nada más (Categoría -> Entidad)
-        await confirmarMembresia(slug, null); 
-        // Cerramos el selector si es una sola opción para mejorar la UX
+    if (opcionesValidas.length === 0) {
+        // CASO DIRECTO (Sin Débito/Crédito)
+        // Guardamos con un tipo genérico para que no diga "null" en el perfil
+        await confirmarMembresia(slug, "Activa"); 
         closeMembresiaSelector(); 
     } else {
-        // FLUJO CON DETALLE: Llamamos a la función que renderiza los botones
-        renderSelectorOpciones(membresia);
+        // CASO CON DETALLE (Muestra Débito/Crédito)
+        // Le pasamos las opciones limpias a la función de renderizado
+        renderSelectorOpciones(membresia, opcionesValidas);
     }
 }
 
-function renderSelectorOpciones(membresia) {
+// Agregamos 'opciones' como parámetro para asegurar que siempre use datos limpios
+function renderSelectorOpciones(membresia, opciones) {
     const list = document.getElementById('selectorList');
+    if (!list) return;
+
+    // Obtenemos las membresías actuales del perfil para marcar las ya seleccionadas
     const actuales = Array.isArray(currentProfile.membresias) ? currentProfile.membresias : [];
-    const opciones = membresia.opciones;
 
     list.innerHTML = `
         <div style="text-align:center; padding: 10px; color: var(--text-main);">
-            <img src="${membresia.logo_url}" style="width:40px; margin-bottom:10px; object-fit:contain;">
-            <h4 style="margin-bottom:20px; font-size:16px;">¿Qué tipo de ${membresia.nombre} tenés?</h4>
+            <img src="${membresia.logo_url}" style="width:40px; margin-bottom:10px; object-fit:contain;" onerror="this.src='https://via.placeholder.com/24'">
+            <h4 style="margin-bottom:20px; font-size:16px; font-weight:800;">¿Qué tipo de ${membresia.nombre} tenés?</h4>
+            
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 ${opciones.map(opt => {
+                    // Verificamos si esta combinación específica ya existe en el perfil
                     const yaLoTiene = actuales.some(m => m.slug === membresia.slug && m.tipo === opt);
+                    
                     return `
                         <button onclick="confirmarMembresia('${membresia.slug}', '${opt}')" style="
-                            padding: 15px; border-radius: 12px; font-weight: 700; cursor: pointer;
+                            padding: 15px; 
+                            border-radius: 12px; 
+                            font-weight: 700; 
+                            cursor: pointer;
+                            transition: 0.3s;
+                            font-family: inherit;
+                            /* Colores dinámicos según el tema y estado */
                             border: 2px solid ${yaLoTiene ? 'var(--color-good)' : 'var(--border)'}; 
                             background: ${yaLoTiene ? 'rgba(0, 200, 83, 0.15)' : 'var(--bg-card)'}; 
                             color: var(--text-main);
@@ -1976,8 +2001,19 @@ function renderSelectorOpciones(membresia) {
                     `;
                 }).join('')}
             </div>
-            <p onclick="renderEntidadesPorCategoria('${membresia.categoria}')" style="margin-top:25px; font-size:13px; color: var(--color-good); cursor:pointer; font-weight:700;">
-                <i class="fa-solid fa-arrow-left"></i> Volver
+
+            <p onclick="renderEntidadesPorCategoria('${membresia.categoria}')" style="
+                margin-top:25px; 
+                font-size:13px; 
+                color: var(--color-good); 
+                cursor:pointer; 
+                font-weight:700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            ">
+                <i class="fa-solid fa-arrow-left"></i> Volver a ${membresia.categoria}
             </p>
         </div>
     `;
