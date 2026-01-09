@@ -1593,7 +1593,7 @@ function openAuth() {
         // Si está logueado, mostramos perfil y cargamos sus datos
         showAuthStep('profileArea');
         
-        // Cargar datos en los campos del perfil
+        // 1. Cargar datos básicos
         const nameEl = document.getElementById('profileName');
         const emailEl = document.getElementById('profileEmail');
         const subEl = document.getElementById('profileSub');
@@ -1605,6 +1605,15 @@ function openAuth() {
         if (dateEl && currentUser.created_at) {
             dateEl.innerText = new Date(currentUser.created_at).toLocaleDateString();
         }
+
+        // 2. ASEGURAR QUE MEMBRESIAS NO SEA NULL ANTES DE RENDERIZAR
+        if (!currentProfile.membresias) {
+            currentProfile.membresias = [];
+        }
+
+        // 3. LLAMADA CRUCIAL: Cargar el catálogo y las tarjetas
+        renderWallet();
+
     } else {
         // Si NO está logueado, mostramos la landing de bienvenida
         showAuthStep('authWelcomeArea');
