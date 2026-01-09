@@ -1831,49 +1831,23 @@ function renderProLanding() {
 async function openMembresiaSelector() {
     const modal = document.getElementById('membresiaSelectorModal');
     const list = document.getElementById('selectorList');
-    if (!modal || !list) return;
-
     modal.style.display = 'block';
     
-    // 1. Traemos el catálogo ordenado por categoría
     const { data: catalogo } = await supabaseAuth.from('catalogo_membresias').select('*').order('categoria');
     
-    if (!catalogo) return;
-
-    // 2. Agrupamos los datos por categoría para crear los títulos
-    const categorias = [...new Set(catalogo.map(m => m.categoria))];
-
-    // 3. Generamos el HTML con separadores
-    list.innerHTML = categorias.map(cat => `
-        <div style="
-            padding: 15px 12px 5px 12px; 
-            font-size: 11px; 
-            font-weight: 800; 
-            text-transform: uppercase; 
-            color: var(--color-good); 
-            letter-spacing: 0.5px;
-            opacity: 0.8;
-        ">
-            ${cat}
-        </div>
-        
-        ${catalogo.filter(m => m.categoria === cat).map(m => `
-            <div onclick="selectMembresiaDetalle('${m.slug}')" style="
-                display:flex; 
-                align-items:center; 
-                gap:12px; 
-                padding:12px; 
-                border-bottom:1px solid var(--border); 
-                cursor:pointer;
-            ">
-                <img src="${m.logo_url}" style="width:24px; height:24px; object-fit:contain;" onerror="this.src='https://via.placeholder.com/24'">
-                <div>
-                    <div style="font-size:14px; font-weight:700;">${m.nombre}</div>
-                    <div style="font-size:10px; color:var(--text-muted);">Seleccionar opciones</div>
-                </div>
+    list.innerHTML = catalogo.map(m => `
+        <div onclick="selectMembresiaDetalle('${m.slug}')" style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:pointer;">
+            <img src="${m.logo_url}" style="width:24px; height:24px; object-fit:contain;">
+            <div>
+                <div style="font-size:14px; font-weight:700;">${m.nombre}</div>
+                <div style="font-size:10px; color:var(--text-muted);">${m.categoria}</div>
             </div>
-        `).join('')}
+        </div>
     `).join('');
+}
+
+      function closeMembresiaSelector() {
+    document.getElementById('membresiaSelectorModal').style.display = 'none';
 }
 // Función para cuando eligen, por ejemplo, "Galicia"
 async function selectMembresiaDetalle(slug) {
