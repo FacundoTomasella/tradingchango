@@ -1917,29 +1917,74 @@ async function renderEntidadesPorCategoria(categoria) {
 async function selectMembresiaDetalle(slug) {
     const list = document.getElementById('selectorList');
     
+    // 1. Buscamos la info de la membresía
     const { data: membresia } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
     if (!membresia) return;
 
     const opciones = membresia.opciones || ["Débito", "Crédito"];
+    
+    // 2. Obtenemos las membresías que el usuario YA tiene para comparar
+    const actuales = Array.isArray(currentProfile.membresias) ? currentProfile.membresias : [];
 
     list.innerHTML = `
         <div style="text-align:center; padding: 10px;">
-            <img src="${membresia.logo_url}" style="width:40px; margin-bottom:10px;">
-            <h4 style="margin-bottom:20px;">¿Qué tipo de ${membresia.nombre} tenés?</h4>
+            <img src="${membresia.logo_url}" style="width:40px; margin-bottom:10px; object-fit:contain;">
+            <h4 style="margin-bottom:20px; font-size:16px;">¿Qué tipo de ${membresia.nombre} tenés?</h4>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                ${opciones.map(opt => `
-                    <button onclick="confirmarMembresia('${slug}', '${opt}')" style="
-                        padding: 15px; border-radius: 12px; border: 1px solid var(--border); 
-                        background: var(--bg-card); color: var(--text-main); font-weight: 700; cursor: pointer;">
-                        ${opt}
-                    </button>
-                `).join('')}
+                ${opciones.map(opt => {
+                    // VERIFICACIÓN: ¿Ya tiene este banco con este tipo de tarjeta?
+                    const yaLoTiene = actuales.some(m => m.slug === slug && m.tipo === opt);
+                    
+                    return `
+                        <button onclick="confirmarMembresia('${slug}', '${opt}')" style="
+                            padding: 15px; 
+                            border-radius: 12px; 
+                            font-weight: 700;
+                            cursor: pointer;
+                            transition: 0.3s;
+                            border: 2px solid ${yaLoTiene ? 'var(--color-good)' : 'var(--border)'}; 
+                            background: ${yaLoTiene ? 'rgba(0, 200, 83, 0.15)' : 'var(--bg-card)'}; 
+                            color: ${yaLoTiene ? 'var(--color-good)' : 'var(--text-main)'};
+                        ">
+                            ${opt} ${yaLoTiene ? '✓' : ''}
+                        </button>
+                    `;
+                }).join('')}
             </div>
-            <p onclick="renderEntidadesPorCategoria('${membresia.categoria}')" style="margin-top:20px; font-size:12px; color:var(--text-muted); cursor:pointer;">← Volver</p>
+            <p onclick="renderEntidadesPorCategoria('${membresia.categoria}')" style="margin-top:20px; font-size:12px; color:var(--text-muted); cursor:pointer; text-decoration:underline;">
+                ← Volver
+            </p>
         </div>
     `;
 }
 
+     async function confirmarMembresia(slug, tipo) {
+    let actuales = Array.isArray(currentProfile.membresias) ? [...currentProfile.membresias] : [];
+    
+    // Buscamos si ya existe
+    const index = actuales.findIndex(m => m.slug === slug && m.tipo === tipo);
+
+    if (index > -1) {
+        // Si ya existe, la quitamos (opcional, para que funcione como toggle)
+        actuales.splice(index, 1);
+    } else {
+        // Si no existe, la agregamos
+        actuales.push({ slug, tipo });
+    }
+    
+    currentProfile.membresias = actuales;
+    
+    // Guardamos en Supabase
+    const { error } = await supabaseAuth.from('perfiles').update({ membresias: actuales }).eq('id', currentUser.id);
+    
+    if (!error) {
+        // Actualizamos el modal de opciones para que cambie el color del botón al instante
+        selectMembresiaDetalle(slug); 
+        // Actualizamos las tarjetas en el perfil de fondo
+        renderWallet();
+    }
+}  
+       
 // Esta función es la que finalmente guarda en la base de datos
 async function confirmarSeleccion(slug, tipo) {
     await addMembresiaToUser(slug, tipo);
