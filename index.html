@@ -564,6 +564,45 @@
     cursor: pointer;
     box-shadow: 0 4px 20px rgba(0, 200, 83, 0.4);
 }        
+
+    .benefit-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column; /* Icono arriba, texto abajo */
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+    filter: grayscale(1);
+    opacity: 0.5;
+    text-align: center;
+}
+
+.benefit-card.active {
+    filter: grayscale(0);
+    opacity: 1;
+    border-color: var(--color-good);
+    background: rgba(0, 200, 83, 0.05);
+}
+
+.benefit-card img {
+    width: 24px; /* Tamaño chico para el logo */
+    height: 24px;
+    object-fit: contain;
+}
+
+.benefit-card span {
+    font-size: 9px; /* Texto bien pequeño */
+    font-weight: 700;
+    text-transform: uppercase;
+    display: block;
+    line-height: 1;
+}
+    
     </style>
 <meta http-equiv="Content-Security-Policy" content="
     default-src 'self'; 
@@ -1817,7 +1856,59 @@ function renderProLanding() {
     }
 }
 
+let catalogoMembresias = []; // Se llena desde la DB
 
+async function renderWallet() {
+    const container = document.getElementById('walletContainer');
+    if (!container) return;
+
+    // 1. Traer el catálogo de Supabase si no lo tenemos
+    if (catalogoMembresias.length === 0) {
+        const { data, error } = await supabaseAuth
+            .from('catalogo_membresias')
+            .select('*')
+            .order('nombre', { ascending: true });
+        if (!error) catalogoMembresias = data;
+    }
+
+    // 2. Obtener las membresías del usuario (asumimos que están en currentProfile.membresias)
+    const misMembresias = currentProfile?.membresias || [];
+
+    // 3. Dibujar
+    container.innerHTML = catalogoMembresias.map(m => {
+        const isActive = misMembresias.includes(m.slug);
+        return `
+            <div class="benefit-card ${isActive ? 'active' : ''}" onclick="toggleMembresia('${m.slug}')">
+                <img src="${m.logo_url}" alt="${m.nombre}" onerror="this.src='https://via.placeholder.com/24'">
+                <span>${m.nombre}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+async function toggleMembresia(slug) {
+    if (!currentUser) return;
+
+    let actuales = currentProfile?.membresias || [];
+    
+    if (actuales.includes(slug)) {
+        actuales = actuales.filter(s => s !== slug);
+    } else {
+        actuales.push(slug);
+    }
+
+    // Actualizar localmente para feedback inmediato
+    currentProfile.membresias = actuales;
+    renderWallet();
+
+    // Actualizar en Supabase
+    const { error } = await supabaseAuth
+        .from('perfiles')
+        .update({ membresias: actuales })
+        .eq('id', currentUser.id);
+    
+    if (error) console.error("Error al guardar membresía:", error);
+}
      
 </script>
 <div id="authModal" onclick="closeAuthOutside(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
@@ -1868,6 +1959,14 @@ function renderProLanding() {
         <div id="proLandingArea" style="display: none;"></div>
 
     </div>
+<div style="text-align: left; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;">
+    <span class="pv-market-title" style="margin-bottom: 15px; display: block;">Mis Membresías</span>
+    
+    <div id="walletContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 25px;">
+        </div>
+</div>
+
+
 </div>
 </body>
 </html>
