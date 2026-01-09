@@ -1851,32 +1851,73 @@ async function openMembresiaSelector() {
 }
 // Función para cuando eligen, por ejemplo, "Galicia"
 async function selectMembresiaDetalle(slug) {
-    const { data: membresia } = await supabaseAuth.from('catalogo_membresias').select('*').eq('slug', slug).single();
-    
-    // Si no tienes configurada la columna 'opciones' aún, usamos este prompt genérico
+    // 1. Traemos la info de la membresía para ver sus opciones
+    const { data: membresia, error } = await supabaseAuth
+        .from('catalogo_membresias')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+    if (error || !membresia) return;
+
+    // 2. Obtenemos las opciones de la columna JSONB (o usamos genéricas si está vacío)
     const opciones = membresia.opciones || ["Débito", "Crédito"];
-    const tipo = prompt(`¿Qué tipo de ${membresia.nombre} tenés?\n(${opciones.join(' / ')})`);
-    
-    if (tipo) {
-        let actuales = Array.isArray(currentProfile.membresias) ? [...currentProfile.membresias] : [];
-        actuales.push({ slug, tipo });
-        
-        currentProfile.membresias = actuales;
-        await supabaseAuth.from('perfiles').update({ membresias: actuales }).eq('id', currentUser.id);
-        renderWallet();
-        closeMembresiaSelector();
-    }
+
+    // 3. Cambiamos el contenido del modal para que elijan la tarjeta
+    const list = document.getElementById('selectorList');
+    list.innerHTML = `
+        <div style="text-align:center; padding: 10px;">
+            <img src="${membresia.logo_url}" style="width:40px; margin-bottom:10px; object-fit:contain;">
+            <h4 style="margin-bottom:20px; font-size:16px;">¿Qué tipo de ${membresia.nombre} tenés?</h4>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                ${opciones.map(opt => `
+                    <button onclick="confirmarSeleccion('${slug}', '${opt}')" style="
+                        padding: 15px; 
+                        border-radius: 12px; 
+                        border: 1px solid var(--border); 
+                        background: var(--bg-card); 
+                        color: var(--text-main); 
+                        font-weight: 700;
+                        cursor: pointer;
+                        font-family: inherit;">
+                        ${opt}
+                    </button>
+                `).join('')}
+            </div>
+            <p onclick="openMembresiaSelector()" style="margin-top:20px; font-size:12px; color:var(--text-muted); cursor:pointer; text-decoration:underline;">
+                ← Volver al listado
+            </p>
+        </div>
+    `;
+}
+
+// Esta función es la que finalmente guarda en la base de datos
+async function confirmarSeleccion(slug, tipo) {
+    await addMembresiaToUser(slug, tipo);
+    closeMembresiaSelector();
 }
 
 async function addMembresiaToUser(slug, tipo) {
     let actuales = Array.isArray(currentProfile.membresias) ? [...currentProfile.membresias] : [];
     
-    // Guardamos como objeto para el carrito
+    // Verificamos si ya existe exactamente esa combinación para no repetirla
+    const existe = actuales.find(m => m.slug === slug && m.tipo === tipo);
+    if (existe) return;
+
     actuales.push({ slug, tipo });
     
     currentProfile.membresias = actuales;
-    await supabaseAuth.from('perfiles').update({ membresias: actuales }).eq('id', currentUser.id);
-    renderWallet();
+    
+    const { error } = await supabaseAuth
+        .from('perfiles')
+        .update({ membresias: actuales })
+        .eq('id', currentUser.id);
+    
+    if (!error) {
+        renderWallet();
+    } else {
+        console.error("Error al guardar:", error);
+    }
 }
 
 // Función para quitar membresía (clic en la tarjeta activa)
@@ -1925,16 +1966,26 @@ async function renderWallet() {
     const { data: catalogo } = await supabaseAuth.from('catalogo_membresias').select('*');
     const misMembresias = currentProfile?.membresias || [];
 
-    // Limpiamos y filtramos solo membresías que existen en el catálogo para evitar "undefined"
     container.innerHTML = misMembresias.map((m, index) => {
         const info = catalogo.find(c => c.slug === m.slug);
-        if (!info) return ''; // Si no hay info, no dibujamos nada
+        if (!info) return ''; 
+
         return `
-            <div class="benefit-card active" onclick="removeMembresia(${index})" style="background: var(--bg-card); border: 1px solid var(--color-good); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; align-items: center; position: relative;">
-                <img src="${info.logo_url}" style="width: 24px; height: 24px; object-fit: contain; margin-bottom: 4px;">
-                <span style="font-size: 8px; font-weight: 800; text-align: center;">${info.nombre}</span>
-                <span style="font-size: 7px; opacity: 0.7;">${m.tipo || ''}</span>
-                <div style="position: absolute; top: -5px; right: -5px; background: var(--color-bad); color: white; width: 14px; height: 14px; border-radius: 50%; font-size: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></div>
+            <div class="benefit-card active" onclick="removeMembresia(${index})" style="
+                background: var(--bg-card); 
+                border: 1px solid var(--color-good); 
+                border-radius: 10px; 
+                padding: 6px; 
+                display: flex; 
+                flex-direction: column; 
+                align-items: center; 
+                position: relative;">
+                <img src="${info.logo_url}" style="width: 20px; height: 20px; object-fit: contain;">
+                <span style="font-size: 8px; font-weight: 800; margin-top:3px; text-align:center;">${info.nombre}</span>
+                <span style="font-size: 7px; opacity: 0.6; text-align:center;">${m.tipo}</span>
+                <div style="position: absolute; top: -5px; right: -5px; background: var(--color-bad); color: white; width: 14px; height: 14px; border-radius: 50%; font-size: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-xmark"></i>
+                </div>
             </div>
         `;
     }).join('');
