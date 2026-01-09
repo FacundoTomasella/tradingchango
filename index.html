@@ -2061,25 +2061,30 @@ async function toggleMembresia(slug) {
         </div>
 
         <div style="text-align: left; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;">
-            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 15px;">Mis Membresías</span>
-            <div id="walletContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                <div onclick="openMembresiaSelector()" style="border: 2px dashed var(--border); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
-                    <i class="fa-solid fa-plus" style="color: var(--color-good);"></i>
-                    <span style="font-size: 10px; color: var(--color-good); font-weight: 700;">Agregar</span>
-                </div>
-                <div id="activeMembresias" style="display: contents;"></div>
-            </div>
+    <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 15px;">Mis Membresías</span>
+    
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+        <div onclick="openMembresiaSelector()" style="border: 2px dashed var(--border); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+            <i class="fa-solid fa-plus" style="color: var(--color-good); font-size: 14px;"></i>
+            <span style="font-size: 10px; color: var(--color-good); font-weight: 700; margin-top: 5px;">Agregar</span>
         </div>
 
+        <div id="activeMembresias" style="display: contents;"></div>
+    </div>
+</div>
         <button onclick="handleSignOut()" style="width: 100%; margin-top: 25px; padding: 12px; background: transparent; color: var(--color-bad); border: 1px solid var(--color-bad); border-radius: 12px; font-weight: 800; cursor: pointer;">CERRAR SESIÓN</button>
     </div>
 
     <div id="proLandingArea" style="display: none;"></div>
 
-    <div id="membresiaSelectorModal" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:var(--bg-app); z-index:100; padding:20px;">
-        <h3 style="margin-bottom:15px; font-weight:800;">Agregar Membresía</h3>
-        <div id="selectorList" style="max-height: 70%; overflow-y: auto;"></div>
-        <button onclick="closeMembresiaSelector()" style="width:100%; margin-top:20px; padding:12px; border-radius:10px; background:var(--bg-card); border:1px solid var(--border); font-weight:700;">Cerrar</button>
+   <div id="membresiaSelectorModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10001; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-app); width:90%; max-width:400px; padding:25px; border-radius:24px; position:relative;">
+        
+        <div id="selectorList" style="max-height:60vh; overflow-y:auto; margin-top:10px;"></div>
+        
+        <button onclick="closeMembresiaSelector()" style="width:100%; margin-top:20px; padding:12px; border-radius:12px; background:var(--bg-card); border:1px solid var(--border); color:var(--text-main); font-weight:700;">
+            Cancelar
+        </button>
     </div>
 </div>
 
