@@ -919,62 +919,102 @@ if (Array.isArray(favorites)) {
     const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
             async function init() {
-    try {
-        await loadSession();
-        if (!currentUser) { favorites = {}; localStorage.removeItem('fav_tickers'); }
-    
-        const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-        const configRows = await resC.json();
-        configRows.forEach(row => configDB[row.clave] = row.valor);
-
-        renderAds();
-
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-        const rows = await res.json();
-        
-        const d7 = new Date();
-        d7.setDate(d7.getDate() - 7);
-        const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-        const hData = await resH.json();
-        
-        // CORRECCIÓN AQUÍ: Mapeo seguro de la nueva columna
-        flatList = rows.map(r => {
-            const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
-            let t = r.ticker || generateTicker(r.nombre);
+            try {
+                await loadSession();
+                // AGREGA ESTO AQUÍ: Si no hay usuario, ignoramos lo que haya en localStorage
+                if (!currentUser) {
+                    favorites = {};
+                    localStorage.removeItem('fav_tickers');
+                }
             
-            // Dentro del flatList = rows.map...
-                return {
-                    id: r.id, 
-                    n: r.nombre.trim(), 
-                    cat: r.categoria, 
-                    ticker: t,
-                    p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
-                    urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
-                    h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
-                    img: r.imagen_url,
-                    // Verificación de seguridad para JSON
-                    oferta_gondola: (r.oferta_gondola && typeof r.oferta_gondola === 'string') 
-                        ? JSON.parse(r.oferta_gondola) 
-                        : (r.oferta_gondola || null)
-                };
+            // 1. Cargar Configuración (Legales, etc)
+            const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+            const configRows = await resC.json();
+            configRows.forEach(row => configDB[row.clave] = row.valor);
 
-        document.getElementById('loader').style.display = 'none';
-        updateCartBadge();
-        
-        // Manejo de rutas y tabs iniciales
-        const path = window.location.pathname.split('/').filter(p => p !== "");
-        if (paginasEstaticas[path[0]]) { openPage(path[0], paginasEstaticas[path[0]], false); } 
-        else if (path.length >= 2) {
-            const itemEncontrado = flatList.find(i => getSlug(i.n) === path[1]);
-            if (itemEncontrado) openProductView(itemEncontrado.id, false);
-            else goHome();
-        } else { goHome(); }
+            renderAds(); 
 
-    } catch (e) { 
-        console.error("Error en INIT:", e);
-        document.getElementById('loader').innerText = "ERROR AL CARGAR DATOS";
+          
+            // 2. Cargar Productos
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+            const rows = await res.json();
+            
+            // 3. Cargar Historial (últimos 7 días)
+            const d7 = new Date(); d7.setDate(d7.getDate() - 7);
+            const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+            const hData = await resH.json();
+            
+            const usedTickers = new Set();
+           // Dentro de la función async function init()
+flatList = rows.map(r => {
+    const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+    let t = r.ticker || generateTicker(r.nombre);
+    
+    return {
+        id: r.id, 
+        n: r.nombre.trim(), 
+        cat: r.categoria, 
+        ticker: t,
+        p: [
+            r.p_coto || 0, 
+            r.p_carrefour || 0, 
+            r.p_dia || 0, 
+            r.p_jumbo || 0, 
+            r.p_masonline || 0
+        ],
+        urls: [
+            r.url_coto || '#', 
+            r.url_carrefour || '#', 
+            r.url_dia || '#', 
+            r.url_jumbo || '#', 
+            r.url_masonline || '#'
+        ],
+        h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
+        img: r.imagen_url
+    }; // <--- Asegurate de que este punto y coma esté aquí
+});
+          document.getElementById('loader').style.display = 'none';
+            updateCartBadge(); 
+
+            // --- LÓGICA DE RUTAS AL CARGAR ---
+            const path = window.location.pathname.split('/').filter(p => p !== "");
+
+            if (paginasEstaticas[path[0]]) {
+                openPage(path[0], paginasEstaticas[path[0]], false);
+            } 
+            else if (path.length >= 2) {
+                const itemEncontrado = flatList.find(i => getSlug(i.n) === path[1]);
+                if (itemEncontrado) openProductView(itemEncontrado.id, false);
+                else goHome();
+            } 
+            else if (path.length === 1 && path[0] !== 'index.html') {
+                setTab(path[0], null, false);
+            } 
+            else {
+                goHome();
+            }
+
+            // --- MANEJO DEL BOTÓN ATRÁS ---
+            window.onpopstate = (e) => {
+                const p = window.location.pathname.split('/').filter(x => x !== "");
+                if (paginasEstaticas[p[0]]) {
+                    openPage(p[0], paginasEstaticas[p[0]], false);
+                } 
+                else if (p.length >= 2) {
+                    const itemPop = flatList.find(i => getSlug(i.n) === p[1]);
+                    if (itemPop) openProductView(itemPop.id, false);
+                } 
+                else {
+                    document.getElementById('pageView').classList.remove('active');
+                    document.getElementById('productFullView').style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    setTab(p[0] || 'home', null, false);
+                }
+            };
+
+        } catch (e) { console.error(e); }
     }
-}
+
     function goHome() {
         currentTab = 'home'; 
         document.getElementById('tickerList').style.display = 'block';
@@ -988,25 +1028,6 @@ if (Array.isArray(favorites)) {
         renderView();
     }
 
-function calcularPromoGondola(item, precioUnitario) {
-    const promo = item.oferta_gondola;
-    if (!promo) return 0;
-
-    const qty = favorites[item.id] || 1;
-
-    if (promo.tipo === "2x1" && qty >= 2) {
-        // Por cada par, descontamos 1 unidad
-        return Math.floor(qty / 2) * precioUnitario;
-    }
-    
-    if (promo.tipo === "70_segunda" && qty >= 2) {
-        // Por cada par, la segunda tiene 70% de descuento
-        return Math.floor(qty / 2) * (precioUnitario * 0.7);
-    }
-
-    return 0;
-}
-       
     function clearInput() {
         const input = document.getElementById('searchInput');
         input.value = '';
@@ -1266,26 +1287,7 @@ function calcularPromoGondola(item, precioUnitario) {
     }
 }
      
-    // Agregá esto antes de renderView
-function calcularAhorroTotal(superId, items) {
-    let subtotal = 0;
-    let ahorroGondola = 0;
-    items.forEach(item => {
-        const precioUnitario = item.p[superId];
-        const qty = favorites[item.id] || 1;
-        subtotal += precioUnitario * qty;
-        ahorroGondola += calcularPromoGondola(item, precioUnitario);
-    });
-    return {
-        totalFinal: subtotal - ahorroGondola,
-        ahorroTotal: ahorroGondola
-    };
-}
-
-// Función dummy para evitar que rompa si no tenés la tabla de referidos aún
-function mostrarSugerenciaReferido(superId) {
-    return ''; 
-} 
+     
     
 
     function updateCartBadge() {
@@ -1319,17 +1321,17 @@ function mostrarSugerenciaReferido(superId) {
         dataToShow = [...flatList];
     } 
     else if (currentTab === 'favs') {
-    trendFilters.style.display = 'none';
-    hero.style.display = 'none';
-    dataToShow = flatList.filter(i => favorites[i.id] !== undefined);
-    
-    if (dataToShow.length === 0) {
-        renderEmptyCart(container);
-        return;
-    }
-    // Llamada a la función que ahora calcula con Canasta Espejo y Membresías
-    renderChangoSummary(container, dataToShow);
-} 
+        trendFilters.style.display = 'none';
+        hero.style.display = 'none';
+        // Filtramos buscando llaves en el objeto
+        dataToShow = flatList.filter(i => favorites[i.id] !== undefined);
+
+        if (dataToShow.length === 0) {
+            renderEmptyCart(container);
+            return;
+        }
+        renderChangoSummary(container, dataToShow);
+    } 
     else {
         trendFilters.style.display = 'flex';
         hero.style.display = 'none';
@@ -1367,108 +1369,72 @@ function mostrarSugerenciaReferido(superId) {
                 </div>`;
         }
 
-        // BUSCÁ ESTA PARTE EN TU CÓDIGO Y REEMPLAZALA:
-const promoGondola = item.oferta_gondola;
-const badgeHtml = promoGondola ? 
-    `<span class="badge-promo" style="position: relative; top: 0; left: 0; transform: none; margin-left: 5px; font-size: 8px;">
-        ${promoGondola.etiqueta}
-    </span>` : '';
-
-// EL ERROR ESTABA AQUÍ: Primero crear el elemento, después asignar el HTML
-const card = document.createElement('div');
-card.className = 'ticker-card';
-card.onclick = () => openProductView(item.id);
-
-card.innerHTML = `
-    <div class="ticker-info">
-        <div class="t-left">
-            <span class="t-symbol">${item.ticker} ${badgeHtml}</span>
-            <span class="t-name">${item.n}</span>
-        </div>
-        <div class="t-right">
-            <span class="t-price">$${format(s.min)}</span><br>
-            <span class="t-change ${s.trendClass}">${s.icon} ${s.spread}%</span>
-        </div>
-    </div>
-    <div style="display:flex; align-items:center;">
-        ${qtyHtml}
-        <div class="fav-btn ${isAdded ? 'active' : ''}" 
-             onclick="event.stopPropagation(); toggleFav(${item.id}, this)">
-            <i class="fa-solid fa-cart-shopping"></i>
-        </div>
-    </div>
-`;
-container.appendChild(card);
-
-        function buscarMejorMembresiaParaSuper(superIdx, misMembresias) {
-    // Por ahora devolvemos null hasta que integres la tabla de beneficios_dia
-    return null;
+        const card = document.createElement('div');
+        card.className = 'ticker-card';
+        card.onclick = () => openProductView(item.id);
+        card.innerHTML = `
+            <div class="ticker-info">
+                <div class="t-left">
+                    <span class="t-symbol">${item.ticker}</span>
+                    <span class="t-name">${item.n}</span>
+                </div>
+                <div class="t-right">
+                    <span class="t-price">$${format(s.min)}</span><br>
+                    <span class="t-change ${s.trendClass}">${s.icon} ${s.spread}%</span>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center;">
+                ${qtyHtml}
+                <div class="fav-btn ${isAdded ? 'active' : ''}" 
+                     onclick="event.stopPropagation(); toggleFav(${item.id}, this)">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
 }
-
-        
-function obtenerPrecio(superIdx, productId) {
-    const producto = flatList.find(p => p.id === productId);
-    return producto ? producto.p[superIdx] : 0;
-}
-       
-      function obtenerSupermercadosValidos(items) {
-    const storeNames = ["Coto", "Carrefour", "Dia", "Jumbo", "MasOnline"];
-    const totalItemsMandatorios = items.length;
-
-    // Retorna los índices de los supermercados que tienen stock COMPLETO
-    return storeNames.map((name, idx) => {
-        const stockEnEsteSuper = items.filter(item => item.p[idx] > 0).length;
-        return {
-            index: idx,
-            nombre: name,
-            completo: stockEnEsteSuper === totalItemsMandatorios,
-            cantidad: stockEnEsteSuper
-        };
-    }).filter(s => s.completo); // Solo dejamos los que tienen todo el chango
-} 
 function renderChangoSummary(container, items) {
-    // 1. Aplicamos el filtro de Canasta Espejo
-    const supersValidos = obtenerSupermercadosValidos(items);
-    
+    const totals = [0, 0, 0, 0, 0]; 
+    const itemCounts = [0, 0, 0, 0, 0]; // Nuevo: contador de items por súper
+
+    items.forEach(item => {
+        const qty = favorites[item.id] || 1;
+        item.p.forEach((val, idx) => {
+            if (val > 0) {
+                totals[idx] += (val * qty);
+                itemCounts[idx] += 1; // Sumamos 1 al contador si el súper tiene el producto
+            }
+        });
+    });
+
+    const validTotals = totals.filter(t => t > 0);
+    const minTotal = validTotals.length > 0 ? Math.min(...validTotals) : 0;
+
     const summaryDiv = document.createElement('div');
     summaryDiv.className = 'chango-summary';
     
-    let html = `<div class="pv-market-title" style="font-weight:800; color:var(--text-main); margin-bottom:15px;">
-                    Canasta Espejo (Comparación Justa)
-                </div>`;
+    // Título en negrita potente (800)
+    let html = `<div class="pv-market-title" style="font-weight:800; color:var(--text-main); margin-bottom:15px;">Tu Chango (Total)</div>`;
+    
+    const storeNames = ["Coto", "Carrefour", "Dia", "Jumbo", "MasOnline"];
+    const totalItems = items.length; // Total de productos que el usuario marcó como favoritos
 
-    if (supersValidos.length === 0) {
-        html += `<p style="font-size:12px; opacity:0.6;">Ningún supermercado tiene todos tus productos actualmente.</p>`;
-    } else {
-        // 2. Calculamos los totales solo para los válidos
-        const resultados = supersValidos.map(s => {
-            const calculo = calcularAhorroTotal(s.index, items);
-            return { ...s, ...calculo };
-        }).sort((a, b) => a.totalFinal - b.totalFinal);
-
-        const minTotal = resultados[0].totalFinal;
-
-        resultados.forEach(res => {
-            const isBest = res.totalFinal === minTotal;
-            const sugerencia = mostrarSugerenciaReferido(res.index);
-
-            html += `
-                <div class="chango-row ${isBest ? 'best' : ''}" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; width: 100%;">
-                        <span style="font-size:13px;">${res.nombre}</span>
-                        <span style="font-weight:700;">$ ${format(Math.round(res.totalFinal))}</span>
-                    </div>
-                    ${res.ahorroTotal > 0 ? 
-                        `<small style="color:var(--color-good); font-size: 10px;">Ahorrás $ ${format(Math.round(res.ahorroTotal))} en este súper</small>` : ''}
-                    ${sugerencia ? sugerencia : ''}
-                </div>`;
-        });
-    }
+    storeNames.forEach((n, i) => {
+        const isBest = totals[i] === minTotal && minTotal > 0;
+        // Agregamos el conteo (x/y) al lado del nombre del supermercado
+        html += `
+            <div class="chango-row ${isBest ? 'best' : ''}">
+                <span style="font-size:13px;">
+                    ${n} <small style="opacity:0.6; font-weight:400;">(${itemCounts[i]}/${totalItems})</small>
+                </span>
+                <span style="font-weight:700;">$ ${format(totals[i])}</span>
+            </div>`;
+    });
     
     summaryDiv.innerHTML = html;
     container.appendChild(summaryDiv);
-}
-       
+}     
 function renderEmptyCart(container) {
     const emptyMsg = document.createElement('div');
     emptyMsg.className = 'empty-cart-message'; // Mejor usar clases CSS
@@ -1878,23 +1844,7 @@ function renderProLanding() {
         }
     });
 }
-       
-function mostrarSugerenciaReferido(superId) {
-    // Si hay un beneficio hoy para este súper pero el usuario NO lo tiene en su perfil
-    const beneficioHoy = obtenerBeneficioDia(superId); 
-    const usuarioLoTiene = currentProfile.membresias.some(m => m.slug === beneficioHoy.slug);
-
-    if (!usuarioLoTiene) {
-        return `
-            <div class="referral-box">
-                <p>Hoy hay 30% en este súper con ${beneficioHoy.nombre}</p>
-                <a href="${beneficioHoy.link_referido}" target="_blank">¡Sacala ahora y ahorrá!</a>
-            </div>
-        `;
-    }
-}
-
-       
+     
     // Abrir el modal de selección
 async function openMembresiaSelector() {
     const modal = document.getElementById('membresiaSelectorModal');
