@@ -917,8 +917,9 @@ if (Array.isArray(favorites)) {
 
     // Función para generar URLs limpias
     const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-
-            async function init() {
+    let beneficiosDelDia = []; // Variable global para los referidos
+       
+       async function init() {
             try {
                 await loadSession();
                 // AGREGA ESTO AQUÍ: Si no hay usuario, ignoramos lo que haya en localStorage
@@ -926,7 +927,12 @@ if (Array.isArray(favorites)) {
                     favorites = {};
                     localStorage.removeItem('fav_tickers');
                 }
-            
+
+                const hoy = new Date().getDay(); 
+        const resB = await fetch(`${SUPABASE_URL}/rest/v1/beneficios_super?dia_semana=eq.${hoy}`, { 
+            headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
+        });
+        beneficiosDelDia = await resB.json();
             // 1. Cargar Configuración (Legales, etc)
             const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
             const configRows = await resC.json();
@@ -1419,61 +1425,81 @@ function calcularSpreadAhorro(resultados) {
        
        
 function renderChangoSummary(container, items) {
-    // 1. Identificar en qué súper están TODOS los productos
-    const storeNames = ["Coto", "Carrefour", "Dia", "Jumbo", "MasOnline"];
-    const validos = storeNames.map((name, idx) => {
-        const tieneTodo = items.every(item => item.p[idx] > 0);
-        return { index: idx, nombre: name, valido: tieneTodo };
-    }).filter(s => s.valido);
-
+    const validos = obtenerSupermercadosValidos(items);
     const summaryDiv = document.createElement('div');
-    summaryDiv.style.cssText = `background:var(--bg-card); border:2px solid var(--color-good); border-radius:20px; padding:25px; margin:20px 10px;`;
+    summaryDiv.className = 'chango-summary';
+    summaryDiv.style.cssText = `background: var(--bg-card); border: 2px solid var(--color-good); border-radius: 20px; padding: 25px; margin: 20px 10px; box-shadow: 0 10px 30px rgba(0, 166, 80, 0.1);`;
 
     if (validos.length === 0) {
-        summaryDiv.innerHTML = `<p style="text-align:center; font-size:12px; opacity:0.5;">BUSCANDO MEJOR PRECIO EN MERCADO...</p>`;
+        summaryDiv.innerHTML = `<p style="text-align:center; font-family:'Roboto Mono'; opacity:0.5; font-size:12px;">ANALIZANDO POSICIONES...</p>`;
         container.appendChild(summaryDiv);
         return;
     }
 
-    // 2. Calcular totales con descuentos de góndola específicos
     const resultados = validos.map(v => {
-        let subtotal = 0;
-        let ahorroGondola = 0;
+        let subtotal = 0; let ahorroGondola = 0;
         items.forEach(item => {
             const p = item.p[v.index];
-            const qty = favorites[item.id] || 1;
-            subtotal += p * qty;
-            
-            // Lógica de 2x1 o 70% según el súper
-            const of = item.oferta_gondola ? item.oferta_gondola[v.nombre.toLowerCase()] : null;
-            if (of) {
-                if (of.tipo === "2x1" && qty >= 2) ahorroGondola += Math.floor(qty / 2) * p;
-                if (of.tipo === "70_segunda" && qty >= 2) ahorroGondola += Math.floor(qty / 2) * (p * 0.7);
-            }
+            subtotal += p * (favorites[item.id] || 1);
+            ahorroGondola += calcularPromoGondola(item, p, v.nombre); 
         });
-        return { ...v, totalFinal: subtotal - ahorroGondola, ahorroGondola };
+        const beneficio = beneficiosDelDia.find(b => b.supermercado.toLowerCase() === v.nombre.toLowerCase());
+        return { ...v, totalFinal: subtotal - ahorroGondola, ahorroGondola, beneficio };
     }).sort((a, b) => a.totalFinal - b.totalFinal);
 
     const ganador = resultados[0];
     const ahorroSpread = resultados.length > 1 ? (resultados[1].totalFinal - resultados[0].totalFinal) : 0;
+    const mejorPromo = ganador.beneficio;
 
     summaryDiv.innerHTML = `
-        <div style="text-align: center; margin-bottom: 20px;">
+        <div style="text-align: center; margin-bottom: 25px;">
             <span style="font-size: 11px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">Ahorrás en total</span>
-            <div style="font-size: 38px; font-weight: 900; color: var(--color-good); font-family: 'Roboto Mono';">$${format(Math.round(ganador.ahorroGondola + ahorroSpread))}<span style="font-size:16px; vertical-align:top;">*</span></div>
-        </div>
-        <div style="background:var(--bg-app); padding:15px; border-radius:12px; border:1px dashed var(--border);">
-            <div style="display:flex; justify-content:space-between; font-size:12px; opacity:0.6; margin-bottom:8px;">
-                <span>Mejor Opción</span>
-                <span>${ganador.nombre.toUpperCase()}</span>
+            <div style="font-size: 42px; font-weight: 900; color: var(--color-good); font-family: 'Roboto Mono'; margin-top: 5px; line-height:1;">
+                $${format(Math.round(ganador.ahorroGondola + ahorroSpread))}<span style="font-size: 14px; vertical-align: top; font-weight: 400; opacity:0.7;">*</span>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:800;">PAGÁS HOY*</span>
-                <span style="font-size:22px; font-weight:900; font-family:'Roboto Mono';">$${format(Math.round(ganador.totalFinal))}</span>
+            <p style="font-size: 13px; opacity: 0.8; margin-top: 8px;">Tu mejor opción hoy es <b>${ganador.nombre.toUpperCase()}</b></p>
+        </div>
+
+        <div style="background: var(--bg-app); border-radius: 14px; padding: 18px; border: 1px dashed var(--border);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; opacity: 0.6; font-size: 12px;">
+                <span>Subtotal Mercado</span>
+                <span>$${format(Math.round(ganador.totalFinal + ganador.ahorroGondola))}</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 800; font-size: 15px;">TOTAL CHANGO*</span>
+                <span style="font-size: 24px; font-weight: 900; font-family: 'Roboto Mono'; color: var(--text-main);">$${format(Math.round(ganador.totalFinal))}</span>
             </div>
         </div>
-        <p style="font-size:9px; color:var(--text-muted); text-align:center; margin-top:15px;">*Valores estimados según precios de góndola.</p>
+
+        ${mejorPromo ? `
+            <div style="margin-top: 15px; padding: 12px; border-radius: 12px; background: rgba(242, 169, 0, 0.08); border: 1px solid var(--star-gold);">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <i class="fa-solid fa-gift" style="color: var(--star-gold);"></i>
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-main);">
+                        Sumá un ${(mejorPromo.descuento * 100)}% de ahorro extra con <b>${mejorPromo.entidad_nombre}</b>.
+                    </span>
+                </div>
+                <a href="${mejorPromo.link_referido}" target="_blank" style="display: block; margin-top: 10px; text-align: center; background: var(--text-main); color: var(--bg-app); padding: 8px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 10px; text-transform: uppercase;">
+                    Solicitar Beneficio
+                </a>
+            </div>
+        ` : ''}
+
+        <div id="otrosPrecios" style="display: none; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
+            <p style="font-size: 9px; font-weight: 800; opacity: 0.4; text-transform: uppercase; margin-bottom: 10px;">Otros Supermercados</p>
+            ${resultados.slice(1).map(o => `
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; opacity: 0.6; font-family: 'Roboto Mono';">
+                    <span>${o.nombre.toUpperCase()}</span>
+                    <span>$${format(Math.round(o.totalFinal))}</span>
+                </div>
+            `).join('')}
+        </div>
+
+        <button onclick="document.getElementById('otrosPrecios').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 15px; background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; text-transform: uppercase;">
+            Comparar con el resto del mercado
+        </button>
     `;
+
     container.appendChild(summaryDiv);
 }
        
@@ -1515,6 +1541,10 @@ function renderEmptyCart(container) {
         const p = item.p[i];
         const url = item.urls[i];
         
+        // Buscamos si este súper específico tiene oferta en este producto
+        const of = item.oferta_gondola ? item.oferta_gondola[s.name.toLowerCase()] : null;
+        const badgeOferta = of ? `<span style="background:var(--color-good); color:white; font-size:8px; padding:2px 4px; border-radius:4px; margin-left:5px;">${of.etiqueta}</span>` : '';
+
         if (!p || p === 0) return `
             <div class="ob-row" style="opacity:0.5;">
                 <div class="ob-store"><div class="dot" style="background:#444"></div>${s.name}</div>
@@ -1524,7 +1554,7 @@ function renderEmptyCart(container) {
         return `
             <div class="ob-row">
                 <div class="ob-store">
-                    <div class="dot" style="background:${s.color}"></div>${s.name}
+                    <div class="dot" style="background:${s.color}"></div>${s.name} ${badgeOferta}
                 </div>
                 <a href="${url}" target="_blank" rel="noopener" class="price-link ${p === min ? 'best-val' : ''}">
                     $${format(p)}
@@ -1532,6 +1562,7 @@ function renderEmptyCart(container) {
             </div>`; 
     }).join('');
 }
+       
     function setTrendFilter(t) { currentTrendFilter = (currentTrendFilter === t) ? null : t; document.getElementById('btnUp').classList.toggle('active-up', currentTrendFilter === 'up'); document.getElementById('btnDown').classList.toggle('active-down', currentTrendFilter === 'down'); renderView(); }
     function toggleTheme() { document.documentElement.classList.toggle('dark-mode'); localStorage.setItem('theme', document.documentElement.classList.contains('dark-mode')?'dark':'light'); updateThemeIcon(); if(openId) loadPvChart(7); }
     function updateThemeIcon() { document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark-mode')?'fa-solid fa-sun':'fa-solid fa-moon'; }
