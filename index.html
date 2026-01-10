@@ -1372,52 +1372,55 @@ function calcularSpreadAhorro(resultados) {
 
         // NUEVO: Lógica para la etiqueta de oferta de góndola
         const ofertas = item.oferta_gondola;
-        let etiquetaMostrar = '';
-        
-        // Si hay ofertas, buscamos la primera disponible para mostrar el badge en la lista general
-        if (ofertas) {
-            const primerSuperConOferta = Object.keys(ofertas).find(k => ofertas[k] && ofertas[k].etiqueta);
-            if (primerSuperConOferta) {
-                etiquetaMostrar = ofertas[primerSuperConOferta].etiqueta;
-            }
-        }
-        
-        const badgeHtml = etiquetaMostrar ? 
-            `<span class="badge-promo" style="background:var(--color-good); color:white; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:5px; vertical-align:middle;">
-                ${etiquetaMostrar}
-            </span>` : '';
-        let qtyHtml = '';
-        if (currentTab === 'favs') {
-            qtyHtml = `
-                <div class="qty-control" onclick="event.stopPropagation()">
-                    <button class="qty-btn" onclick="changeQty(${item.id}, -1, event)">-</button>
-                    <span class="qty-num">${currentQty}</span>
-                    <button class="qty-btn" onclick="changeQty(${item.id}, 1, event)">+</button>
-                </div>`;
-        }
+let badgesHtml = '';
 
-        const card = document.createElement('div');
-        card.className = 'ticker-card';
-        card.onclick = () => openProductView(item.id);
-        card.innerHTML = `
-            <div class="ticker-info">
-                <div class="t-left">
-                    <span class="t-symbol">${item.ticker} ${badgeHtml}</span>
-                    <span class="t-name">${item.n}</span>
-                </div>
-                <div class="t-right">
-                    <span class="t-price">$${format(s.min)}</span><br>
-                    <span class="t-change ${s.trendClass}">${s.icon} ${s.spread}%</span>
-                </div>
+if (ofertas) {
+    // Obtenemos todas las etiquetas únicas de todos los supermercados para este producto
+    const etiquetasUnicas = [...new Set(Object.keys(ofertas).map(k => ofertas[k]?.etiqueta).filter(Boolean))];
+    
+    badgesHtml = etiquetasUnicas.map(etiqueta => `
+        <span class="badge-promo" style="
+            background: var(--color-good); 
+            color: white; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            font-size: 9px; 
+            font-weight: 800;
+            margin-left: 5px; 
+            display: inline-block;
+            white-space: nowrap;
+        ">
+            ${etiqueta}
+        </span>
+    `).join('');
+}
+
+const card = document.createElement('div');
+card.className = 'ticker-card';
+card.onclick = () => openProductView(item.id);
+
+card.innerHTML = `
+    <div class="ticker-info" style="display: flex; align-items: center; overflow: hidden; width: 100%;">
+        <div class="t-left" style="min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                <span class="t-symbol" style="white-space: nowrap;">${item.ticker}</span>
+                ${badgesHtml}
             </div>
-            <div style="display:flex; align-items:center;">
-                ${qtyHtml}
-                <div class="fav-btn ${isAdded ? 'active' : ''}" 
-                     onclick="event.stopPropagation(); toggleFav(${item.id}, this)">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                </div>
-            </div>
-        `;
+            <span class="t-name" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.n}</span>
+        </div>
+        <div class="t-right" style="flex-shrink: 0; text-align: right; margin-left: 10px;">
+            <span class="t-price">$${format(s.min)}</span><br>
+            <span class="t-change ${s.trendClass}">${s.icon} ${s.spread}%</span>
+        </div>
+    </div>
+    <div style="display:flex; align-items:center; flex-shrink: 0;">
+        ${qtyHtml}
+        <div class="fav-btn ${isAdded ? 'active' : ''}" 
+             onclick="event.stopPropagation(); toggleFav(${item.id}, this)">
+            <i class="fa-solid fa-cart-shopping"></i>
+        </div>
+    </div>
+`;
         container.appendChild(card);
     });
 }
