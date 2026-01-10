@@ -930,109 +930,72 @@ if (Array.isArray(favorites)) {
 }
       
        async function init() {
-            try {
-                await loadSession();
-                await loadBeneficios();
-                // AGREGA ESTO AQUÍ: Si no hay usuario, ignoramos lo que haya en localStorage
-                if (!currentUser) {
-                    favorites = {};
-                    localStorage.removeItem('fav_tickers');
-                }
+    try {
+        await loadSession();
+        // 1. CARGAMOS LOS BENEFICIOS DESDE LA TABLA (Esta función ya tiene el filtro de día)
+        await loadBeneficios(); 
 
-                const hoy = new Date().getDay(); 
-        const resB = await fetch(`${SUPABASE_URL}/rest/v1/beneficios_super?dia_semana=eq.${hoy}`, { 
+        if (!currentUser) {
+            favorites = {};
+            localStorage.removeItem('fav_tickers');
+        }
+
+        // --- ELIMINÉ EL BLOQUE FETCH MANUAL QUE ESTABA AQUÍ PARA EVITAR CONFLICTOS ---
+
+        // 2. Cargar Configuración (Legales, etc)
+        const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { 
             headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
         });
-        beneficiosDelDia = await resB.json();
-            // 1. Cargar Configuración (Legales, etc)
-            const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const configRows = await resC.json();
-            configRows.forEach(row => configDB[row.clave] = row.valor);
+        const configRows = await resC.json();
+        configRows.forEach(row => configDB[row.clave] = row.valor);
 
-            renderAds(); 
+        renderAds(); 
 
-          
-            // 2. Cargar Productos
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const rows = await res.json();
+        // 3. Cargar Productos
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { 
+            headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
+        });
+        const rows = await res.json();
+        
+        // 4. Cargar Historial
+        const d7 = new Date(); d7.setDate(d7.getDate() - 7);
+        const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { 
+            headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
+        });
+        const hData = await resH.json();
+        
+        flatList = rows.map(r => {
+            const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
             
-            // 3. Cargar Historial (últimos 7 días)
-            const d7 = new Date(); d7.setDate(d7.getDate() - 7);
-            const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const hData = await resH.json();
-            
-            const usedTickers = new Set();
-           // Dentro de la función async function init()
-// BUSCÁ ESTO DENTRO DE init()
-flatList = rows.map(r => {
-    const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
-    
-    // CORRECCIÓN: Procesar el JSON de ofertas por supermercado
-    let oferta = null;
-    if (r.oferta_gondola) {
-        try {
-            oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
-        } catch (e) {
-            console.error("Error en JSON de oferta:", r.nombre);
-            oferta = null;
-        }
-    }
-
-    return {
-        id: r.id, 
-        n: r.nombre.trim(), 
-        cat: r.categoria, 
-        ticker: r.ticker || generateTicker(r.nombre),
-        p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
-        urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
-        h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
-        img: r.imagen_url,
-        oferta_gondola: oferta // Ahora ya no será undefined
-    };
-});
-                
-          document.getElementById('loader').style.display = 'none';
-            updateCartBadge(); 
-
-            // --- LÓGICA DE RUTAS AL CARGAR ---
-            const path = window.location.pathname.split('/').filter(p => p !== "");
-
-            if (paginasEstaticas[path[0]]) {
-                openPage(path[0], paginasEstaticas[path[0]], false);
-            } 
-            else if (path.length >= 2) {
-                const itemEncontrado = flatList.find(i => getSlug(i.n) === path[1]);
-                if (itemEncontrado) openProductView(itemEncontrado.id, false);
-                else goHome();
-            } 
-            else if (path.length === 1 && path[0] !== 'index.html') {
-                setTab(path[0], null, false);
-            } 
-            else {
-                goHome();
+            let oferta = null;
+            if (r.oferta_gondola) {
+                try {
+                    oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
+                } catch (e) {
+                    console.error("Error en JSON de oferta:", r.nombre);
+                    oferta = null;
+                }
             }
 
-            // --- MANEJO DEL BOTÓN ATRÁS ---
-            window.onpopstate = (e) => {
-                const p = window.location.pathname.split('/').filter(x => x !== "");
-                if (paginasEstaticas[p[0]]) {
-                    openPage(p[0], paginasEstaticas[p[0]], false);
-                } 
-                else if (p.length >= 2) {
-                    const itemPop = flatList.find(i => getSlug(i.n) === p[1]);
-                    if (itemPop) openProductView(itemPop.id, false);
-                } 
-                else {
-                    document.getElementById('pageView').classList.remove('active');
-                    document.getElementById('productFullView').style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                    setTab(p[0] || 'home', null, false);
-                }
+            return {
+                id: r.id, 
+                n: r.nombre.trim(), 
+                cat: r.categoria, 
+                ticker: r.ticker || generateTicker(r.nombre),
+                p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
+                urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
+                h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
+                img: r.imagen_url,
+                oferta_gondola: oferta 
             };
+        });
+                
+        document.getElementById('loader').style.display = 'none';
+        updateCartBadge(); 
+        goHome();
 
-        } catch (e) { console.error(e); }
-    }
-
+    } catch (e) { console.error(e); }
+}
     function goHome() {
         currentTab = 'home'; 
         document.getElementById('tickerList').style.display = 'block';
@@ -1456,8 +1419,10 @@ function renderChangoSummary(container, items) {
             subtotal += p * qty;
             ahorroGondola += calcularPromoGondola(item, p, v.nombre);
         });
-        // Buscamos el beneficio cargado en beneficios_super para este super específico
+        
+        // CORRECCIÓN: Buscar el beneficio en la variable que cargamos desde la tabla beneficios_super
         const beneficio = beneficiosDelDia.find(b => b.supermercado.toLowerCase() === v.nombre.toLowerCase());
+        
         return { ...v, subtotal, totalFinal: subtotal - ahorroGondola, ahorroGondola, beneficio };
     }).sort((a, b) => a.totalFinal - b.totalFinal);
 
@@ -1491,7 +1456,7 @@ function renderChangoSummary(container, items) {
         </div>
 
         ${mejorPromo ? `
-            <div id="referidoBlock" style="margin-top: 15px; padding: 15px; border-radius: 12px; background: rgba(242, 169, 0, 0.1); border: 1px solid var(--star-gold); display: block;">
+            <div style="margin-top: 15px; padding: 15px; border-radius: 12px; background: rgba(242, 169, 0, 0.1); border: 1px solid var(--star-gold);">
                 <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
                     <i class="fa-solid fa-gift" style="color: var(--star-gold); font-size: 18px;"></i>
                     <span style="font-size: 12px; font-weight: 700; color: var(--text-main); line-height: 1.2;">
