@@ -1382,15 +1382,18 @@ function calcularSpreadAhorro(resultados) {
         const currentQty = favorites[item.id] || 1;
 
         // NUEVO: Lógica para la etiqueta de oferta de góndola
-        const ofertas = item.oferta_gondola;
-        let etiquetaMostrar = '';
+           const ofertas = item.oferta_gondola;
+        let badgesHtml = '';
         
-        // Si hay ofertas, buscamos la primera disponible para mostrar el badge en la lista general
         if (ofertas) {
-            const primerSuperConOferta = Object.keys(ofertas).find(k => ofertas[k] && ofertas[k].etiqueta);
-            if (primerSuperConOferta) {
-                etiquetaMostrar = ofertas[primerSuperConOferta].etiqueta;
-            }
+            // Obtenemos todas las ofertas de todos los súper para este producto
+            Object.keys(ofertas).forEach(key => {
+                if (ofertas[key]) {
+                    badgesHtml += `<span class="badge-promo" style="background:var(--color-good); color:white; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:5px; white-space:nowrap; display:inline-block;">
+                        ${ofertas[key].etiqueta}
+                    </span>`;
+                }
+            });
         }
         
         const badgeHtml = etiquetaMostrar ? 
@@ -2197,9 +2200,33 @@ async function removeMembresia(index) {
     await supabaseAuth.from('perfiles').update({ membresias: currentProfile.membresias }).eq('id', currentUser.id);
     renderWallet();
 }
+
+async function compartirCarrito() {
+    if (!esUsuarioPro()) return openAuth(); // Abre landing PRO si no es pro
+
+    const items = Object.keys(favorites).map(id => ({id, qty: favorites[id]}));
+    const nombre = prompt("Dale un nombre a tu carrito:");
+    
+    const { data, error } = await supabaseAuth.from('carritos_guardados').insert([{
+        user_id: currentUser.id,
+        nombre: nombre,
+        items: items
+    }]).select();
+
+    if (data) {
+        const link = `https://tradingchango.com.ar/chango?share=${data[0].id}`;
+        navigator.share({ title: 'Mi Chango en TradingChango', url: link });
+    }
+}
        
     // Iniciar la app
     init();
+       const cachedData = localStorage.getItem('flatList_cache');
+        if (cachedData) {
+            flatList = JSON.parse(cachedData);
+            renderView(); // Muestra algo instantáneamente
+            document.getElementById('loader').style.display = 'none';
+        }
         async function loadSession() {
         const { data } = await supabaseAuth.auth.getSession();
         currentUser = data.session?.user || null;
