@@ -932,7 +932,7 @@ if (Array.isArray(favorites)) {
        async function init() {
     try {
         await loadSession();
-        // 1. Carga única y centralizada de beneficios
+        // 1. CARGAMOS LOS BENEFICIOS DESDE LA TABLA (Esta función ya tiene el filtro de día)
         await loadBeneficios(); 
 
         if (!currentUser) {
@@ -940,7 +940,9 @@ if (Array.isArray(favorites)) {
             localStorage.removeItem('fav_tickers');
         }
 
-        // 2. Cargar Configuración
+        // --- ELIMINÉ EL BLOQUE FETCH MANUAL QUE ESTABA AQUÍ PARA EVITAR CONFLICTOS ---
+
+        // 2. Cargar Configuración (Legales, etc)
         const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { 
             headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
         });
@@ -949,12 +951,13 @@ if (Array.isArray(favorites)) {
 
         renderAds(); 
 
-        // 3. Cargar Productos e Historial
+        // 3. Cargar Productos
         const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { 
             headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
         });
         const rows = await res.json();
         
+        // 4. Cargar Historial
         const d7 = new Date(); d7.setDate(d7.getDate() - 7);
         const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { 
             headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
@@ -963,11 +966,15 @@ if (Array.isArray(favorites)) {
         
         flatList = rows.map(r => {
             const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+            
             let oferta = null;
             if (r.oferta_gondola) {
                 try {
                     oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
-                } catch (e) { oferta = null; }
+                } catch (e) {
+                    console.error("Error en JSON de oferta:", r.nombre);
+                    oferta = null;
+                }
             }
 
             return {
@@ -985,51 +992,23 @@ if (Array.isArray(favorites)) {
                 
         document.getElementById('loader').style.display = 'none';
         updateCartBadge(); 
+        goHome();
 
-        // 4. Lógica de rutas (Maneja el estado inicial sin romper el 'Atrás')
-        const path = window.location.pathname.split('/').filter(p => p !== "");
-        if (path.length > 0) {
-            window.onpopstate(); // Disparamos el manejador de historial
-        } else {
-            goHome();
-        }
-
-    } catch (e) { console.error("Error en init:", e); }
+    } catch (e) { console.error(e); }
 }
     function goHome() {
-    currentTab = 'home'; 
-    document.getElementById('tickerList').style.display = 'block';
-    document.getElementById('pageView').classList.remove('active');
-    document.getElementById('productFullView').style.display = 'none';
-    document.getElementById('searchBarSection').style.display = 'block';
-    document.getElementById('heroSection').style.display = 'block';
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const btnHome = document.getElementById('btn-home');
-    if(btnHome) btnHome.classList.add('active');
-    renderView();
-}
-
-window.onpopstate = (e) => {
-    const p = window.location.pathname.split('/').filter(x => x !== "");
-    
-    // Si estamos en una página legal
-    if (paginasEstaticas[p[0]]) {
-        openPage(p[0], paginasEstaticas[p[0]], false);
-    } 
-    // Si estamos en un producto (/carnes/asado)
-    else if (p.length >= 2) {
-        const itemPop = flatList.find(i => getSlug(i.n) === p[1]);
-        if (itemPop) openProductView(itemPop.id, false);
-    } 
-    // Si es una pestaña (home, carnes, favs)
-    else {
-        const tab = p[0] || 'home';
+        currentTab = 'home'; 
+        document.getElementById('tickerList').style.display = 'block';
         document.getElementById('pageView').classList.remove('active');
-        document.getElementById('productFullView').style.display = 'none';
-        document.body.style.overflow = 'auto';
-        setTab(tab, null, false);
+        document.getElementById('searchBarSection').style.display = 'block';
+        document.getElementById('heroSection').style.display = 'block';
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        const btnHome = document.getElementById('btn-home');
+        if(btnHome) btnHome.classList.add('active');
+        window.scrollTo(0,0);
+        renderView();
     }
-};
+
     function clearInput() {
         const input = document.getElementById('searchInput');
         input.value = '';
@@ -1432,27 +1411,31 @@ function renderChangoSummary(container, items) {
     }
 
     const resultados = validos.map(v => {
-        let sub = 0; let ahorroG = 0;
+        let subtotal = 0;
+        let ahorroGondola = 0;
         items.forEach(item => {
             const p = item.p[v.index];
-            const q = favorites[item.id] || 1;
-            sub += p * q;
-            ahorroG += calcularPromoGondola(item, p, v.nombre);
+            const qty = favorites[item.id] || 1;
+            subtotal += p * qty;
+            ahorroGondola += calcularPromoGondola(item, p, v.nombre);
         });
+        
+        // CORRECCIÓN: Buscar el beneficio en la variable que cargamos desde la tabla beneficios_super
         const beneficio = beneficiosDelDia.find(b => b.supermercado.toLowerCase() === v.nombre.toLowerCase());
-        return { ...v, subtotal: sub, totalFinal: sub - ahorroG, ahorroGondola: ahorroG, beneficio };
+        
+        return { ...v, subtotal, totalFinal: subtotal - ahorroGondola, ahorroGondola, beneficio };
     }).sort((a, b) => a.totalFinal - b.totalFinal);
 
     const ganador = resultados[0];
     const masCaro = resultados[resultados.length - 1];
-    const ahorroSpreadMaximo = masCaro.totalFinal - ganador.totalFinal;
+    const ahorroMaximo = masCaro.totalFinal - ganador.totalFinal;
     const mejorPromo = ganador.beneficio;
 
     summaryDiv.innerHTML = `
         <div style="text-align: center; margin-bottom: 25px;">
             <span style="font-size: 11px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">Ahorrás en total</span>
             <div style="font-size: 42px; font-weight: 900; color: var(--color-good); font-family: 'Roboto Mono'; margin-top: 5px; line-height:1;">
-                $${format(Math.round(ahorroSpreadMaximo))}<span style="font-size: 14px; vertical-align: top; opacity:0.7;">*</span>
+                $${format(Math.round(ahorroMaximo))}<span style="font-size: 14px; vertical-align: top; font-weight: 400; opacity:0.7;">*</span>
             </div>
             <p style="font-size: 13px; opacity: 0.8; margin-top: 8px;">Tu mejor opción hoy es <b>${ganador.nombre.toUpperCase()}</b></p>
         </div>
@@ -1476,16 +1459,34 @@ function renderChangoSummary(container, items) {
             <div style="margin-top: 15px; padding: 15px; border-radius: 12px; background: rgba(242, 169, 0, 0.1); border: 1px solid var(--star-gold);">
                 <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
                     <i class="fa-solid fa-gift" style="color: var(--star-gold); font-size: 18px;"></i>
-                    <span style="font-size: 12px; font-weight: 700;">Sumá un ${(mejorPromo.descuento * 100)}% extra con ${mejorPromo.entidad_nombre}.</span>
+                    <span style="font-size: 12px; font-weight: 700; color: var(--text-main); line-height: 1.2;">
+                        Sumá un ${(mejorPromo.descuento * 100)}% de ahorro extra pagando con <b>${mejorPromo.entidad_nombre}</b>.
+                    </span>
                 </div>
-                <a href="${mejorPromo.link_referido}" target="_blank" style="display: block; text-align: center; background: var(--text-main); color: var(--bg-app); padding: 10px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 11px; text-transform: uppercase;">Solicitar Beneficio</a>
+                <a href="${mejorPromo.link_referido}" target="_blank" style="display: block; text-align: center; background: var(--text-main); color: var(--bg-app); padding: 10px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Solicitar Beneficio
+                </a>
             </div>
         ` : ''}
 
         <p style="font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 15px; line-height: 1.4;">
             *Es un valor informativo. El ahorro real depende de los T&C de cada entidad y la disponibilidad en góndola.
         </p>
+
+        <button onclick="document.getElementById('otrosPrecios').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 15px; background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; text-transform: uppercase;">
+            Comparar con otros mercados
+        </button>
+
+        <div id="otrosPrecios" style="display: none; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
+            ${resultados.slice(1).map(o => `
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; opacity: 0.6; font-family: 'Roboto Mono';">
+                    <span>${o.nombre.toUpperCase()}</span>
+                    <span>$${format(Math.round(o.totalFinal))}</span>
+                </div>
+            `).join('')}
+        </div>
     `;
+
     container.appendChild(summaryDiv);
 }
        
