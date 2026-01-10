@@ -886,7 +886,7 @@
 
           </div>
           
-   <script>
+   <script>  
     const SUPABASE_URL = 'https://uginrayldvkhgodvfhta.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnaW5yYXlsZHZraGdvZHZmaHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwODEzMzcsImV4cCI6MjA4MTY1NzMzN30.hRp7YjVymPnsqbwh8dJjfgKFg77cdd0A5o-ETWYgeiw';
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -897,7 +897,7 @@
     
     let currentUser = null;
     let currentProfile = null;
-
+    let beneficiosDelDia = [];
 
     // 1. Reemplazá tu línea de declaración por estas:
 let flatList = [], currentTab = 'home', currentTrendFilter = null, openId = null, configDB = {}, currentChart = null;
@@ -917,11 +917,22 @@ if (Array.isArray(favorites)) {
 
     // Función para generar URLs limpias
     const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-    let beneficiosDelDia = []; // Variable global para los referidos
-       
+    async function loadBeneficios() {
+    const hoy = new Date().getDay(); 
+    const { data, error } = await supabaseAuth
+        .from('beneficios_super') // Verifica que el nombre en Supabase sea idéntico
+        .select('*')
+        .eq('dia_semana', hoy);
+    if (!error && data) {
+        beneficiosDelDia = data;
+        console.log("Beneficios cargados para hoy:", beneficiosDelDia);
+    }
+}
+      
        async function init() {
             try {
                 await loadSession();
+                await loadBeneficios();
                 // AGREGA ESTO AQUÍ: Si no hay usuario, ignoramos lo que haya en localStorage
                 if (!currentUser) {
                     favorites = {};
