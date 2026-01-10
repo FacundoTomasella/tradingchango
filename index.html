@@ -1431,7 +1431,7 @@ function renderChangoSummary(container, items) {
     summaryDiv.style.cssText = `background: var(--bg-card); border: 2px solid var(--color-good); border-radius: 20px; padding: 25px; margin: 20px 10px; box-shadow: 0 10px 30px rgba(0, 166, 80, 0.1);`;
 
     if (validos.length === 0) {
-        summaryDiv.innerHTML = `<p style="text-align:center; font-family:'Roboto Mono'; opacity:0.5; font-size:12px;">ANALIZANDO POSICIONES...</p>`;
+        summaryDiv.innerHTML = `<p style="text-align:center; font-family:'Roboto Mono'; opacity:0.5; font-size:12px;">ANALIZANDO MERCADO...</p>`;
         container.appendChild(summaryDiv);
         return;
     }
@@ -1443,15 +1443,15 @@ function renderChangoSummary(container, items) {
             const p = item.p[v.index];
             const qty = favorites[item.id] || 1;
             subtotal += p * qty;
-            ahorroGondola += calcularPromoGondola(item, p, v.nombre); 
+            ahorroGondola += calcularPromoGondola(item, p, v.nombre);
         });
+        // Buscamos el beneficio cargado en beneficios_super para este super específico
         const beneficio = beneficiosDelDia.find(b => b.supermercado.toLowerCase() === v.nombre.toLowerCase());
         return { ...v, subtotal, totalFinal: subtotal - ahorroGondola, ahorroGondola, beneficio };
     }).sort((a, b) => a.totalFinal - b.totalFinal);
 
     const ganador = resultados[0];
     const masCaro = resultados[resultados.length - 1];
-    // El ahorro total es la diferencia entre el más caro y el neto del ganador
     const ahorroMaximo = masCaro.totalFinal - ganador.totalFinal;
     const mejorPromo = ganador.beneficio;
 
@@ -1480,14 +1480,14 @@ function renderChangoSummary(container, items) {
         </div>
 
         ${mejorPromo ? `
-            <div style="margin-top: 15px; padding: 12px; border-radius: 12px; background: rgba(242, 169, 0, 0.08); border: 1px solid var(--star-gold);">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <i class="fa-solid fa-gift" style="color: var(--star-gold);"></i>
-                    <span style="font-size: 11px; font-weight: 700; color: var(--text-main);">
-                        Sumá un ${(mejorPromo.descuento * 100)}% de ahorro extra con <b>${mejorPromo.entidad_nombre}</b>.
+            <div id="referidoBlock" style="margin-top: 15px; padding: 15px; border-radius: 12px; background: rgba(242, 169, 0, 0.1); border: 1px solid var(--star-gold); display: block;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <i class="fa-solid fa-gift" style="color: var(--star-gold); font-size: 18px;"></i>
+                    <span style="font-size: 12px; font-weight: 700; color: var(--text-main); line-height: 1.2;">
+                        Sumá un ${(mejorPromo.descuento * 100)}% de ahorro extra pagando con <b>${mejorPromo.entidad_nombre}</b>.
                     </span>
                 </div>
-                <a href="${mejorPromo.link_referido}" target="_blank" style="display: block; margin-top: 10px; text-align: center; background: var(--text-main); color: var(--bg-app); padding: 8px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 10px; text-transform: uppercase;">
+                <a href="${mejorPromo.link_referido}" target="_blank" style="display: block; text-align: center; background: var(--text-main); color: var(--bg-app); padding: 10px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
                     Solicitar Beneficio
                 </a>
             </div>
@@ -1497,8 +1497,11 @@ function renderChangoSummary(container, items) {
             *Es un valor informativo. El ahorro real depende de los T&C de cada entidad y la disponibilidad en góndola.
         </p>
 
+        <button onclick="document.getElementById('otrosPrecios').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 15px; background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; text-transform: uppercase;">
+            Comparar con otros mercados
+        </button>
+
         <div id="otrosPrecios" style="display: none; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
-            <p style="font-size: 9px; font-weight: 800; opacity: 0.4; text-transform: uppercase; margin-bottom: 10px;">Otros Supermercados</p>
             ${resultados.slice(1).map(o => `
                 <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; opacity: 0.6; font-family: 'Roboto Mono';">
                     <span>${o.nombre.toUpperCase()}</span>
@@ -1506,10 +1509,6 @@ function renderChangoSummary(container, items) {
                 </div>
             `).join('')}
         </div>
-
-        <button onclick="document.getElementById('otrosPrecios').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 15px; background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; text-transform: uppercase;">
-            Comparar con el resto del mercado
-        </button>
     `;
 
     container.appendChild(summaryDiv);
