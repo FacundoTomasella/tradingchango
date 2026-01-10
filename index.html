@@ -1704,6 +1704,18 @@ function openAuth() {
         const nameEl = document.getElementById('profileName');
         const emailEl = document.getElementById('profileEmail');
         const subEl = document.getElementById('profileSub');
+        if (subEl) {
+            const esPro = esUsuarioPro();
+            subEl.innerText = esPro ? 'PRO (Cuenta Activa)' : 'FREE (Limitado)';
+            subEl.style.color = esPro ? 'var(--color-good)' : 'var(--text-muted)';
+        }
+        
+        // Lógica para mostrar/ocultar el botón de pago/renovación (Opcional por ahora)
+        const renuevaBtn = document.getElementById('btnRenovacion'); 
+        if (renuevaBtn) {
+            // Solo mostramos el botón si ya estableciste una fecha de vencimiento o si ya es FREE
+            renuevaBtn.style.display = (currentProfile.subscription_end || !esUsuarioPro()) ? 'block' : 'none';
+        }
         const dateEl = document.getElementById('profileDate');
 
         if (nameEl) nameEl.innerText = currentProfile?.nombre ? `${currentProfile.nombre} ${currentProfile.apellido}` : "Trader";
@@ -1758,16 +1770,15 @@ async function handleAuthSubmit(e) {
         }
         
         if (data.user) {
-            const userId = data.user.id; 
             const { error: pErr } = await supabaseAuth.from('perfiles').insert([{
-                id: userId,
-                email: email,
-                nombre: document.getElementById('regNombre').value,
-                apellido: document.getElementById('regApellido').value,
-                fecha_nacimiento: document.getElementById('regFecha').value,
-                subscription: 'free'
-            }]);
-
+            id: userId,
+            email: email,
+            nombre: document.getElementById('regNombre').value,
+            apellido: document.getElementById('regApellido').value,
+            fecha_nacimiento: document.getElementById('regFecha').value,
+            subscription: 'pro', // Nace como PRO
+            subscription_end: null // Sin fecha = PRO por lanzamiento
+        }]);
             if (pErr) {
                 console.log("Error detallado perfil:", pErr);
                 alert("Error en datos de perfil: " + pErr.message);
@@ -2203,6 +2214,21 @@ async function removeMembresia(index) {
 
 let catalogoMembresias = []; // Se llena desde la DB
 
+function esUsuarioPro() {
+    if (!currentUser || !currentProfile) return false;
+
+    // 1. Si el tipo de suscripción es 'free', ya fue degradado
+    if (currentProfile.subscription === 'free') return false;
+
+    // 2. Si es 'pro' y no tiene fecha (null), es la etapa actual de lanzamiento
+    if (currentProfile.subscription === 'pro' && !currentProfile.subscription_end) return true;
+    
+    // 3. Si tiene fecha de vencimiento, verificamos si ya expiró
+    const vencimiento = new Date(currentProfile.subscription_end);
+    return vencimiento > new Date(); 
+}
+
+       
 async function renderWallet() {
     const container = document.getElementById('activeMembresias');
     if (!container) return;
