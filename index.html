@@ -1403,22 +1403,28 @@ flatList = rows.map(r => {
         container.appendChild(card);
     });
 }
+
+       
        
 function renderChangoSummary(container, items) {
     const validos = obtenerSupermercadosValidos(items);
     const summaryDiv = document.createElement('div');
     summaryDiv.className = 'chango-summary';
-    summaryDiv.style.padding = '25px';
-    summaryDiv.style.borderRadius = '20px';
-    summaryDiv.style.border = '2px solid var(--color-good)';
+    // Estética Minimalista / TradingView
+    summaryDiv.style.cssText = `
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+    `;
 
     if (validos.length === 0) {
-        summaryDiv.innerHTML = `<p style="text-align:center; opacity:0.6;">Agregá productos para encontrar tu mejor ahorro.</p>`;
+        summaryDiv.innerHTML = `<p style="text-align:center; font-size:12px; opacity:0.5; font-family:'Roboto Mono';">ESPERANDO DATOS DE MERCADO...</p>`;
         container.appendChild(summaryDiv);
         return;
     }
 
-    // Calculamos y ordenamos por precio final
     const resultados = validos.map(v => {
         const calculo = calcularAhorroTotal(v.index, items);
         const beneficioHoy = obtenerMejorBeneficioHoy(v.index);
@@ -1426,67 +1432,77 @@ function renderChangoSummary(container, items) {
     }).sort((a, b) => a.totalFinal - b.totalFinal);
 
     const ganador = resultados[0];
-    const otros = resultados.slice(1);
-    const tieneBeneficioHoy = ganador.beneficioHoy;
-    const yaLoTiene = tieneBeneficioHoy && usuarioTieneMembresia(ganador.beneficioHoy.nombre);
+    const ahorroSpread = calcularAhorroRespectoAlSegundo(resultados);
+    const mejorBeneficio = ganador.beneficioHoy;
+    const tieneMembresia = mejorBeneficio && usuarioTieneMembresia(mejorBeneficio.nombre);
 
     summaryDiv.innerHTML = `
-        <div style="text-align: center; margin-bottom: 20px;">
-            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--color-good); letter-spacing: 1px;">Tu Compra Inteligente</span>
-            <h2 style="font-size: 28px; font-weight: 900; margin: 5px 0;">¡Ahorrás $ ${format(Math.round(ganador.ahorroTotal))}!</h2>
-            <p style="font-size: 13px; opacity: 0.8;">Comprando hoy en <b>${ganador.nombre}</b></p>
-        </div>
-
-        <div style="background: var(--bg-app); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed var(--border);">
-            <div class="chango-row" style="margin-bottom: 8px; opacity: 0.6;">
-                <span>Total productos</span>
-                <span>$ ${format(Math.round(ganador.totalFinal + ganador.ahorroTotal))}</span>
-            </div>
-            <div class="chango-row" style="margin-bottom: 8px; color: var(--color-good); font-weight: 700;">
-                <span>Descuentos aplicados</span>
-                <span>- $ ${format(Math.round(ganador.ahorroTotal))}</span>
-            </div>
-            <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
-            <div class="chango-row" style="font-size: 18px; font-weight: 900;">
-                <span>PAGÁS NETO</span>
-                <span style="font-family: 'Roboto Mono';">$ ${format(Math.round(ganador.totalFinal))}</span>
-            </div>
-        </div>
-
-        ${tieneBeneficioHoy ? `
-            <div style="background: ${yaLoTiene ? 'rgba(0, 166, 80, 0.1)' : 'rgba(255, 169, 0, 0.1)'}; padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid ${yaLoTiene ? 'var(--color-good)' : 'var(--star-gold)'};">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fa-solid ${yaLoTiene ? 'fa-circle-check' : 'fa-circle-plus'}" style="color: ${yaLoTiene ? 'var(--color-good)' : 'var(--star-gold)'};"></i>
-                    <div style="font-size: 12px; color: var(--text-main);">
-                        ${yaLoTiene 
-                            ? `Con tu membresía de <b>${ganador.beneficioHoy.nombre}</b> hoy ahorrás un <b>${ganador.beneficioHoy.dto * 100}% extra</b>.` 
-                            : `Podés ahorrar un <b>${ganador.beneficioHoy.dto * 100}% adicional</b> pagando con <b>${ganador.beneficioHoy.nombre}</b>.`}
-                    </div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div>
+                <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Spread de Ahorro</span>
+                <div style="font-size: 32px; font-weight: 800; color: var(--color-good); font-family: 'Roboto Mono';">
+                    +$${format(Math.round(ahorroSpread))}*
                 </div>
-                ${!yaLoTiene ? `
-                    <a href="${ganador.beneficioHoy.link}" target="_blank" style="display: block; margin-top: 10px; text-align: center; background: var(--text-main); color: var(--bg-app); padding: 8px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 11px;">
-                        OBTENER MI DESCUENTO AQUÍ
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Mejor Posición</span>
+                <div style="font-size: 16px; font-weight: 800; color: var(--text-main);">${ganador.nombre.toUpperCase()}</div>
+            </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span style="font-size: 12px; color: var(--text-muted);">Valuación Chango (Market)</span>
+                <span style="font-size: 12px; font-family: 'Roboto Mono'; font-weight: 600;">$${format(Math.round(ganador.totalFinal + ganador.ahorroTotal))}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="font-size: 14px; font-weight: 800;">TOTAL ESTIMADO*</span>
+                <span style="font-size: 18px; font-weight: 800; font-family: 'Roboto Mono'; color: var(--text-main);">$${format(Math.round(ganador.totalFinal))}</span>
+            </div>
+            <p style="font-size: 9px; color: var(--text-muted); margin-top: 10px; line-height: 1.2;">
+                *Los precios netos son de carácter informativo. Los descuentos finales dependen de los T&C de cada entidad y la disponibilidad en sucursal.
+            </p>
+        </div>
+
+        ${mejorBeneficio ? `
+            <div style="background: var(--bg-app); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <i class="fa-solid fa-robot" style="color: ${tieneMembresia ? 'var(--color-good)' : 'var(--star-gold)'}; font-size: 14px;"></i>
+                    <span style="font-size: 11px; font-weight: 600;">
+                        ${tieneMembresia 
+                            ? `Posición optimizada: Aplicando -${mejorBeneficio.dto * 100}% vía ${mejorBeneficio.nombre}.` 
+                            : `Oportunidad: Podés reducir hasta un ${mejorBeneficio.dto * 100}% extra con ${mejorBeneficio.nombre}.`}
+                    </span>
+                </div>
+                ${!tieneMembresia ? `
+                    <a href="${mejorBeneficio.link}" target="_blank" style="display: block; margin-top: 10px; text-align: center; border: 1px solid var(--color-good); color: var(--color-good); padding: 6px; border-radius: 6px; text-decoration: none; font-weight: 800; font-size: 10px; text-transform: uppercase;">
+                        Abrir Cuenta & Ahorrar
                     </a>
                 ` : ''}
             </div>
         ` : ''}
 
-        <div id="comparativaOtros" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
-            <p style="font-size: 11px; font-weight: 800; opacity: 0.5; margin-bottom: 10px; text-transform: uppercase;">Comparativa de mercado</p>
-            ${otros.map(o => `
-                <div class="chango-row" style="margin-bottom: 8px; opacity: 0.8; font-size: 13px;">
-                    <span>${o.nombre}</span>
-                    <span>$ ${format(Math.round(o.totalFinal))}</span>
+        <div id="comparativaTrading" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border);">
+            ${resultados.slice(1).map(o => `
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; opacity: 0.7; font-family: 'Roboto Mono';">
+                    <span>${o.nombre.toUpperCase()}</span>
+                    <span>$${format(Math.round(o.totalFinal))}</span>
                 </div>
             `).join('')}
         </div>
 
-        <button onclick="document.getElementById('comparativaOtros').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 15px; background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 10px; border-radius: 10px; font-size: 11px; font-weight: 700; cursor: pointer;">
-            VER OTROS SUPERMERCADOS
+        <button onclick="document.getElementById('comparativaTrading').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 15px; background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; text-transform: uppercase; letter-spacing: 1px;">
+            Ver comparativa de mercado
         </button>
     `;
 
     container.appendChild(summaryDiv);
+}
+       
+    function calcularAhorroRespectoAlSegundo(resultados) {
+    if (resultados.length < 2) return 0;
+    // Diferencia entre el precio del 2do supermercado más barato y el 1ro
+    return resultados[1].totalFinal - resultados[0].totalFinal;
 }
        
 function renderEmptyCart(container) {
