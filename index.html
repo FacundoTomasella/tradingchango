@@ -952,32 +952,32 @@ if (Array.isArray(favorites)) {
             const hData = await resH.json();
             
             const usedTickers = new Set();
-           // Dentro de la función async function init()
-// BUSCÁ ESTO DENTRO DE init()
+// BUSCÁ ESTO DENTRO DE async function init()
 flatList = rows.map(r => {
     const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+    let t = r.ticker || generateTicker(r.nombre);
     
-    // CORRECCIÓN: Procesar el JSON de ofertas por supermercado
+    // PROCESAMIENTO SEGURO DE LA COLUMNA oferta_gondola
     let oferta = null;
     if (r.oferta_gondola) {
         try {
             oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
         } catch (e) {
-            console.error("Error en JSON de oferta:", r.nombre);
+            console.warn("Error en oferta para:", r.nombre);
             oferta = null;
         }
     }
-
+    
     return {
         id: r.id, 
         n: r.nombre.trim(), 
         cat: r.categoria, 
-        ticker: r.ticker || generateTicker(r.nombre),
+        ticker: t,
         p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
         urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
         h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
         img: r.imagen_url,
-        oferta_gondola: oferta // Ahora ya no será undefined
+        oferta_gondola: oferta 
     };
 });
                 
@@ -2269,35 +2269,6 @@ function obtenerSupermercadosValidos(items) {
     }).filter(s => s.valido);
 }
 
-// Función para calcular promos tipo 2x1 o 70% en la 2da
-// Asegura el cálculo correcto de ofertas por supermercado específico
-function calcularPromoGondola(item, precioUnitario, nombreSuper) {
-    const ofertaDelSuper = item.oferta_gondola ? item.oferta_gondola[nombreSuper.toLowerCase()] : null;
-    if (!ofertaDelSuper) return 0;
-
-    const qty = favorites[item.id] || 1;
-
-    if (ofertaDelSuper.tipo === "2x1") {
-        // Descuenta el precio de 1 unidad por cada par comprado
-        return Math.floor(qty / 2) * precioUnitario;
-    }
-    if (ofertaDelSuper.tipo === "70_segunda") {
-        // Descuenta el 70% de 1 unidad por cada par comprado
-        return Math.floor(qty / 2) * (precioUnitario * 0.7);
-    }
-    return 0;
-}
-
-// Función para obtener beneficios del día desde la tabla beneficios_super
-let beneficiosDelDia = []; 
-async function loadBeneficios() {
-    const hoy = new Date().getDay(); 
-    const { data, error } = await supabaseAuth
-        .from('beneficios_super')
-        .select('*')
-        .eq('dia_semana', hoy);
-    if (!error) beneficiosDelDia = data;
-}
 // Función maestra de ahorro (Combina Góndola + Membresías futuras)
 function calcularAhorroTotal(superId, items) {
     let subtotal = 0;
@@ -2344,6 +2315,27 @@ function usuarioTieneMembresia(nombreMembresia) {
     if (!currentProfile || !currentProfile.membresias) return false;
     return currentProfile.membresias.some(m => m.slug.toLowerCase().includes(nombreMembresia.toLowerCase()));
 }
+
+    let beneficiosDelDia = []; 
+
+async function loadBeneficios() {
+    const hoy = new Date().getDay(); 
+    const { data, error } = await supabaseAuth
+        .from('beneficios_super')
+        .select('*')
+        .eq('dia_semana', hoy);
+    if (!error) beneficiosDelDia = data;
+}
+
+function calcularPromoGondola(item, precioUnitario, nombreSuper) {
+    const ofertaDelSuper = item.oferta_gondola ? item.oferta_gondola[nombreSuper.toLowerCase()] : null;
+    if (!ofertaDelSuper) return 0;
+    const qty = favorites[item.id] || 1;
+
+    if (ofertaDelSuper.tipo === "2x1") return Math.floor(qty / 2) * precioUnitario;
+    if (ofertaDelSuper.tipo === "70_segunda") return Math.floor(qty / 2) * (precioUnitario * 0.7);
+    return 0;
+}   
        
 </script>
 <div id="authModal" onclick="closeAuthOutside(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
