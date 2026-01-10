@@ -929,105 +929,110 @@ if (Array.isArray(favorites)) {
     }
 }
       
-     async function init() {
-    console.log("Iniciando TradingChango...");
-    const loader = document.getElementById('loader');
-
-    try {
-        // 1. CARGA RÁPIDA DESDE CACHÉ
-        const cached = localStorage.getItem('flatList_cache');
-        if (cached) {
-            flatList = JSON.parse(cached);
-            renderView();
-            loader.style.display = 'none';
-        }
-
-        // 2. PROCESOS DE AUTENTICACIÓN
-        console.log("Cargando sesión y beneficios...");
-        await loadSession();
-        await loadBeneficios().catch(e => console.error("Error cargando beneficios:", e));
-
-        // 3. FETCH DE DATOS (Supabase)
-        console.log("Conectando con Supabase...");
-        const [resC, resP, resH] = await Promise.all([
-            fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }),
-            fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }),
-            fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${new Date(Date.now() - 7*864e5).toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } })
-        ]);
-
-        if (!resP.ok) throw new Error("No se pudieron cargar los productos");
-
-        const configRows = await resC.json();
-        configRows.forEach(row => configDB[row.clave] = row.valor);
-        renderAds();
-
-        const rows = await resP.json();
-        const hData = await resH.json();
-
-        // 4. MAPEO DE PRODUCTOS
-        flatList = rows.map(r => {
-            let oferta = null;
-            try { 
-                if (r.oferta_gondola) {
-                    oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
+       async function init() {
+            try {
+                await loadSession();
+                await loadBeneficios();
+                // AGREGA ESTO AQUÍ: Si no hay usuario, ignoramos lo que haya en localStorage
+                if (!currentUser) {
+                    favorites = {};
+                    localStorage.removeItem('fav_tickers');
                 }
-            } catch (e) { console.warn("Error en oferta de:", r.nombre); }
 
-            // Buscamos el precio histórico de hace 7 días
-            const hist = Array.isArray(hData) ? hData.find(h => h.nombre_producto === r.nombre) : null;
-
-            return {
-                id: r.id, 
-                n: r.nombre?.trim() || "Producto sin nombre", 
-                cat: r.categoria || "Varios", 
-                ticker: r.ticker || generateTicker(r.nombre || "PROD"),
-                p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
-                urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
-                h7d: hist ? hist.precio_minimo : 0,
-                img: r.imagen_url,
-                oferta_gondola: oferta
-            };
+                const hoy = new Date().getDay(); 
+        const resB = await fetch(`${SUPABASE_URL}/rest/v1/beneficios_super?dia_semana=eq.${hoy}`, { 
+            headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
         });
+        beneficiosDelDia = await resB.json();
+            // 1. Cargar Configuración (Legales, etc)
+            const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+            const configRows = await resC.json();
+            configRows.forEach(row => configDB[row.clave] = row.valor);
 
-        // Guardar caché actualizado
-        localStorage.setItem('flatList_cache', JSON.stringify(flatList));
-        
-        // 5. SINCRONIZACIÓN DE USUARIO
-        if (currentUser) {
-            await syncCartFromCloud().catch(e => console.error("Error sincronizando carrito:", e));
+            renderAds(); 
+
+          
+            // 2. Cargar Productos
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+            const rows = await res.json();
+            
+            // 3. Cargar Historial (últimos 7 días)
+            const d7 = new Date(); d7.setDate(d7.getDate() - 7);
+            const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+            const hData = await resH.json();
+            
+            const usedTickers = new Set();
+           // Dentro de la función async function init()
+// BUSCÁ ESTO DENTRO DE init()
+flatList = rows.map(r => {
+    const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+    
+    // CORRECCIÓN: Procesar el JSON de ofertas por supermercado
+    let oferta = null;
+    if (r.oferta_gondola) {
+        try {
+            oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
+        } catch (e) {
+            console.error("Error en JSON de oferta:", r.nombre);
+            oferta = null;
         }
+    }
 
-        loader.style.display = 'none';
-        updateCartBadge();
-        
-        // 6. MANEJO DE RUTAS AL CARGAR
-        const path = window.location.pathname.split('/').filter(p => p !== "" && p !== "index.html");
-        if (path.length > 0) {
-            // Si es una página legal
+    return {
+        id: r.id, 
+        n: r.nombre.trim(), 
+        cat: r.categoria, 
+        ticker: r.ticker || generateTicker(r.nombre),
+        p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
+        urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
+        h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
+        img: r.imagen_url,
+        oferta_gondola: oferta // Ahora ya no será undefined
+    };
+});
+                
+          document.getElementById('loader').style.display = 'none';
+            updateCartBadge(); 
+
+            // --- LÓGICA DE RUTAS AL CARGAR ---
+            const path = window.location.pathname.split('/').filter(p => p !== "");
+
             if (paginasEstaticas[path[0]]) {
                 openPage(path[0], paginasEstaticas[path[0]], false);
             } 
-            // Si es un producto (ej: /carnes/asado)
             else if (path.length >= 2) {
-                const item = flatList.find(i => getSlug(i.n) === path[1]);
-                if (item) openProductView(item.id, false);
-                else setTab(path[0], null, false);
+                const itemEncontrado = flatList.find(i => getSlug(i.n) === path[1]);
+                if (itemEncontrado) openProductView(itemEncontrado.id, false);
+                else goHome();
             } 
-            // Si es una pestaña (ej: /carnes)
-            else {
+            else if (path.length === 1 && path[0] !== 'index.html') {
                 setTab(path[0], null, false);
+            } 
+            else {
+                goHome();
             }
-        } else {
-            renderView();
-        }
 
-    } catch (e) { 
-        console.error("ERROR CRÍTICO EN INIT:", e);
-        loader.innerText = "ERROR DE CONEXIÓN: Revise la consola.";
-        loader.style.color = "red";
+            // --- MANEJO DEL BOTÓN ATRÁS ---
+            window.onpopstate = (e) => {
+                const p = window.location.pathname.split('/').filter(x => x !== "");
+                if (paginasEstaticas[p[0]]) {
+                    openPage(p[0], paginasEstaticas[p[0]], false);
+                } 
+                else if (p.length >= 2) {
+                    const itemPop = flatList.find(i => getSlug(i.n) === p[1]);
+                    if (itemPop) openProductView(itemPop.id, false);
+                } 
+                else {
+                    document.getElementById('pageView').classList.remove('active');
+                    document.getElementById('productFullView').style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    setTab(p[0] || 'home', null, false);
+                }
+            };
+
+        } catch (e) { console.error(e); }
     }
-}
-       
+
     function goHome() {
         currentTab = 'home'; 
         document.getElementById('tickerList').style.display = 'block';
@@ -1377,17 +1382,19 @@ function calcularSpreadAhorro(resultados) {
         const currentQty = favorites[item.id] || 1;
 
         // NUEVO: Lógica para la etiqueta de oferta de góndola
-    const ofertas = item.oferta_gondola;
-    let badgesHtml = '';
-    if (ofertas) {
-    // Obtenemos etiquetas únicas de todos los supermercados (ej: "2x1", "70% 2da")
-    const etiquetasUnicas = [...new Set(Object.values(ofertas).map(o => o?.etiqueta).filter(Boolean))];
-    badgesHtml = etiquetasUnicas.map(txt => `
-        <span class="badge-promo" style="background:var(--color-good); color:white; padding:2px 6px; border-radius:4px; font-size:9px; font-weight:800; margin-left:5px;">
-            ${txt}
-        </span>
-    `).join('');
-}
+           const ofertas = item.oferta_gondola;
+        let badgesHtml = '';
+        
+        if (ofertas) {
+            // Obtenemos todas las ofertas de todos los súper para este producto
+            Object.keys(ofertas).forEach(key => {
+                if (ofertas[key]) {
+                    badgesHtml += `<span class="badge-promo" style="background:var(--color-good); color:white; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:5px; white-space:nowrap; display:inline-block;">
+                        ${ofertas[key].etiqueta}
+                    </span>`;
+                }
+            });
+        }
         
         const badgeHtml = etiquetaMostrar ? 
             `<span class="badge-promo" style="background:var(--color-good); color:white; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:5px; vertical-align:middle;">
@@ -1433,86 +1440,93 @@ function calcularSpreadAhorro(resultados) {
        
 function renderChangoSummary(container, items) {
     const validos = obtenerSupermercadosValidos(items);
-    if (validos.length === 0) return;
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'chango-summary';
+    summaryDiv.style.cssText = `background: var(--bg-card); border: 2px solid var(--color-good); border-radius: 20px; padding: 25px; margin: 20px 10px; box-shadow: 0 10px 30px rgba(0, 166, 80, 0.1);`;
+
+    if (validos.length === 0) {
+        summaryDiv.innerHTML = `<p style="text-align:center; font-family:'Roboto Mono'; opacity:0.5; font-size:12px;">ANALIZANDO MERCADO...</p>`;
+        container.appendChild(summaryDiv);
+        return;
+    }
 
     const resultados = validos.map(v => {
-        let sub = 0; let ahorroG = 0;
+        let subtotal = 0;
+        let ahorroGondola = 0;
         items.forEach(item => {
             const p = item.p[v.index];
-            const q = favorites[item.id] || 1;
-            sub += p * q;
-            ahorroG += calcularPromoGondola(item, p, v.nombre);
+            const qty = favorites[item.id] || 1;
+            subtotal += p * qty;
+            ahorroGondola += calcularPromoGondola(item, p, v.nombre);
         });
-        return { ...v, subtotal: sub, totalFinal: sub - ahorroG, ahorroGondola: ahorroG };
+        // Buscamos el beneficio cargado en beneficios_super para este super específico
+        const beneficio = beneficiosDelDia.find(b => b.supermercado.toLowerCase() === v.nombre.toLowerCase());
+        return { ...v, subtotal, totalFinal: subtotal - ahorroGondola, ahorroGondola, beneficio };
     }).sort((a, b) => a.totalFinal - b.totalFinal);
 
     const ganador = resultados[0];
-    const ahorroMax = (resultados.length > 1 ? resultados[1].totalFinal : ganador.totalFinal) - ganador.totalFinal;
+    const masCaro = resultados[resultados.length - 1];
+    const ahorroMaximo = masCaro.totalFinal - ganador.totalFinal;
+    const mejorPromo = ganador.beneficio;
 
-    // Lógica de Beneficios de Pago (Bancos/Membresías)
-    const misMembresiasSlugs = (currentProfile?.membresias || []).map(m => m.slug);
-    
-    // Buscar todos los beneficios para este super hoy
-    const beneficiosSuper = beneficiosDelDia.filter(b => b.supermercado.toLowerCase() === ganador.nombre.toLowerCase());
-
-    // 1. El que ya tiene
-    const beneficioActivo = beneficiosSuper.find(b => misMembresiasSlugs.includes(b.entidad_slug));
-    
-    // 2. El mejor que NO tiene (Referido)
-    const mejorReferido = beneficiosSuper
-        .filter(b => !misMembresiasSlugs.includes(b.entidad_slug))
-        .sort((a, b) => b.descuento - a.descuento)[0];
-
-    let footerHTML = "";
-    if (beneficioActivo) {
-        footerHTML = `
-            <div style="margin-top:15px; padding:12px; border-radius:12px; background:rgba(0, 200, 83, 0.1); border:1px solid var(--color-good); font-size:11px;">
-                <b style="color:var(--color-good)">✓ BENEFICIO APLICADO:</b> Hoy ahorrás un <b>${beneficioActivo.descuento * 100}% extra</b> con tu tarjeta ${beneficioActivo.entidad_nombre}.
-            </div>`;
-    } else if (mejorReferido) {
-        footerHTML = `
-            <div style="margin-top:15px; padding:15px; border-radius:12px; background:rgba(242, 169, 0, 0.1); border:1px solid var(--star-gold);">
-                <div style="font-size:12px; font-weight:700; margin-bottom:8px;">💡 Tip de Ahorro:</div>
-                <div style="font-size:11px; margin-bottom:10px;">Podrías ahorrar un <b>${mejorReferido.descuento * 100}% extra</b> en esta compra con <b>${mejorReferido.entidad_nombre}</b>.</div>
-                <a href="${mejorReferido.link_referido}" target="_blank" style="display:block; text-align:center; background:var(--text-main); color:var(--bg-app); padding:8px; border-radius:8px; text-decoration:none; font-weight:800; font-size:10px;">SOLICITAR TARJETA</a>
-            </div>`;
-    }
-
-    container.innerHTML = `
-        <div class="chango-summary" style="border: 2px solid var(--color-good);">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <span style="font-size: 11px; font-weight: 800; color: var(--color-good);">AHORRO TOTAL ESTIMADO</span>
-                <div style="font-size: 38px; font-weight: 900; color: var(--color-good);">$${format(Math.round(ahorroMax + ganador.ahorroGondola))}</div>
-                <p style="font-size: 12px; opacity: 0.8;">Comprando en <b>${ganador.nombre.toUpperCase()}</b></p>
+    summaryDiv.innerHTML = `
+        <div style="text-align: center; margin-bottom: 25px;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">Ahorrás en total</span>
+            <div style="font-size: 42px; font-weight: 900; color: var(--color-good); font-family: 'Roboto Mono'; margin-top: 5px; line-height:1;">
+                $${format(Math.round(ahorroMaximo))}<span style="font-size: 14px; vertical-align: top; font-weight: 400; opacity:0.7;">*</span>
             </div>
-            <div style="background: var(--bg-app); padding: 15px; border-radius: 12px;">
-                <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;"><span>Subtotal:</span><span>$${format(Math.round(ganador.subtotal))}</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--color-good);"><span>Dctos. Góndola:</span><span>-$${format(Math.round(ganador.ahorroGondola))}</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:18px; font-weight:900; border-top:1px solid var(--border); margin-top:10px; padding-top:10px;"><span>TOTAL:</span><span>$${format(Math.round(ganador.totalFinal))}</span></div>
+            <p style="font-size: 13px; opacity: 0.8; margin-top: 8px;">Tu mejor opción hoy es <b>${ganador.nombre.toUpperCase()}</b></p>
+        </div>
+
+        <div style="background: var(--bg-app); border-radius: 14px; padding: 18px; border: 1px dashed var(--border);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; opacity: 0.6; font-size: 12px;">
+                <span>Subtotal Mercado</span>
+                <span>$${format(Math.round(ganador.subtotal))}</span>
             </div>
-            ${footerHTML}
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--color-good); font-size: 12px; font-weight: 700;">
+                <span>Descuentos de Góndola</span>
+                <span>-$${format(Math.round(ganador.ahorroGondola))}</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 800; font-size: 15px;">TOTAL CHANGO*</span>
+                <span style="font-size: 24px; font-weight: 900; font-family: 'Roboto Mono'; color: var(--text-main);">$${format(Math.round(ganador.totalFinal))}</span>
+            </div>
+        </div>
+
+        ${mejorPromo ? `
+            <div id="referidoBlock" style="margin-top: 15px; padding: 15px; border-radius: 12px; background: rgba(242, 169, 0, 0.1); border: 1px solid var(--star-gold); display: block;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <i class="fa-solid fa-gift" style="color: var(--star-gold); font-size: 18px;"></i>
+                    <span style="font-size: 12px; font-weight: 700; color: var(--text-main); line-height: 1.2;">
+                        Sumá un ${(mejorPromo.descuento * 100)}% de ahorro extra pagando con <b>${mejorPromo.entidad_nombre}</b>.
+                    </span>
+                </div>
+                <a href="${mejorPromo.link_referido}" target="_blank" style="display: block; text-align: center; background: var(--text-main); color: var(--bg-app); padding: 10px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Solicitar Beneficio
+                </a>
+            </div>
+        ` : ''}
+
+        <p style="font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 15px; line-height: 1.4;">
+            *Es un valor informativo. El ahorro real depende de los T&C de cada entidad y la disponibilidad en góndola.
+        </p>
+
+        <button onclick="document.getElementById('otrosPrecios').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 15px; background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; text-transform: uppercase;">
+            Comparar con otros mercados
+        </button>
+
+        <div id="otrosPrecios" style="display: none; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
+            ${resultados.slice(1).map(o => `
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; opacity: 0.6; font-family: 'Roboto Mono';">
+                    <span>${o.nombre.toUpperCase()}</span>
+                    <span>$${format(Math.round(o.totalFinal))}</span>
+                </div>
+            `).join('')}
         </div>
     `;
-}
 
-    // Sincroniza el carrito LOCAL a la NUBE
-async function syncCartToCloud() {
-    if (!currentUser) return;
-    console.log("Guardando carrito en la nube...");
-    await supabaseAuth.from('perfiles')
-        .update({ last_cart: favorites })
-        .eq('id', currentUser.id);
+    container.appendChild(summaryDiv);
 }
-
-// Trae el carrito de la NUBE al LOCAL
-async function syncCartFromCloud() {
-    if (!currentUser || !currentProfile) return;
-    if (currentProfile.last_cart && Object.keys(currentProfile.last_cart).length > 0) {
-        console.log("Cargando carrito desde la nube...");
-        favorites = currentProfile.last_cart;
-        localStorage.setItem('fav_tickers', JSON.stringify(favorites));
-    }
-}   
        
     function calcularAhorroRespectoAlSegundo(resultados) {
     if (resultados.length < 2) return 0;
@@ -1733,12 +1747,15 @@ function closeAuthOutside(event) {
 }
 // Actualiza esta lógica en tu código
 function esUsuarioPro() {
-    if (!currentUser) return false;
-    // Lógica temporal: Todos son PRO si están logueados
-    // En el futuro, preguntarás por profile.subscription_end
-    return true; 
+    if (!currentProfile) return false;
+    // Si no hay fecha de vencimiento, es PRO (etapa actual)
+    if (!currentProfile.subscription_end) return true; 
+    
+    // Si hay fecha, verificamos si ya pasó
+    const vencimiento = new Date(currentProfile.subscription_end);
+    return vencimiento > new Date();
 }
-       
+
 function renderNotificacionVencimiento() {
     if (!currentProfile?.subscription_end) return;
     const dias = Math.ceil((new Date(currentProfile.subscription_end) - new Date()) / (1000 * 60 * 60 * 24));
@@ -1856,52 +1873,24 @@ function toggleFav(id, btn) {
     }
 
     const isAlreadyFav = !!favorites[id];
-    
-    // Lógica de límite para FREE (puedes comentarla para que todos sean PRO hoy)
-    const isPro = currentProfile?.subscription === 'pro';
-    if (!isPro && !isAlreadyFav && Object.keys(favorites).length >= 5) {
-        renderProLanding();
-        showAuthStep('proLandingArea');
+    const count = Object.keys(favorites).length;
+    const isPro = currentProfile?.subscription === 'pro' || currentProfile?.subscription === 'premium';
+
+    if (!isPro && !isAlreadyFav && count >= 5) {
+        document.getElementById('authModal').style.display = 'flex';
+        renderProLanding(); // <--- ESTO LLENA EL HTML
+        showAuthStep('proLandingArea'); // <--- ESTO LO MUESTRA
         return;
     }
 
-    if (isAlreadyFav) {
-        delete favorites[id];
-    } else {
-        favorites[id] = 1;
-    }
+    if (isAlreadyFav) delete favorites[id];
+    else favorites[id] = 1;
 
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     updateCartBadge();
-    
-    // GUARDAR EN SUPABASE AUTOMÁTICAMENTE
-    if (currentUser) syncCartToCloud();
-
     if (currentTab === 'favs') renderView();
     else if (btn) btn.classList.toggle('active', !!favorites[id]);
 }
-       
-     async function compartirCarrito() {
-    if (!esUsuarioPro()) return openAuth();
-    
-    const nombreChango = prompt("Nombre de tu lista (ej: Asado Domingo):");
-    if (!nombreChango) return;
-
-    const { data, error } = await supabaseAuth.from('carritos_compartidos').insert([{
-        creador_id: currentUser.id,
-        nombre: nombreChango,
-        items: favorites
-    }]).select();
-
-    if (data) {
-        const shareUrl = `${window.location.origin}/chango?import=${data[0].id}`;
-        if (navigator.share) {
-            navigator.share({ title: 'Mi Chango en TradingChango', text: `Te comparto mi lista: ${nombreChango}`, url: shareUrl });
-        } else {
-            prompt("Copia este link para compartir:", shareUrl);
-        }
-    }
-}  
        
 function renderProLanding() {
     const proArea = document.getElementById('proLandingArea');
@@ -2357,6 +2346,26 @@ function calcularPromoGondola(item, precioUnitario, nombreSuper) {
     }
     return 0;
 }
+// Función maestra de ahorro (Combina Góndola + Membresías futuras)
+function calcularAhorroTotal(superId, items) {
+    let subtotal = 0;
+    let ahorroGondola = 0;
+
+    items.forEach(item => {
+        const precioUnitario = item.p[superId];
+        const qty = favorites[item.id] || 1;
+        subtotal += precioUnitario * qty;
+        ahorroGondola += calcularPromoGondola(item, precioUnitario);
+    });
+
+    return {
+        totalFinal: subtotal - ahorroGondola,
+        ahorroTotal: ahorroGondola
+    };
+}
+
+// Función placeholder para evitar errores de referidos (la completaremos en el siguiente paso)
+function mostrarSugerenciaReferido(superId) { return ''; }
 
 // Calcula cuánto dinero extra gastaría el usuario si no elige la mejor opción
 function calcularSpreadAhorro(resultados) {
