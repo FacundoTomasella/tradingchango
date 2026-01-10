@@ -929,110 +929,71 @@ if (Array.isArray(favorites)) {
     }
 }
       
-       async function init() {
-            try {
-                await loadSession();
-                await loadBeneficios();
-                // AGREGA ESTO AQUÍ: Si no hay usuario, ignoramos lo que haya en localStorage
-                if (!currentUser) {
-                    favorites = {};
-                    localStorage.removeItem('fav_tickers');
-                }
-
-                const hoy = new Date().getDay(); 
-        const resB = await fetch(`${SUPABASE_URL}/rest/v1/beneficios_super?dia_semana=eq.${hoy}`, { 
-            headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
-        });
-        beneficiosDelDia = await resB.json();
-            // 1. Cargar Configuración (Legales, etc)
-            const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const configRows = await resC.json();
-            configRows.forEach(row => configDB[row.clave] = row.valor);
-
-            renderAds(); 
-
-          
-            // 2. Cargar Productos
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const rows = await res.json();
-            
-            // 3. Cargar Historial (últimos 7 días)
-            const d7 = new Date(); d7.setDate(d7.getDate() - 7);
-            const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const hData = await resH.json();
-            
-            const usedTickers = new Set();
-           // Dentro de la función async function init()
-// BUSCÁ ESTO DENTRO DE init()
-flatList = rows.map(r => {
-    const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
-    
-    // CORRECCIÓN: Procesar el JSON de ofertas por supermercado
-    let oferta = null;
-    if (r.oferta_gondola) {
-        try {
-            oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
-        } catch (e) {
-            console.error("Error en JSON de oferta:", r.nombre);
-            oferta = null;
+      async function init() {
+    try {
+        // 1. Cargar lo que tengamos en caché para velocidad instantánea
+        const cached = localStorage.getItem('flatList_cache');
+        if (cached) {
+            flatList = JSON.parse(cached);
+            renderView();
+            document.getElementById('loader').style.display = 'none';
         }
-    }
 
-    return {
-        id: r.id, 
-        n: r.nombre.trim(), 
-        cat: r.categoria, 
-        ticker: r.ticker || generateTicker(r.nombre),
-        p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
-        urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
-        h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
-        img: r.imagen_url,
-        oferta_gondola: oferta // Ahora ya no será undefined
-    };
-});
-                
-          document.getElementById('loader').style.display = 'none';
-            updateCartBadge(); 
+        await loadSession();
+        await loadBeneficios();
 
-            // --- LÓGICA DE RUTAS AL CARGAR ---
-            const path = window.location.pathname.split('/').filter(p => p !== "");
+        // 2. Cargar Configuración y Productos en paralelo
+        const [resC, resP, resH] = await Promise.all([
+            fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }),
+            fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }),
+            fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${new Date(Date.now() - 7*864e5).toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } })
+        ]);
 
-            if (paginasEstaticas[path[0]]) {
-                openPage(path[0], paginasEstaticas[path[0]], false);
-            } 
-            else if (path.length >= 2) {
-                const itemEncontrado = flatList.find(i => getSlug(i.n) === path[1]);
-                if (itemEncontrado) openProductView(itemEncontrado.id, false);
-                else goHome();
-            } 
-            else if (path.length === 1 && path[0] !== 'index.html') {
-                setTab(path[0], null, false);
-            } 
-            else {
-                goHome();
-            }
+        const configRows = await resC.json();
+        configRows.forEach(row => configDB[row.clave] = row.valor);
+        renderAds();
 
-            // --- MANEJO DEL BOTÓN ATRÁS ---
-            window.onpopstate = (e) => {
-                const p = window.location.pathname.split('/').filter(x => x !== "");
-                if (paginasEstaticas[p[0]]) {
-                    openPage(p[0], paginasEstaticas[p[0]], false);
-                } 
-                else if (p.length >= 2) {
-                    const itemPop = flatList.find(i => getSlug(i.n) === p[1]);
-                    if (itemPop) openProductView(itemPop.id, false);
-                } 
-                else {
-                    document.getElementById('pageView').classList.remove('active');
-                    document.getElementById('productFullView').style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                    setTab(p[0] || 'home', null, false);
-                }
+        const rows = await resP.json();
+        const hData = await resH.json();
+
+        flatList = rows.map(r => {
+            let oferta = null;
+            try { 
+                if (r.oferta_gondola) oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
+            } catch (e) { console.error("Error JSON oferta:", r.nombre); }
+
+            return {
+                id: r.id, 
+                n: r.nombre.trim(), 
+                cat: r.categoria, 
+                ticker: r.ticker || generateTicker(r.nombre),
+                p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
+                urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
+                h7d: hData.filter(h => h.nombre_producto === r.nombre)[0]?.precio_minimo || 0,
+                img: r.imagen_url,
+                oferta_gondola: oferta
             };
+        });
 
-        } catch (e) { console.error(e); }
+        // Guardar en caché para la próxima vez
+        localStorage.setItem('flatList_cache', JSON.stringify(flatList));
+        
+        // 3. Si hay usuario, sincronizar carrito de la nube
+        if (currentUser) await syncCartFromCloud();
+
+        document.getElementById('loader').style.display = 'none';
+        updateCartBadge();
+        
+        // Manejo de rutas (URL limpia)
+        const path = window.location.pathname.split('/').filter(p => p !== "");
+        if (path.length > 0) handleRouting(path);
+        else renderView();
+
+    } catch (e) { 
+        console.error("Error en Init:", e);
+        document.getElementById('loader').innerText = "ERROR DE CONEXIÓN";
     }
-
+}
     function goHome() {
         currentTab = 'home'; 
         document.getElementById('tickerList').style.display = 'block';
@@ -1382,13 +1343,13 @@ function calcularSpreadAhorro(resultados) {
         const currentQty = favorites[item.id] || 1;
 
         // NUEVO: Lógica para la etiqueta de oferta de góndola
-        const ofertas = item.oferta_gondola;
+    const ofertas = item.oferta_gondola;
     let badgesHtml = '';
     if (ofertas) {
-    // Extraemos todas las etiquetas únicas (ej: si hay 2x1 en varios súper, mostrar 1 sola vez)
+    // Obtenemos etiquetas únicas de todos los supermercados (ej: "2x1", "70% 2da")
     const etiquetasUnicas = [...new Set(Object.values(ofertas).map(o => o?.etiqueta).filter(Boolean))];
     badgesHtml = etiquetasUnicas.map(txt => `
-        <span class="badge-promo" style="background:var(--color-good); color:white; padding:2px 6px; border-radius:4px; font-size:9px; font-weight:800; margin-left:5px; display:inline-block; white-space:nowrap;">
+        <span class="badge-promo" style="background:var(--color-good); color:white; padding:2px 6px; border-radius:4px; font-size:9px; font-weight:800; margin-left:5px;">
             ${txt}
         </span>
     `).join('');
@@ -1438,15 +1399,7 @@ function calcularSpreadAhorro(resultados) {
        
 function renderChangoSummary(container, items) {
     const validos = obtenerSupermercadosValidos(items);
-    const summaryDiv = document.createElement('div');
-    summaryDiv.className = 'chango-summary';
-    summaryDiv.style.cssText = `background: var(--bg-card); border: 2px solid var(--color-good); border-radius: 20px; padding: 25px; margin: 20px 10px; box-shadow: 0 10px 30px rgba(0, 166, 80, 0.1);`;
-
-    if (validos.length === 0) {
-        summaryDiv.innerHTML = `<p style="text-align:center; font-family:'Roboto Mono'; opacity:0.5; font-size:12px;">ANALIZANDO MERCADO...</p>`;
-        container.appendChild(summaryDiv);
-        return;
-    }
+    if (validos.length === 0) return;
 
     const resultados = validos.map(v => {
         let sub = 0; let ahorroG = 0;
@@ -1460,57 +1413,66 @@ function renderChangoSummary(container, items) {
     }).sort((a, b) => a.totalFinal - b.totalFinal);
 
     const ganador = resultados[0];
-    const masCaro = resultados[resultados.length - 1];
-    const ahorroSpreadMaximo = masCaro.totalFinal - ganador.totalFinal;
+    const ahorroMax = (resultados.length > 1 ? resultados[1].totalFinal : ganador.totalFinal) - ganador.totalFinal;
 
-    // LÓGICA DE REFERIDOS:
-    const misMembresiasSlugs = (currentProfile?.membresias || []).map(m => m.slug.toLowerCase());
+    // Lógica de Beneficios de Pago (Bancos/Membresías)
+    const misMembresiasSlugs = (currentProfile?.membresias || []).map(m => m.slug);
     
-    // 1. Ver si el usuario ya tiene un beneficio para el súper ganador
-    const beneficioQueTiene = beneficiosDelDia.find(b => 
-        b.supermercado.toLowerCase() === ganador.nombre.toLowerCase() && 
-        misMembresiasSlugs.includes(b.entidad_nombre.toLowerCase())
-    );
+    // Buscar todos los beneficios para este super hoy
+    const beneficiosSuper = beneficiosDelDia.filter(b => b.supermercado.toLowerCase() === ganador.nombre.toLowerCase());
 
-    // 2. Buscar el mejor beneficio que el usuario NO tiene (para vender el referido)
-    const beneficioVenta = beneficiosDelDia.filter(b => 
-        b.supermercado.toLowerCase() === ganador.nombre.toLowerCase() && 
-        !misMembresiasSlugs.includes(b.entidad_nombre.toLowerCase())
-    ).sort((a, b) => b.descuento - a.descuento)[0];
+    // 1. El que ya tiene
+    const beneficioActivo = beneficiosSuper.find(b => misMembresiasSlugs.includes(b.entidad_slug));
+    
+    // 2. El mejor que NO tiene (Referido)
+    const mejorReferido = beneficiosSuper
+        .filter(b => !misMembresiasSlugs.includes(b.entidad_slug))
+        .sort((a, b) => b.descuento - a.descuento)[0];
 
-    let htmlReferido = '';
-    if (beneficioQueTiene) {
-        htmlReferido = `<div style="margin-top:15px; padding:12px; border-radius:12px; background:rgba(0, 166, 80, 0.1); border:1px solid var(--color-good); font-size:11px; font-weight:700;">
-            ✅ Con tu membresía de ${beneficioQueTiene.entidad_nombre} hoy ahorrás un ${(beneficioQueTiene.descuento*100)}% extra.
-        </div>`;
-    } else if (beneficioVenta) {
-        htmlReferido = `<div style="margin-top:15px; padding:15px; border-radius:12px; background:rgba(242, 169, 0, 0.1); border:1px solid var(--star-gold);">
-            <div style="font-size:12px; font-weight:700; margin-bottom:10px;">💡 Ahorrá un ${(beneficioVenta.descuento*100)}% extra con ${beneficioVenta.entidad_nombre}</div>
-            <a href="${beneficioVenta.link_referido}" target="_blank" style="display:block; text-align:center; background:var(--text-main); color:var(--bg-app); padding:10px; border-radius:8px; text-decoration:none; font-weight:800; font-size:11px;">SOLICITAR BENEFICIO</a>
-        </div>`;
+    let footerHTML = "";
+    if (beneficioActivo) {
+        footerHTML = `
+            <div style="margin-top:15px; padding:12px; border-radius:12px; background:rgba(0, 200, 83, 0.1); border:1px solid var(--color-good); font-size:11px;">
+                <b style="color:var(--color-good)">✓ BENEFICIO APLICADO:</b> Hoy ahorrás un <b>${beneficioActivo.descuento * 100}% extra</b> con tu tarjeta ${beneficioActivo.entidad_nombre}.
+            </div>`;
+    } else if (mejorReferido) {
+        footerHTML = `
+            <div style="margin-top:15px; padding:15px; border-radius:12px; background:rgba(242, 169, 0, 0.1); border:1px solid var(--star-gold);">
+                <div style="font-size:12px; font-weight:700; margin-bottom:8px;">💡 Tip de Ahorro:</div>
+                <div style="font-size:11px; margin-bottom:10px;">Podrías ahorrar un <b>${mejorReferido.descuento * 100}% extra</b> en esta compra con <b>${mejorReferido.entidad_nombre}</b>.</div>
+                <a href="${mejorReferido.link_referido}" target="_blank" style="display:block; text-align:center; background:var(--text-main); color:var(--bg-app); padding:8px; border-radius:8px; text-decoration:none; font-weight:800; font-size:10px;">SOLICITAR TARJETA</a>
+            </div>`;
     }
 
-    summaryDiv.innerHTML = `
-        <div style="text-align: center; margin-bottom: 25px;">
-            <span style="font-size: 11px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">Ahorrás en total</span>
-            <div style="font-size: 42px; font-weight: 900; color: var(--color-good); font-family: 'Roboto Mono'; margin-top: 5px; line-height:1;">
-                $${format(Math.round(ahorroSpreadMaximo + ganador.ahorroGondola))}<span style="font-size: 14px; vertical-align: top; opacity:0.7;">*</span>
+    container.innerHTML = `
+        <div class="chango-summary" style="border: 2px solid var(--color-good);">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <span style="font-size: 11px; font-weight: 800; color: var(--color-good);">AHORRO TOTAL ESTIMADO</span>
+                <div style="font-size: 38px; font-weight: 900; color: var(--color-good);">$${format(Math.round(ahorroMax + ganador.ahorroGondola))}</div>
+                <p style="font-size: 12px; opacity: 0.8;">Comprando en <b>${ganador.nombre.toUpperCase()}</b></p>
             </div>
-            <p style="font-size: 13px; opacity: 0.8; margin-top: 8px;">Tu mejor opción hoy es <b>${ganador.nombre.toUpperCase()}</b></p>
-        </div>
-        <div style="background: var(--bg-app); border-radius: 14px; padding: 18px; border: 1px dashed var(--border);">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; opacity: 0.6; font-size: 12px;"><span>Subtotal</span><span>$${format(Math.round(ganador.subtotal))}</span></div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--color-good); font-size: 12px; font-weight: 700;"><span>Descuentos Góndola</span><span>-$${format(Math.round(ganador.ahorroGondola))}</span></div>
-            <div style="border-top: 1px solid var(--border); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: 800; font-size: 15px;">TOTAL CHANGO*</span>
-                <span style="font-size: 24px; font-weight: 900; font-family: 'Roboto Mono';">$${format(Math.round(ganador.totalFinal))}</span>
+            <div style="background: var(--bg-app); padding: 15px; border-radius: 12px;">
+                <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;"><span>Subtotal:</span><span>$${format(Math.round(ganador.subtotal))}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--color-good);"><span>Dctos. Góndola:</span><span>-$${format(Math.round(ganador.ahorroGondola))}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:18px; font-weight:900; border-top:1px solid var(--border); margin-top:10px; padding-top:10px;"><span>TOTAL:</span><span>$${format(Math.round(ganador.totalFinal))}</span></div>
             </div>
+            ${footerHTML}
         </div>
-        ${htmlReferido}
-        <p style="font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 15px;">*Valor informativo. Sujeto a T&C de cada entidad.</p>
     `;
-    container.appendChild(summaryDiv);
 }
+
+    async function syncCartToCloud() {
+    if (!currentUser) return;
+    await supabaseAuth.from('perfiles').update({ last_cart: favorites }).eq('id', currentUser.id);
+}
+
+async function syncCartFromCloud() {
+    if (currentProfile?.last_cart) {
+        favorites = currentProfile.last_cart;
+        localStorage.setItem('fav_tickers', JSON.stringify(favorites));
+    }
+}
+       
        
     function calcularAhorroRespectoAlSegundo(resultados) {
     if (resultados.length < 2) return 0;
@@ -1864,14 +1826,36 @@ function toggleFav(id, btn) {
         return;
     }
 
-    if (isAlreadyFav) delete favorites[id];
+    if (favorites[id]) delete favorites[id];
     else favorites[id] = 1;
-
+    
     localStorage.setItem('fav_tickers', JSON.stringify(favorites));
+    if (currentUser) syncCartToCloud(); // Sincroniza a la nube
     updateCartBadge();
-    if (currentTab === 'favs') renderView();
-    else if (btn) btn.classList.toggle('active', !!favorites[id]);
-}
+    renderView();
+    }
+
+     async function compartirCarrito() {
+    if (!esUsuarioPro()) return openAuth();
+    
+    const nombreChango = prompt("Nombre de tu lista (ej: Asado Domingo):");
+    if (!nombreChango) return;
+
+    const { data, error } = await supabaseAuth.from('carritos_compartidos').insert([{
+        creador_id: currentUser.id,
+        nombre: nombreChango,
+        items: favorites
+    }]).select();
+
+    if (data) {
+        const shareUrl = `${window.location.origin}/chango?import=${data[0].id}`;
+        if (navigator.share) {
+            navigator.share({ title: 'Mi Chango en TradingChango', text: `Te comparto mi lista: ${nombreChango}`, url: shareUrl });
+        } else {
+            prompt("Copia este link para compartir:", shareUrl);
+        }
+    }
+}  
        
 function renderProLanding() {
     const proArea = document.getElementById('proLandingArea');
