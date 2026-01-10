@@ -929,25 +929,33 @@ if (Array.isArray(favorites)) {
     }
 }
       
-      async function init() {
+     async function init() {
+    console.log("Iniciando TradingChango...");
+    const loader = document.getElementById('loader');
+
     try {
-        // 1. Cargar lo que tengamos en caché para velocidad instantánea
+        // 1. CARGA RÁPIDA DESDE CACHÉ
         const cached = localStorage.getItem('flatList_cache');
         if (cached) {
             flatList = JSON.parse(cached);
             renderView();
-            document.getElementById('loader').style.display = 'none';
+            loader.style.display = 'none';
         }
 
+        // 2. PROCESOS DE AUTENTICACIÓN
+        console.log("Cargando sesión y beneficios...");
         await loadSession();
-        await loadBeneficios();
+        await loadBeneficios().catch(e => console.error("Error cargando beneficios:", e));
 
-        // 2. Cargar Configuración y Productos en paralelo
+        // 3. FETCH DE DATOS (Supabase)
+        console.log("Conectando con Supabase...");
         const [resC, resP, resH] = await Promise.all([
             fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }),
             fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }),
             fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${new Date(Date.now() - 7*864e5).toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } })
         ]);
+
+        if (!resP.ok) throw new Error("No se pudieron cargar los productos");
 
         const configRows = await resC.json();
         configRows.forEach(row => configDB[row.clave] = row.valor);
@@ -956,44 +964,70 @@ if (Array.isArray(favorites)) {
         const rows = await resP.json();
         const hData = await resH.json();
 
+        // 4. MAPEO DE PRODUCTOS
         flatList = rows.map(r => {
             let oferta = null;
             try { 
-                if (r.oferta_gondola) oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
-            } catch (e) { console.error("Error JSON oferta:", r.nombre); }
+                if (r.oferta_gondola) {
+                    oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
+                }
+            } catch (e) { console.warn("Error en oferta de:", r.nombre); }
+
+            // Buscamos el precio histórico de hace 7 días
+            const hist = Array.isArray(hData) ? hData.find(h => h.nombre_producto === r.nombre) : null;
 
             return {
                 id: r.id, 
-                n: r.nombre.trim(), 
-                cat: r.categoria, 
-                ticker: r.ticker || generateTicker(r.nombre),
+                n: r.nombre?.trim() || "Producto sin nombre", 
+                cat: r.categoria || "Varios", 
+                ticker: r.ticker || generateTicker(r.nombre || "PROD"),
                 p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
                 urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
-                h7d: hData.filter(h => h.nombre_producto === r.nombre)[0]?.precio_minimo || 0,
+                h7d: hist ? hist.precio_minimo : 0,
                 img: r.imagen_url,
                 oferta_gondola: oferta
             };
         });
 
-        // Guardar en caché para la próxima vez
+        // Guardar caché actualizado
         localStorage.setItem('flatList_cache', JSON.stringify(flatList));
         
-        // 3. Si hay usuario, sincronizar carrito de la nube
-        if (currentUser) await syncCartFromCloud();
+        // 5. SINCRONIZACIÓN DE USUARIO
+        if (currentUser) {
+            await syncCartFromCloud().catch(e => console.error("Error sincronizando carrito:", e));
+        }
 
-        document.getElementById('loader').style.display = 'none';
+        loader.style.display = 'none';
         updateCartBadge();
         
-        // Manejo de rutas (URL limpia)
-        const path = window.location.pathname.split('/').filter(p => p !== "");
-        if (path.length > 0) handleRouting(path);
-        else renderView();
+        // 6. MANEJO DE RUTAS AL CARGAR
+        const path = window.location.pathname.split('/').filter(p => p !== "" && p !== "index.html");
+        if (path.length > 0) {
+            // Si es una página legal
+            if (paginasEstaticas[path[0]]) {
+                openPage(path[0], paginasEstaticas[path[0]], false);
+            } 
+            // Si es un producto (ej: /carnes/asado)
+            else if (path.length >= 2) {
+                const item = flatList.find(i => getSlug(i.n) === path[1]);
+                if (item) openProductView(item.id, false);
+                else setTab(path[0], null, false);
+            } 
+            // Si es una pestaña (ej: /carnes)
+            else {
+                setTab(path[0], null, false);
+            }
+        } else {
+            renderView();
+        }
 
     } catch (e) { 
-        console.error("Error en Init:", e);
-        document.getElementById('loader').innerText = "ERROR DE CONEXIÓN";
+        console.error("ERROR CRÍTICO EN INIT:", e);
+        loader.innerText = "ERROR DE CONEXIÓN: Revise la consola.";
+        loader.style.color = "red";
     }
 }
+       
     function goHome() {
         currentTab = 'home'; 
         document.getElementById('tickerList').style.display = 'block';
@@ -1461,18 +1495,24 @@ function renderChangoSummary(container, items) {
     `;
 }
 
-    async function syncCartToCloud() {
+    // Sincroniza el carrito LOCAL a la NUBE
+async function syncCartToCloud() {
     if (!currentUser) return;
-    await supabaseAuth.from('perfiles').update({ last_cart: favorites }).eq('id', currentUser.id);
+    console.log("Guardando carrito en la nube...");
+    await supabaseAuth.from('perfiles')
+        .update({ last_cart: favorites })
+        .eq('id', currentUser.id);
 }
 
+// Trae el carrito de la NUBE al LOCAL
 async function syncCartFromCloud() {
-    if (currentProfile?.last_cart) {
+    if (!currentUser || !currentProfile) return;
+    if (currentProfile.last_cart && Object.keys(currentProfile.last_cart).length > 0) {
+        console.log("Cargando carrito desde la nube...");
         favorites = currentProfile.last_cart;
         localStorage.setItem('fav_tickers', JSON.stringify(favorites));
     }
-}
-       
+}   
        
     function calcularAhorroRespectoAlSegundo(resultados) {
     if (resultados.length < 2) return 0;
@@ -1816,25 +1856,31 @@ function toggleFav(id, btn) {
     }
 
     const isAlreadyFav = !!favorites[id];
-    const count = Object.keys(favorites).length;
-    const isPro = currentProfile?.subscription === 'pro' || currentProfile?.subscription === 'premium';
-
-    if (!isPro && !isAlreadyFav && count >= 5) {
-        document.getElementById('authModal').style.display = 'flex';
-        renderProLanding(); // <--- ESTO LLENA EL HTML
-        showAuthStep('proLandingArea'); // <--- ESTO LO MUESTRA
+    
+    // Lógica de límite para FREE (puedes comentarla para que todos sean PRO hoy)
+    const isPro = currentProfile?.subscription === 'pro';
+    if (!isPro && !isAlreadyFav && Object.keys(favorites).length >= 5) {
+        renderProLanding();
+        showAuthStep('proLandingArea');
         return;
     }
 
-    if (favorites[id]) delete favorites[id];
-    else favorites[id] = 1;
-    
-    localStorage.setItem('fav_tickers', JSON.stringify(favorites));
-    if (currentUser) syncCartToCloud(); // Sincroniza a la nube
-    updateCartBadge();
-    renderView();
+    if (isAlreadyFav) {
+        delete favorites[id];
+    } else {
+        favorites[id] = 1;
     }
 
+    localStorage.setItem('fav_tickers', JSON.stringify(favorites));
+    updateCartBadge();
+    
+    // GUARDAR EN SUPABASE AUTOMÁTICAMENTE
+    if (currentUser) syncCartToCloud();
+
+    if (currentTab === 'favs') renderView();
+    else if (btn) btn.classList.toggle('active', !!favorites[id]);
+}
+       
      async function compartirCarrito() {
     if (!esUsuarioPro()) return openAuth();
     
