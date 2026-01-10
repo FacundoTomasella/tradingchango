@@ -917,23 +917,16 @@ if (Array.isArray(favorites)) {
 
     // Función para generar URLs limpias
     const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-    let beneficiosDelDia = []; // Variable global para los referidos
-       
-       async function init() {
+
+            async function init() {
             try {
                 await loadSession();
-                await loadBeneficios();
                 // AGREGA ESTO AQUÍ: Si no hay usuario, ignoramos lo que haya en localStorage
                 if (!currentUser) {
                     favorites = {};
                     localStorage.removeItem('fav_tickers');
                 }
-
-                const hoy = new Date().getDay(); 
-        const resB = await fetch(`${SUPABASE_URL}/rest/v1/beneficios_super?dia_semana=eq.${hoy}`, { 
-            headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } 
-        });
-        beneficiosDelDia = await resB.json();
+            
             // 1. Cargar Configuración (Legales, etc)
             const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
             const configRows = await resC.json();
@@ -952,32 +945,32 @@ if (Array.isArray(favorites)) {
             const hData = await resH.json();
             
             const usedTickers = new Set();
-// BUSCÁ ESTO DENTRO DE async function init()
+           // Dentro de la función async function init()
+// BUSCÁ ESTO DENTRO DE init()
 flatList = rows.map(r => {
     const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
-    let t = r.ticker || generateTicker(r.nombre);
     
-    // PROCESAMIENTO SEGURO DE LA COLUMNA oferta_gondola
+    // CORRECCIÓN: Procesar el JSON de ofertas por supermercado
     let oferta = null;
     if (r.oferta_gondola) {
         try {
             oferta = typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola;
         } catch (e) {
-            console.warn("Error en oferta para:", r.nombre);
+            console.error("Error en JSON de oferta:", r.nombre);
             oferta = null;
         }
     }
-    
+
     return {
         id: r.id, 
         n: r.nombre.trim(), 
         cat: r.categoria, 
-        ticker: t,
+        ticker: r.ticker || generateTicker(r.nombre),
         p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
         urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
         h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
         img: r.imagen_url,
-        oferta_gondola: oferta 
+        oferta_gondola: oferta // Ahora ya no será undefined
     };
 });
                 
@@ -1373,55 +1366,52 @@ function calcularSpreadAhorro(resultados) {
 
         // NUEVO: Lógica para la etiqueta de oferta de góndola
         const ofertas = item.oferta_gondola;
-let badgesHtml = '';
+        let etiquetaMostrar = '';
+        
+        // Si hay ofertas, buscamos la primera disponible para mostrar el badge en la lista general
+        if (ofertas) {
+            const primerSuperConOferta = Object.keys(ofertas).find(k => ofertas[k] && ofertas[k].etiqueta);
+            if (primerSuperConOferta) {
+                etiquetaMostrar = ofertas[primerSuperConOferta].etiqueta;
+            }
+        }
+        
+        const badgeHtml = etiquetaMostrar ? 
+            `<span class="badge-promo" style="background:var(--color-good); color:white; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:5px; vertical-align:middle;">
+                ${etiquetaMostrar}
+            </span>` : '';
+        let qtyHtml = '';
+        if (currentTab === 'favs') {
+            qtyHtml = `
+                <div class="qty-control" onclick="event.stopPropagation()">
+                    <button class="qty-btn" onclick="changeQty(${item.id}, -1, event)">-</button>
+                    <span class="qty-num">${currentQty}</span>
+                    <button class="qty-btn" onclick="changeQty(${item.id}, 1, event)">+</button>
+                </div>`;
+        }
 
-if (ofertas) {
-    // Obtenemos todas las etiquetas únicas de todos los supermercados para este producto
-    const etiquetasUnicas = [...new Set(Object.keys(ofertas).map(k => ofertas[k]?.etiqueta).filter(Boolean))];
-    
-    badgesHtml = etiquetasUnicas.map(etiqueta => `
-        <span class="badge-promo" style="
-            background: var(--color-good); 
-            color: white; 
-            padding: 2px 6px; 
-            border-radius: 4px; 
-            font-size: 9px; 
-            font-weight: 800;
-            margin-left: 5px; 
-            display: inline-block;
-            white-space: nowrap;
-        ">
-            ${etiqueta}
-        </span>
-    `).join('');
-}
-
-const card = document.createElement('div');
-card.className = 'ticker-card';
-card.onclick = () => openProductView(item.id);
-
-card.innerHTML = `
-    <div class="ticker-info" style="display: flex; align-items: center; overflow: hidden; width: 100%;">
-        <div class="t-left" style="min-width: 0; flex: 1;">
-            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                <span class="t-symbol" style="white-space: nowrap;">${item.ticker}</span>
-                ${badgesHtml}
+        const card = document.createElement('div');
+        card.className = 'ticker-card';
+        card.onclick = () => openProductView(item.id);
+        card.innerHTML = `
+            <div class="ticker-info">
+                <div class="t-left">
+                    <span class="t-symbol">${item.ticker} ${badgeHtml}</span>
+                    <span class="t-name">${item.n}</span>
+                </div>
+                <div class="t-right">
+                    <span class="t-price">$${format(s.min)}</span><br>
+                    <span class="t-change ${s.trendClass}">${s.icon} ${s.spread}%</span>
+                </div>
             </div>
-            <span class="t-name" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.n}</span>
-        </div>
-        <div class="t-right" style="flex-shrink: 0; text-align: right; margin-left: 10px;">
-            <span class="t-price">$${format(s.min)}</span><br>
-            <span class="t-change ${s.trendClass}">${s.icon} ${s.spread}%</span>
-        </div>
-    </div>
-    <div style="display:flex; align-items:center; flex-shrink: 0;">
-        ${qtyHtml}
-        <div class="fav-btn ${isAdded ? 'active' : ''}" 
-             onclick="event.stopPropagation(); toggleFav(${item.id}, this)">
-            <i class="fa-solid fa-cart-shopping"></i>
-        </div>
-    </div>
-`;
+            <div style="display:flex; align-items:center;">
+                ${qtyHtml}
+                <div class="fav-btn ${isAdded ? 'active' : ''}" 
+                     onclick="event.stopPropagation(); toggleFav(${item.id}, this)">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+            </div>
+        `;
         container.appendChild(card);
     });
 }
@@ -1429,17 +1419,23 @@ card.innerHTML = `
        
        
 function renderChangoSummary(container, items) {
-    const validos = obtenerSupermercadosValidos(items);
+    // 1. Identificar en qué súper están TODOS los productos
+    const storeNames = ["Coto", "Carrefour", "Dia", "Jumbo", "MasOnline"];
+    const validos = storeNames.map((name, idx) => {
+        const tieneTodo = items.every(item => item.p[idx] > 0);
+        return { index: idx, nombre: name, valido: tieneTodo };
+    }).filter(s => s.valido);
+
     const summaryDiv = document.createElement('div');
-    summaryDiv.className = 'chango-summary';
-    summaryDiv.style.cssText = `background: var(--bg-card); border: 2px solid var(--color-good); border-radius: 20px; padding: 25px; margin: 20px 10px; box-shadow: 0 10px 30px rgba(0, 166, 80, 0.1);`;
+    summaryDiv.style.cssText = `background:var(--bg-card); border:2px solid var(--color-good); border-radius:20px; padding:25px; margin:20px 10px;`;
 
     if (validos.length === 0) {
-        summaryDiv.innerHTML = `<p style="text-align:center; font-family:'Roboto Mono'; opacity:0.5; font-size:12px;">ESPERANDO DATOS DE MERCADO...</p>`;
+        summaryDiv.innerHTML = `<p style="text-align:center; font-size:12px; opacity:0.5;">BUSCANDO MEJOR PRECIO EN MERCADO...</p>`;
         container.appendChild(summaryDiv);
         return;
     }
 
+    // 2. Calcular totales con descuentos de góndola específicos
     const resultados = validos.map(v => {
         let subtotal = 0;
         let ahorroGondola = 0;
@@ -1447,71 +1443,36 @@ function renderChangoSummary(container, items) {
             const p = item.p[v.index];
             const qty = favorites[item.id] || 1;
             subtotal += p * qty;
-            ahorroGondola += calcularPromoGondola(item, p, v.nombre);
+            
+            // Lógica de 2x1 o 70% según el súper
+            const of = item.oferta_gondola ? item.oferta_gondola[v.nombre.toLowerCase()] : null;
+            if (of) {
+                if (of.tipo === "2x1" && qty >= 2) ahorroGondola += Math.floor(qty / 2) * p;
+                if (of.tipo === "70_segunda" && qty >= 2) ahorroGondola += Math.floor(qty / 2) * (p * 0.7);
+            }
         });
-        const beneficio = beneficiosDelDia.find(b => b.supermercado.toLowerCase() === v.nombre.toLowerCase());
-        return { ...v, subtotal, totalFinal: subtotal - ahorroGondola, ahorroGondola, beneficio };
+        return { ...v, totalFinal: subtotal - ahorroGondola, ahorroGondola };
     }).sort((a, b) => a.totalFinal - b.totalFinal);
 
     const ganador = resultados[0];
-    const masCaro = resultados[resultados.length - 1];
-    const ahorroMaximo = masCaro.totalFinal - ganador.totalFinal;
-    const mejorPromo = ganador.beneficio;
+    const ahorroSpread = resultados.length > 1 ? (resultados[1].totalFinal - resultados[0].totalFinal) : 0;
 
     summaryDiv.innerHTML = `
-        <div style="text-align: center; margin-bottom: 25px;">
+        <div style="text-align: center; margin-bottom: 20px;">
             <span style="font-size: 11px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">Ahorrás en total</span>
-            <div style="font-size: 42px; font-weight: 900; color: var(--color-good); font-family: 'Roboto Mono'; margin-top: 5px; line-height:1;">
-                $${format(Math.round(ahorroMaximo))}<span style="font-size: 14px; vertical-align: top; font-weight: 400; opacity:0.7;">*</span>
-            </div>
-            <p style="font-size: 13px; opacity: 0.8; margin-top: 8px;">Tu mejor opción hoy es <b>${ganador.nombre.toUpperCase()}</b></p>
+            <div style="font-size: 38px; font-weight: 900; color: var(--color-good); font-family: 'Roboto Mono';">$${format(Math.round(ganador.ahorroGondola + ahorroSpread))}<span style="font-size:16px; vertical-align:top;">*</span></div>
         </div>
-
-        <div style="background: var(--bg-app); border-radius: 14px; padding: 18px; border: 1px dashed var(--border);">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; opacity: 0.6; font-size: 12px;">
-                <span>Subtotal Mercado</span>
-                <span>$${format(Math.round(ganador.subtotal))}</span>
+        <div style="background:var(--bg-app); padding:15px; border-radius:12px; border:1px dashed var(--border);">
+            <div style="display:flex; justify-content:space-between; font-size:12px; opacity:0.6; margin-bottom:8px;">
+                <span>Mejor Opción</span>
+                <span>${ganador.nombre.toUpperCase()}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--color-good); font-size: 12px; font-weight: 700;">
-                <span>Descuentos de Góndola</span>
-                <span>-$${format(Math.round(ganador.ahorroGondola))}</span>
-            </div>
-            <div style="border-top: 1px solid var(--border); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: 800; font-size: 15px;">TOTAL CHANGO*</span>
-                <span style="font-size: 24px; font-weight: 900; font-family: 'Roboto Mono'; color: var(--text-main);">$${format(Math.round(ganador.totalFinal))}</span>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:800;">PAGÁS HOY*</span>
+                <span style="font-size:22px; font-weight:900; font-family:'Roboto Mono';">$${format(Math.round(ganador.totalFinal))}</span>
             </div>
         </div>
-
-        ${mejorPromo ? `
-            <div style="margin-top: 15px; padding: 12px; border-radius: 12px; background: rgba(242, 169, 0, 0.08); border: 1px solid var(--star-gold);">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <i class="fa-solid fa-gift" style="color: var(--star-gold);"></i>
-                    <span style="font-size: 11px; font-weight: 700; color: var(--text-main);">
-                        Ahorrá un ${(mejorPromo.descuento * 100)}% extra pagando con <b>${mejorPromo.entidad_nombre}</b>.
-                    </span>
-                </div>
-                <a href="${mejorPromo.link_referido}" target="_blank" style="display: block; margin-top: 10px; text-align: center; background: var(--text-main); color: var(--bg-app); padding: 8px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 10px; text-transform: uppercase;">
-                    Solicitar Beneficio
-                </a>
-            </div>
-        ` : ''}
-
-        <p style="font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 15px; line-height: 1.4;">
-            *Es un valor informativo. El ahorro real depende de los T&C de cada entidad y la disponibilidad en góndola.
-        </p>
-
-        <button onclick="document.getElementById('otrosPrecios').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 15px; background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; text-transform: uppercase;">
-            Comparar mercados
-        </button>
-
-        <div id="otrosPrecios" style="display: none; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
-            ${resultados.slice(1).map(o => `
-                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; opacity: 0.6; font-family: 'Roboto Mono';">
-                    <span>${o.nombre.toUpperCase()}</span>
-                    <span>$${format(Math.round(o.totalFinal))}</span>
-                </div>
-            `).join('')}
-        </div>
+        <p style="font-size:9px; color:var(--text-muted); text-align:center; margin-top:15px;">*Valores estimados según precios de góndola.</p>
     `;
     container.appendChild(summaryDiv);
 }
@@ -1554,10 +1515,6 @@ function renderEmptyCart(container) {
         const p = item.p[i];
         const url = item.urls[i];
         
-        // Buscamos si este súper específico tiene oferta en este producto
-        const of = item.oferta_gondola ? item.oferta_gondola[s.name.toLowerCase()] : null;
-        const badgeOferta = of ? `<span style="background:var(--color-good); color:white; font-size:8px; padding:2px 4px; border-radius:4px; margin-left:5px;">${of.etiqueta}</span>` : '';
-
         if (!p || p === 0) return `
             <div class="ob-row" style="opacity:0.5;">
                 <div class="ob-store"><div class="dot" style="background:#444"></div>${s.name}</div>
@@ -1567,7 +1524,7 @@ function renderEmptyCart(container) {
         return `
             <div class="ob-row">
                 <div class="ob-store">
-                    <div class="dot" style="background:${s.color}"></div>${s.name} ${badgeOferta}
+                    <div class="dot" style="background:${s.color}"></div>${s.name}
                 </div>
                 <a href="${url}" target="_blank" rel="noopener" class="price-link ${p === min ? 'best-val' : ''}">
                     $${format(p)}
@@ -1575,7 +1532,6 @@ function renderEmptyCart(container) {
             </div>`; 
     }).join('');
 }
-       
     function setTrendFilter(t) { currentTrendFilter = (currentTrendFilter === t) ? null : t; document.getElementById('btnUp').classList.toggle('active-up', currentTrendFilter === 'up'); document.getElementById('btnDown').classList.toggle('active-down', currentTrendFilter === 'down'); renderView(); }
     function toggleTheme() { document.documentElement.classList.toggle('dark-mode'); localStorage.setItem('theme', document.documentElement.classList.contains('dark-mode')?'dark':'light'); updateThemeIcon(); if(openId) loadPvChart(7); }
     function updateThemeIcon() { document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark-mode')?'fa-solid fa-sun':'fa-solid fa-moon'; }
@@ -2269,6 +2225,23 @@ function obtenerSupermercadosValidos(items) {
     }).filter(s => s.valido);
 }
 
+// Función para calcular promos tipo 2x1 o 70% en la 2da
+function calcularPromoGondola(item, precioUnitario, nombreSuper) {
+    // Buscamos si el super específico tiene oferta en este item
+    const ofertaDelSuper = item.oferta_gondola ? item.oferta_gondola[nombreSuper.toLowerCase()] : null;
+    
+    if (!ofertaDelSuper) return 0;
+
+    const qty = favorites[item.id] || 1;
+
+    if (ofertaDelSuper.tipo === "2x1" && qty >= 2) {
+        return Math.floor(qty / 2) * precioUnitario;
+    }
+    if (ofertaDelSuper.tipo === "70_segunda" && qty >= 2) {
+        return Math.floor(qty / 2) * (precioUnitario * 0.7);
+    }
+    return 0;
+}
 // Función maestra de ahorro (Combina Góndola + Membresías futuras)
 function calcularAhorroTotal(superId, items) {
     let subtotal = 0;
@@ -2315,27 +2288,6 @@ function usuarioTieneMembresia(nombreMembresia) {
     if (!currentProfile || !currentProfile.membresias) return false;
     return currentProfile.membresias.some(m => m.slug.toLowerCase().includes(nombreMembresia.toLowerCase()));
 }
-
-    let beneficiosDelDia = []; 
-
-async function loadBeneficios() {
-    const hoy = new Date().getDay(); 
-    const { data, error } = await supabaseAuth
-        .from('beneficios_super')
-        .select('*')
-        .eq('dia_semana', hoy);
-    if (!error) beneficiosDelDia = data;
-}
-
-function calcularPromoGondola(item, precioUnitario, nombreSuper) {
-    const ofertaDelSuper = item.oferta_gondola ? item.oferta_gondola[nombreSuper.toLowerCase()] : null;
-    if (!ofertaDelSuper) return 0;
-    const qty = favorites[item.id] || 1;
-
-    if (ofertaDelSuper.tipo === "2x1") return Math.floor(qty / 2) * precioUnitario;
-    if (ofertaDelSuper.tipo === "70_segunda") return Math.floor(qty / 2) * (precioUnitario * 0.7);
-    return 0;
-}   
        
 </script>
 <div id="authModal" onclick="closeAuthOutside(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
