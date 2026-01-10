@@ -942,19 +942,21 @@ if (Array.isArray(favorites)) {
             const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
             let t = r.ticker || generateTicker(r.nombre);
             
-            return {
-                id: r.id, 
-                n: r.nombre.trim(), 
-                cat: r.categoria, 
-                ticker: t,
-                p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
-                urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
-                h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
-                img: r.imagen_url,
-                // Leemos la nueva columna (asegurándonos que sea objeto)
-                oferta_gondola: typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola
-            };
-        });
+            // Dentro del flatList = rows.map...
+                return {
+                    id: r.id, 
+                    n: r.nombre.trim(), 
+                    cat: r.categoria, 
+                    ticker: t,
+                    p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
+                    urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
+                    h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
+                    img: r.imagen_url,
+                    // Verificación de seguridad para JSON
+                    oferta_gondola: (r.oferta_gondola && typeof r.oferta_gondola === 'string') 
+                        ? JSON.parse(r.oferta_gondola) 
+                        : (r.oferta_gondola || null)
+                };
 
         document.getElementById('loader').style.display = 'none';
         updateCartBadge();
@@ -1264,7 +1266,26 @@ function calcularPromoGondola(item, precioUnitario) {
     }
 }
      
-     
+    // Agregá esto antes de renderView
+function calcularAhorroTotal(superId, items) {
+    let subtotal = 0;
+    let ahorroGondola = 0;
+    items.forEach(item => {
+        const precioUnitario = item.p[superId];
+        const qty = favorites[item.id] || 1;
+        subtotal += precioUnitario * qty;
+        ahorroGondola += calcularPromoGondola(item, precioUnitario);
+    });
+    return {
+        totalFinal: subtotal - ahorroGondola,
+        ahorroTotal: ahorroGondola
+    };
+}
+
+// Función dummy para evitar que rompa si no tenés la tabla de referidos aún
+function mostrarSugerenciaReferido(superId) {
+    return ''; 
+} 
     
 
     function updateCartBadge() {
@@ -1346,46 +1367,45 @@ function calcularPromoGondola(item, precioUnitario) {
                 </div>`;
         }
 
-        const promoGondola = item.oferta_gondola; // La nueva columna de Supabase
-        const badgeHtml = promoGondola ? 
-            `<span class="badge-promo" style="position: relative; top: 0; left: 0; transform: none; margin-left: 5px; font-size: 8px;">
-                ${promoGondola.etiqueta}
-            </span>` : '';
-        
-        card.innerHTML = `
-            <div class="ticker-info">
-                <div class="t-left">
-                    <span class="t-symbol">${item.ticker} ${badgeHtml}</span>
-                    <span class="t-name">${item.n}</span>
-                </div>
-                ...
-        `;
-        
-        const card = document.createElement('div');
-        card.className = 'ticker-card';
-        card.onclick = () => openProductView(item.id);
-        card.innerHTML = `
-            <div class="ticker-info">
-                <div class="t-left">
-                    <span class="t-symbol">${item.ticker}</span>
-                    <span class="t-name">${item.n}</span>
-                </div>
-                <div class="t-right">
-                    <span class="t-price">$${format(s.min)}</span><br>
-                    <span class="t-change ${s.trendClass}">${s.icon} ${s.spread}%</span>
-                </div>
-            </div>
-            <div style="display:flex; align-items:center;">
-                ${qtyHtml}
-                <div class="fav-btn ${isAdded ? 'active' : ''}" 
-                     onclick="event.stopPropagation(); toggleFav(${item.id}, this)">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                </div>
-            </div>
-        `;
-        container.appendChild(card);
-    });
+        // BUSCÁ ESTA PARTE EN TU CÓDIGO Y REEMPLAZALA:
+const promoGondola = item.oferta_gondola;
+const badgeHtml = promoGondola ? 
+    `<span class="badge-promo" style="position: relative; top: 0; left: 0; transform: none; margin-left: 5px; font-size: 8px;">
+        ${promoGondola.etiqueta}
+    </span>` : '';
+
+// EL ERROR ESTABA AQUÍ: Primero crear el elemento, después asignar el HTML
+const card = document.createElement('div');
+card.className = 'ticker-card';
+card.onclick = () => openProductView(item.id);
+
+card.innerHTML = `
+    <div class="ticker-info">
+        <div class="t-left">
+            <span class="t-symbol">${item.ticker} ${badgeHtml}</span>
+            <span class="t-name">${item.n}</span>
+        </div>
+        <div class="t-right">
+            <span class="t-price">$${format(s.min)}</span><br>
+            <span class="t-change ${s.trendClass}">${s.icon} ${s.spread}%</span>
+        </div>
+    </div>
+    <div style="display:flex; align-items:center;">
+        ${qtyHtml}
+        <div class="fav-btn ${isAdded ? 'active' : ''}" 
+             onclick="event.stopPropagation(); toggleFav(${item.id}, this)">
+            <i class="fa-solid fa-cart-shopping"></i>
+        </div>
+    </div>
+`;
+container.appendChild(card);
+
+        function buscarMejorMembresiaParaSuper(superIdx, misMembresias) {
+    // Por ahora devolvemos null hasta que integres la tabla de beneficios_dia
+    return null;
 }
+
+        
 function obtenerPrecio(superIdx, productId) {
     const producto = flatList.find(p => p.id === productId);
     return producto ? producto.p[superIdx] : 0;
@@ -1858,35 +1878,6 @@ function renderProLanding() {
         }
     });
 }
-
-function calcularAhorroTotal(superId, items) {
-    let subtotal = 0;
-    let ahorroGondola = 0;
-    
-    items.forEach(item => {
-        const precioUnitario = obtenerPrecio(superId, item.id);
-        subtotal += precioUnitario * item.cantidad;
-        
-        // Calcular 2x1, 70% 2da, etc.
-        ahorroGondola += calcularPromoGondola(item, precioUnitario);
-    });
-
-    const totalConGondola = subtotal - ahorroGondola;
-    
-    // Cruce con Membresías del Perfil
-    const mejorMembresia = buscarMejorMembresiaParaSuper(superId, currentProfile.membresias);
-    let ahorroMembresia = 0;
-    if (mejorMembresia) {
-        ahorroMembresia = totalConGondola * mejorMembresia.porcentaje;
-    }
-
-    return {
-        totalFinal: totalConGondola - ahorroMembresia,
-        ahorroTotal: ahorroGondola + ahorroMembresia,
-        mejorMembresia: mejorMembresia
-    };
-}
-
        
 function mostrarSugerenciaReferido(superId) {
     // Si hay un beneficio hoy para este súper pero el usuario NO lo tiene en su perfil
