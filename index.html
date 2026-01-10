@@ -1437,25 +1437,29 @@ function renderChangoSummary(container, items) {
     }
 
     const resultados = validos.map(v => {
-        let subtotal = 0; let ahorroGondola = 0;
+        let subtotal = 0;
+        let ahorroGondola = 0;
         items.forEach(item => {
             const p = item.p[v.index];
-            subtotal += p * (favorites[item.id] || 1);
+            const qty = favorites[item.id] || 1;
+            subtotal += p * qty;
             ahorroGondola += calcularPromoGondola(item, p, v.nombre); 
         });
         const beneficio = beneficiosDelDia.find(b => b.supermercado.toLowerCase() === v.nombre.toLowerCase());
-        return { ...v, totalFinal: subtotal - ahorroGondola, ahorroGondola, beneficio };
+        return { ...v, subtotal, totalFinal: subtotal - ahorroGondola, ahorroGondola, beneficio };
     }).sort((a, b) => a.totalFinal - b.totalFinal);
 
     const ganador = resultados[0];
-    const ahorroSpread = resultados.length > 1 ? (resultados[1].totalFinal - resultados[0].totalFinal) : 0;
+    const masCaro = resultados[resultados.length - 1];
+    // El ahorro total es la diferencia entre el más caro y el neto del ganador
+    const ahorroMaximo = masCaro.totalFinal - ganador.totalFinal;
     const mejorPromo = ganador.beneficio;
 
     summaryDiv.innerHTML = `
         <div style="text-align: center; margin-bottom: 25px;">
             <span style="font-size: 11px; font-weight: 800; color: var(--color-good); text-transform: uppercase;">Ahorrás en total</span>
             <div style="font-size: 42px; font-weight: 900; color: var(--color-good); font-family: 'Roboto Mono'; margin-top: 5px; line-height:1;">
-                $${format(Math.round(ganador.ahorroGondola + ahorroSpread))}<span style="font-size: 14px; vertical-align: top; font-weight: 400; opacity:0.7;">*</span>
+                $${format(Math.round(ahorroMaximo))}<span style="font-size: 14px; vertical-align: top; font-weight: 400; opacity:0.7;">*</span>
             </div>
             <p style="font-size: 13px; opacity: 0.8; margin-top: 8px;">Tu mejor opción hoy es <b>${ganador.nombre.toUpperCase()}</b></p>
         </div>
@@ -1463,7 +1467,11 @@ function renderChangoSummary(container, items) {
         <div style="background: var(--bg-app); border-radius: 14px; padding: 18px; border: 1px dashed var(--border);">
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px; opacity: 0.6; font-size: 12px;">
                 <span>Subtotal Mercado</span>
-                <span>$${format(Math.round(ganador.totalFinal + ganador.ahorroGondola))}</span>
+                <span>$${format(Math.round(ganador.subtotal))}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--color-good); font-size: 12px; font-weight: 700;">
+                <span>Descuentos de Góndola</span>
+                <span>-$${format(Math.round(ganador.ahorroGondola))}</span>
             </div>
             <div style="border-top: 1px solid var(--border); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-weight: 800; font-size: 15px;">TOTAL CHANGO*</span>
@@ -1484,6 +1492,10 @@ function renderChangoSummary(container, items) {
                 </a>
             </div>
         ` : ''}
+
+        <p style="font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 15px; line-height: 1.4;">
+            *Es un valor informativo. El ahorro real depende de los T&C de cada entidad y la disponibilidad en góndola.
+        </p>
 
         <div id="otrosPrecios" style="display: none; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
             <p style="font-size: 9px; font-weight: 800; opacity: 0.4; text-transform: uppercase; margin-bottom: 10px;">Otros Supermercados</p>
@@ -2258,17 +2270,17 @@ function obtenerSupermercadosValidos(items) {
 
 // Función para calcular promos tipo 2x1 o 70% en la 2da
 function calcularPromoGondola(item, precioUnitario, nombreSuper) {
-    // Buscamos si el super específico tiene oferta en este item
     const ofertaDelSuper = item.oferta_gondola ? item.oferta_gondola[nombreSuper.toLowerCase()] : null;
-    
     if (!ofertaDelSuper) return 0;
 
     const qty = favorites[item.id] || 1;
 
-    if (ofertaDelSuper.tipo === "2x1" && qty >= 2) {
+    if (ofertaDelSuper.tipo === "2x1") {
+        // Descuenta el precio de 1 unidad por cada 2 compradas
         return Math.floor(qty / 2) * precioUnitario;
     }
-    if (ofertaDelSuper.tipo === "70_segunda" && qty >= 2) {
+    if (ofertaDelSuper.tipo === "70_segunda") {
+        // Descuenta el 70% de 1 unidad por cada 2 compradas
         return Math.floor(qty / 2) * (precioUnitario * 0.7);
     }
     return 0;
