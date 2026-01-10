@@ -1382,18 +1382,15 @@ function calcularSpreadAhorro(resultados) {
         const currentQty = favorites[item.id] || 1;
 
         // NUEVO: Lógica para la etiqueta de oferta de góndola
-           const ofertas = item.oferta_gondola;
-        let badgesHtml = '';
+        const ofertas = item.oferta_gondola;
+        let etiquetaMostrar = '';
         
+        // Si hay ofertas, buscamos la primera disponible para mostrar el badge en la lista general
         if (ofertas) {
-            // Obtenemos todas las ofertas de todos los súper para este producto
-            Object.keys(ofertas).forEach(key => {
-                if (ofertas[key]) {
-                    badgesHtml += `<span class="badge-promo" style="background:var(--color-good); color:white; padding:2px 6px; border-radius:4px; font-size:9px; margin-left:5px; white-space:nowrap; display:inline-block;">
-                        ${ofertas[key].etiqueta}
-                    </span>`;
-                }
-            });
+            const primerSuperConOferta = Object.keys(ofertas).find(k => ofertas[k] && ofertas[k].etiqueta);
+            if (primerSuperConOferta) {
+                etiquetaMostrar = ofertas[primerSuperConOferta].etiqueta;
+            }
         }
         
         const badgeHtml = etiquetaMostrar ? 
@@ -1745,30 +1742,6 @@ function closeAuthOutside(event) {
         closeAuth();
     }
 }
-// Actualiza esta lógica en tu código
-function esUsuarioPro() {
-    if (!currentProfile) return false;
-    // Si no hay fecha de vencimiento, es PRO (etapa actual)
-    if (!currentProfile.subscription_end) return true; 
-    
-    // Si hay fecha, verificamos si ya pasó
-    const vencimiento = new Date(currentProfile.subscription_end);
-    return vencimiento > new Date();
-}
-
-function renderNotificacionVencimiento() {
-    if (!currentProfile?.subscription_end) return;
-    const dias = Math.ceil((new Date(currentProfile.subscription_end) - new Date()) / (1000 * 60 * 60 * 24));
-    
-    if (dias > 0 && dias <= 7) {
-        return `<div style="background:var(--color-bad); color:white; padding:10px; font-size:11px; font-weight:800; text-align:center;">
-            TU MEMBRESÍA VENCE EN ${dias} DÍAS. <a onclick="showAuthStep('proLandingArea')" style="text-decoration:underline; cursor:pointer;">RENOVAR AQUÍ</a>
-        </div>`;
-    }
-    return '';
-}
-
-       
 // 2. ENVIAR FORMULARIO (Auth + Tabla Perfiles)
 async function handleAuthSubmit(e) {
     e.preventDefault();
@@ -2200,33 +2173,9 @@ async function removeMembresia(index) {
     await supabaseAuth.from('perfiles').update({ membresias: currentProfile.membresias }).eq('id', currentUser.id);
     renderWallet();
 }
-
-async function compartirCarrito() {
-    if (!esUsuarioPro()) return openAuth(); // Abre landing PRO si no es pro
-
-    const items = Object.keys(favorites).map(id => ({id, qty: favorites[id]}));
-    const nombre = prompt("Dale un nombre a tu carrito:");
-    
-    const { data, error } = await supabaseAuth.from('carritos_guardados').insert([{
-        user_id: currentUser.id,
-        nombre: nombre,
-        items: items
-    }]).select();
-
-    if (data) {
-        const link = `https://tradingchango.com.ar/chango?share=${data[0].id}`;
-        navigator.share({ title: 'Mi Chango en TradingChango', url: link });
-    }
-}
        
     // Iniciar la app
     init();
-       const cachedData = localStorage.getItem('flatList_cache');
-        if (cachedData) {
-            flatList = JSON.parse(cachedData);
-            renderView(); // Muestra algo instantáneamente
-            document.getElementById('loader').style.display = 'none';
-        }
         async function loadSession() {
         const { data } = await supabaseAuth.auth.getSession();
         currentUser = data.session?.user || null;
