@@ -1788,12 +1788,12 @@ async function handleAuthSubmit(e) {
 } 
 
      function showAuthForm(mode) {
-    authMode = mode; // Guardamos si es 'login' o 'register'
+    isSignUpMode = (mode === 'register'); // Corregido: asigna true si es registro
     const regFields = document.getElementById('registerFields');
     const authTitle = document.getElementById('authTitle');
     const authBtnLabel = document.getElementById('authBtnLabel');
 
-    if (mode === 'register') {
+    if (isSignUpMode) {
         authTitle.innerText = 'Crear Cuenta';
         authBtnLabel.innerText = 'REGISTRARME';
         if (regFields) regFields.style.display = 'block';
@@ -1802,8 +1802,6 @@ async function handleAuthSubmit(e) {
         authBtnLabel.innerText = 'ENTRAR';
         if (regFields) regFields.style.display = 'none';
     }
-
-    // Una vez configurado el formulario, mostramos el área del formulario
     showAuthStep('authFormArea');
 }  
        
