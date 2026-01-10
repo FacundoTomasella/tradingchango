@@ -919,102 +919,60 @@ if (Array.isArray(favorites)) {
     const getSlug = (name) => name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
             async function init() {
-            try {
-                await loadSession();
-                // AGREGA ESTO AQUÍ: Si no hay usuario, ignoramos lo que haya en localStorage
-                if (!currentUser) {
-                    favorites = {};
-                    localStorage.removeItem('fav_tickers');
-                }
-            
-            // 1. Cargar Configuración (Legales, etc)
-            const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const configRows = await resC.json();
-            configRows.forEach(row => configDB[row.clave] = row.valor);
-
-            renderAds(); 
-
-          
-            // 2. Cargar Productos
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const rows = await res.json();
-            
-            // 3. Cargar Historial (últimos 7 días)
-            const d7 = new Date(); d7.setDate(d7.getDate() - 7);
-            const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
-            const hData = await resH.json();
-            
-            const usedTickers = new Set();
-           // Dentro de la función async function init()
-flatList = rows.map(r => {
-    const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
-    let t = r.ticker || generateTicker(r.nombre);
+    try {
+        await loadSession();
+        if (!currentUser) { favorites = {}; localStorage.removeItem('fav_tickers'); }
     
-    return {
-        id: r.id, 
-        n: r.nombre.trim(), 
-        cat: r.categoria, 
-        ticker: t,
-        p: [
-            r.p_coto || 0, 
-            r.p_carrefour || 0, 
-            r.p_dia || 0, 
-            r.p_jumbo || 0, 
-            r.p_masonline || 0
-        ],
-        urls: [
-            r.url_coto || '#', 
-            r.url_carrefour || '#', 
-            r.url_dia || '#', 
-            r.url_jumbo || '#', 
-            r.url_masonline || '#'
-        ],
-        h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
-        img: r.imagen_url
-    }; // <--- Asegurate de que este punto y coma esté aquí
-});
-          document.getElementById('loader').style.display = 'none';
-            updateCartBadge(); 
+        const resC = await fetch(`${SUPABASE_URL}/rest/v1/configuracion?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+        const configRows = await resC.json();
+        configRows.forEach(row => configDB[row.clave] = row.valor);
 
-            // --- LÓGICA DE RUTAS AL CARGAR ---
-            const path = window.location.pathname.split('/').filter(p => p !== "");
+        renderAds();
 
-            if (paginasEstaticas[path[0]]) {
-                openPage(path[0], paginasEstaticas[path[0]], false);
-            } 
-            else if (path.length >= 2) {
-                const itemEncontrado = flatList.find(i => getSlug(i.n) === path[1]);
-                if (itemEncontrado) openProductView(itemEncontrado.id, false);
-                else goHome();
-            } 
-            else if (path.length === 1 && path[0] !== 'index.html') {
-                setTab(path[0], null, false);
-            } 
-            else {
-                goHome();
-            }
-
-            // --- MANEJO DEL BOTÓN ATRÁS ---
-            window.onpopstate = (e) => {
-                const p = window.location.pathname.split('/').filter(x => x !== "");
-                if (paginasEstaticas[p[0]]) {
-                    openPage(p[0], paginasEstaticas[p[0]], false);
-                } 
-                else if (p.length >= 2) {
-                    const itemPop = flatList.find(i => getSlug(i.n) === p[1]);
-                    if (itemPop) openProductView(itemPop.id, false);
-                } 
-                else {
-                    document.getElementById('pageView').classList.remove('active');
-                    document.getElementById('productFullView').style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                    setTab(p[0] || 'home', null, false);
-                }
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+        const rows = await res.json();
+        
+        const d7 = new Date();
+        d7.setDate(d7.getDate() - 7);
+        const resH = await fetch(`${SUPABASE_URL}/rest/v1/historial_precios?fecha=gte.${d7.toISOString().split('T')[0]}`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } });
+        const hData = await resH.json();
+        
+        // CORRECCIÓN AQUÍ: Mapeo seguro de la nueva columna
+        flatList = rows.map(r => {
+            const h7 = hData.filter(h => h.nombre_producto === r.nombre).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+            let t = r.ticker || generateTicker(r.nombre);
+            
+            return {
+                id: r.id, 
+                n: r.nombre.trim(), 
+                cat: r.categoria, 
+                ticker: t,
+                p: [r.p_coto || 0, r.p_carrefour || 0, r.p_dia || 0, r.p_jumbo || 0, r.p_masonline || 0],
+                urls: [r.url_coto || '#', r.url_carrefour || '#', r.url_dia || '#', r.url_jumbo || '#', r.url_masonline || '#'],
+                h7d: h7.length > 0 ? h7[0].precio_minimo : 0,
+                img: r.imagen_url,
+                // Leemos la nueva columna (asegurándonos que sea objeto)
+                oferta_gondola: typeof r.oferta_gondola === 'string' ? JSON.parse(r.oferta_gondola) : r.oferta_gondola
             };
+        });
 
-        } catch (e) { console.error(e); }
+        document.getElementById('loader').style.display = 'none';
+        updateCartBadge();
+        
+        // Manejo de rutas y tabs iniciales
+        const path = window.location.pathname.split('/').filter(p => p !== "");
+        if (paginasEstaticas[path[0]]) { openPage(path[0], paginasEstaticas[path[0]], false); } 
+        else if (path.length >= 2) {
+            const itemEncontrado = flatList.find(i => getSlug(i.n) === path[1]);
+            if (itemEncontrado) openProductView(itemEncontrado.id, false);
+            else goHome();
+        } else { goHome(); }
+
+    } catch (e) { 
+        console.error("Error en INIT:", e);
+        document.getElementById('loader').innerText = "ERROR AL CARGAR DATOS";
     }
-
+}
     function goHome() {
         currentTab = 'home'; 
         document.getElementById('tickerList').style.display = 'block';
@@ -1028,6 +986,25 @@ flatList = rows.map(r => {
         renderView();
     }
 
+function calcularPromoGondola(item, precioUnitario) {
+    const promo = item.oferta_gondola;
+    if (!promo) return 0;
+
+    const qty = favorites[item.id] || 1;
+
+    if (promo.tipo === "2x1" && qty >= 2) {
+        // Por cada par, descontamos 1 unidad
+        return Math.floor(qty / 2) * precioUnitario;
+    }
+    
+    if (promo.tipo === "70_segunda" && qty >= 2) {
+        // Por cada par, la segunda tiene 70% de descuento
+        return Math.floor(qty / 2) * (precioUnitario * 0.7);
+    }
+
+    return 0;
+}
+       
     function clearInput() {
         const input = document.getElementById('searchInput');
         input.value = '';
@@ -1321,17 +1298,17 @@ flatList = rows.map(r => {
         dataToShow = [...flatList];
     } 
     else if (currentTab === 'favs') {
-        trendFilters.style.display = 'none';
-        hero.style.display = 'none';
-        // Filtramos buscando llaves en el objeto
-        dataToShow = flatList.filter(i => favorites[i.id] !== undefined);
-
-        if (dataToShow.length === 0) {
-            renderEmptyCart(container);
-            return;
-        }
-        renderChangoSummary(container, dataToShow);
-    } 
+    trendFilters.style.display = 'none';
+    hero.style.display = 'none';
+    dataToShow = flatList.filter(i => favorites[i.id] !== undefined);
+    
+    if (dataToShow.length === 0) {
+        renderEmptyCart(container);
+        return;
+    }
+    // Llamada a la función que ahora calcula con Canasta Espejo y Membresías
+    renderChangoSummary(container, dataToShow);
+} 
     else {
         trendFilters.style.display = 'flex';
         hero.style.display = 'none';
