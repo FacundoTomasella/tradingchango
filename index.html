@@ -1405,46 +1405,87 @@ flatList = rows.map(r => {
 }
        
 function renderChangoSummary(container, items) {
-    // 1. Filtramos: Solo supermercados que tienen stock de TODOS los productos del chango
     const validos = obtenerSupermercadosValidos(items);
-    
     const summaryDiv = document.createElement('div');
     summaryDiv.className = 'chango-summary';
-    
-    let html = `<div class="pv-market-title" style="font-weight:800; color:var(--text-main); margin-bottom:15px;">
-                    Canasta Espejo (Comparación Justa)
-                </div>`;
+    summaryDiv.style.padding = '25px';
+    summaryDiv.style.borderRadius = '20px';
+    summaryDiv.style.border = '2px solid var(--color-good)';
 
     if (validos.length === 0) {
-        html += `<p style="font-size:12px; opacity:0.6; text-align:center; padding: 10px;">
-                    Ningún supermercado tiene todos tus productos marcados actualmente.
-                 </p>`;
-    } else {
-        // 2. Calculamos los totales finales aplicando promos de góndola
-        const resultados = validos.map(v => {
-            const calculo = calcularAhorroTotal(v.index, items);
-            return { nombre: v.nombre, ...calculo };
-        }).sort((a, b) => a.totalFinal - b.totalFinal);
-
-        const mejorPrecio = resultados[0].totalFinal;
-
-        resultados.forEach(res => {
-            const esMejor = res.totalFinal === mejorPrecio;
-            html += `
-                <div class="chango-row ${esMejor ? 'best' : ''}" style="margin-bottom:12px; flex-direction: column; align-items: flex-start;">
-                    <div style="display:flex; justify-content:space-between; width:100%;">
-                        <span style="font-size:13px; font-weight:700;">${res.nombre}</span>
-                        <span style="font-weight:800; font-family:'Roboto Mono';">$ ${format(Math.round(res.totalFinal))}</span>
-                    </div>
-                    ${res.ahorroTotal > 0 ? 
-                        `<small style="color:var(--color-good); font-size:9px; font-weight:700;">
-                            Ahorro góndola aplicado: -$${format(Math.round(res.ahorroTotal))}
-                         </small>` : ''}
-                </div>`;
-        });
+        summaryDiv.innerHTML = `<p style="text-align:center; opacity:0.6;">Agregá productos para encontrar tu mejor ahorro.</p>`;
+        container.appendChild(summaryDiv);
+        return;
     }
 
-    summaryDiv.innerHTML = html;
+    // Calculamos y ordenamos por precio final
+    const resultados = validos.map(v => {
+        const calculo = calcularAhorroTotal(v.index, items);
+        const beneficioHoy = obtenerMejorBeneficioHoy(v.index);
+        return { ...v, ...calculo, beneficioHoy };
+    }).sort((a, b) => a.totalFinal - b.totalFinal);
+
+    const ganador = resultados[0];
+    const otros = resultados.slice(1);
+    const tieneBeneficioHoy = ganador.beneficioHoy;
+    const yaLoTiene = tieneBeneficioHoy && usuarioTieneMembresia(ganador.beneficioHoy.nombre);
+
+    summaryDiv.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--color-good); letter-spacing: 1px;">Tu Compra Inteligente</span>
+            <h2 style="font-size: 28px; font-weight: 900; margin: 5px 0;">¡Ahorrás $ ${format(Math.round(ganador.ahorroTotal))}!</h2>
+            <p style="font-size: 13px; opacity: 0.8;">Comprando hoy en <b>${ganador.nombre}</b></p>
+        </div>
+
+        <div style="background: var(--bg-app); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed var(--border);">
+            <div class="chango-row" style="margin-bottom: 8px; opacity: 0.6;">
+                <span>Total productos</span>
+                <span>$ ${format(Math.round(ganador.totalFinal + ganador.ahorroTotal))}</span>
+            </div>
+            <div class="chango-row" style="margin-bottom: 8px; color: var(--color-good); font-weight: 700;">
+                <span>Descuentos aplicados</span>
+                <span>- $ ${format(Math.round(ganador.ahorroTotal))}</span>
+            </div>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+            <div class="chango-row" style="font-size: 18px; font-weight: 900;">
+                <span>PAGÁS NETO</span>
+                <span style="font-family: 'Roboto Mono';">$ ${format(Math.round(ganador.totalFinal))}</span>
+            </div>
+        </div>
+
+        ${tieneBeneficioHoy ? `
+            <div style="background: ${yaLoTiene ? 'rgba(0, 166, 80, 0.1)' : 'rgba(255, 169, 0, 0.1)'}; padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid ${yaLoTiene ? 'var(--color-good)' : 'var(--star-gold)'};">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid ${yaLoTiene ? 'fa-circle-check' : 'fa-circle-plus'}" style="color: ${yaLoTiene ? 'var(--color-good)' : 'var(--star-gold)'};"></i>
+                    <div style="font-size: 12px; color: var(--text-main);">
+                        ${yaLoTiene 
+                            ? `Con tu membresía de <b>${ganador.beneficioHoy.nombre}</b> hoy ahorrás un <b>${ganador.beneficioHoy.dto * 100}% extra</b>.` 
+                            : `Podés ahorrar un <b>${ganador.beneficioHoy.dto * 100}% adicional</b> pagando con <b>${ganador.beneficioHoy.nombre}</b>.`}
+                    </div>
+                </div>
+                ${!yaLoTiene ? `
+                    <a href="${ganador.beneficioHoy.link}" target="_blank" style="display: block; margin-top: 10px; text-align: center; background: var(--text-main); color: var(--bg-app); padding: 8px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 11px;">
+                        OBTENER MI DESCUENTO AQUÍ
+                    </a>
+                ` : ''}
+            </div>
+        ` : ''}
+
+        <div id="comparativaOtros" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+            <p style="font-size: 11px; font-weight: 800; opacity: 0.5; margin-bottom: 10px; text-transform: uppercase;">Comparativa de mercado</p>
+            ${otros.map(o => `
+                <div class="chango-row" style="margin-bottom: 8px; opacity: 0.8; font-size: 13px;">
+                    <span>${o.nombre}</span>
+                    <span>$ ${format(Math.round(o.totalFinal))}</span>
+                </div>
+            `).join('')}
+        </div>
+
+        <button onclick="document.getElementById('comparativaOtros').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 15px; background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 10px; border-radius: 10px; font-size: 11px; font-weight: 700; cursor: pointer;">
+            VER OTROS SUPERMERCADOS
+        </button>
+    `;
+
     container.appendChild(summaryDiv);
 }
        
@@ -2225,6 +2266,28 @@ function calcularAhorroTotal(superId, items) {
 
 // Función placeholder para evitar errores de referidos (la completaremos en el siguiente paso)
 function mostrarSugerenciaReferido(superId) { return ''; }
+
+// Busca qué beneficio de hoy es el mejor (el que da más %)
+function obtenerMejorBeneficioHoy(superIdx) {
+    const storeNames = ["Coto", "Carrefour", "Dia", "Jumbo", "MasOnline"];
+    const nombreSuper = storeNames[superIdx];
+    
+    // Aquí podrías conectar con una tabla de Supabase en el futuro. 
+    // Por ahora, simulamos la lógica:
+    const beneficiosMock = {
+        "Coto": { nombre: "Mercado Pago", dto: 0.30, link: "https://mpago.li/referido1" },
+        "Carrefour": { nombre: "Banco Galicia", dto: 0.20, link: "https://galicia.ar/referido2" },
+        "Dia": { nombre: "Personal Pay", dto: 0.25, link: "https://ppay.li/referido3" }
+    };
+    
+    return beneficiosMock[nombreSuper] || null;
+}
+
+// Verifica si el usuario ya tiene esa membresía en su perfil
+function usuarioTieneMembresia(nombreMembresia) {
+    if (!currentProfile || !currentProfile.membresias) return false;
+    return currentProfile.membresias.some(m => m.slug.toLowerCase().includes(nombreMembresia.toLowerCase()));
+}
        
 </script>
 <div id="authModal" onclick="closeAuthOutside(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
