@@ -1361,6 +1361,13 @@ flatList = rows.map(r => {
         const isAdded = favorites[item.id] !== undefined;
         const currentQty = favorites[item.id] || 1;
 
+        // NUEVO: Lógica para la etiqueta de oferta de góndola
+        const promoGondola = item.oferta_gondola;
+        const badgeHtml = promoGondola ? 
+            `<span class="badge-promo" style="position: static; transform: none; margin-left: 8px; font-size: 8px; display: inline-block; vertical-align: middle;">
+                ${promoGondola.etiqueta}
+            </span>` : '';
+
         let qtyHtml = '';
         if (currentTab === 'favs') {
             qtyHtml = `
@@ -1377,7 +1384,7 @@ flatList = rows.map(r => {
         card.innerHTML = `
             <div class="ticker-info">
                 <div class="t-left">
-                    <span class="t-symbol">${item.ticker}</span>
+                    <span class="t-symbol">${item.ticker} ${badgeHtml}</span>
                     <span class="t-name">${item.n}</span>
                 </div>
                 <div class="t-right">
@@ -1396,47 +1403,51 @@ flatList = rows.map(r => {
         container.appendChild(card);
     });
 }
+       
 function renderChangoSummary(container, items) {
-    const totals = [0, 0, 0, 0, 0]; 
-    const itemCounts = [0, 0, 0, 0, 0]; // Nuevo: contador de items por súper
-
-    items.forEach(item => {
-        const qty = favorites[item.id] || 1;
-        item.p.forEach((val, idx) => {
-            if (val > 0) {
-                totals[idx] += (val * qty);
-                itemCounts[idx] += 1; // Sumamos 1 al contador si el súper tiene el producto
-            }
-        });
-    });
-
-    const validTotals = totals.filter(t => t > 0);
-    const minTotal = validTotals.length > 0 ? Math.min(...validTotals) : 0;
-
+    // 1. Filtramos: Solo supermercados que tienen stock de TODOS los productos del chango
+    const validos = obtenerSupermercadosValidos(items);
+    
     const summaryDiv = document.createElement('div');
     summaryDiv.className = 'chango-summary';
     
-    // Título en negrita potente (800)
-    let html = `<div class="pv-market-title" style="font-weight:800; color:var(--text-main); margin-bottom:15px;">Tu Chango (Total)</div>`;
-    
-    const storeNames = ["Coto", "Carrefour", "Dia", "Jumbo", "MasOnline"];
-    const totalItems = items.length; // Total de productos que el usuario marcó como favoritos
+    let html = `<div class="pv-market-title" style="font-weight:800; color:var(--text-main); margin-bottom:15px;">
+                    Canasta Espejo (Comparación Justa)
+                </div>`;
 
-    storeNames.forEach((n, i) => {
-        const isBest = totals[i] === minTotal && minTotal > 0;
-        // Agregamos el conteo (x/y) al lado del nombre del supermercado
-        html += `
-            <div class="chango-row ${isBest ? 'best' : ''}">
-                <span style="font-size:13px;">
-                    ${n} <small style="opacity:0.6; font-weight:400;">(${itemCounts[i]}/${totalItems})</small>
-                </span>
-                <span style="font-weight:700;">$ ${format(totals[i])}</span>
-            </div>`;
-    });
-    
+    if (validos.length === 0) {
+        html += `<p style="font-size:12px; opacity:0.6; text-align:center; padding: 10px;">
+                    Ningún supermercado tiene todos tus productos marcados actualmente.
+                 </p>`;
+    } else {
+        // 2. Calculamos los totales finales aplicando promos de góndola
+        const resultados = validos.map(v => {
+            const calculo = calcularAhorroTotal(v.index, items);
+            return { nombre: v.nombre, ...calculo };
+        }).sort((a, b) => a.totalFinal - b.totalFinal);
+
+        const mejorPrecio = resultados[0].totalFinal;
+
+        resultados.forEach(res => {
+            const esMejor = res.totalFinal === mejorPrecio;
+            html += `
+                <div class="chango-row ${esMejor ? 'best' : ''}" style="margin-bottom:12px; flex-direction: column; align-items: flex-start;">
+                    <div style="display:flex; justify-content:space-between; width:100%;">
+                        <span style="font-size:13px; font-weight:700;">${res.nombre}</span>
+                        <span style="font-weight:800; font-family:'Roboto Mono';">$ ${format(Math.round(res.totalFinal))}</span>
+                    </div>
+                    ${res.ahorroTotal > 0 ? 
+                        `<small style="color:var(--color-good); font-size:9px; font-weight:700;">
+                            Ahorro góndola aplicado: -$${format(Math.round(res.ahorroTotal))}
+                         </small>` : ''}
+                </div>`;
+        });
+    }
+
     summaryDiv.innerHTML = html;
     container.appendChild(summaryDiv);
-}     
+}
+       
 function renderEmptyCart(container) {
     const emptyMsg = document.createElement('div');
     emptyMsg.className = 'empty-cart-message'; // Mejor usar clases CSS
