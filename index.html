@@ -1288,8 +1288,12 @@ flatList = rows.map(r => {
         renderView(); // Refrescamos para actualizar el total y los números
     }
 }
-     
-     
+     // Calcula cuánto dinero extra gastaría el usuario si no elige la mejor opción
+function calcularSpreadAhorro(resultados) {
+    if (resultados.length < 2) return 0;
+    // Diferencia entre el 2do supermercado más barato y el 1ro
+    return resultados[1].totalFinal - resultados[0].totalFinal;
+}
     
 
     function updateCartBadge() {
@@ -1410,13 +1414,14 @@ function renderChangoSummary(container, items) {
     const validos = obtenerSupermercadosValidos(items);
     const summaryDiv = document.createElement('div');
     summaryDiv.className = 'chango-summary';
-    // Estética Minimalista / TradingView
+    
+    // Estética Minimalista Trading [cite: 108, 135]
     summaryDiv.style.cssText = `
         background: var(--bg-card);
         border: 1px solid var(--border);
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 20px;
-        margin: 15px 0;
+        margin: 15px 10px;
     `;
 
     if (validos.length === 0) {
@@ -1427,56 +1432,56 @@ function renderChangoSummary(container, items) {
 
     const resultados = validos.map(v => {
         const calculo = calcularAhorroTotal(v.index, items);
-        const beneficioHoy = obtenerMejorBeneficioHoy(v.index);
-        return { ...v, ...calculo, beneficioHoy };
+        const beneficio = obtenerMejorBeneficioHoy(v.index);
+        return { ...v, ...calculo, beneficio };
     }).sort((a, b) => a.totalFinal - b.totalFinal);
 
     const ganador = resultados[0];
-    const ahorroSpread = calcularAhorroRespectoAlSegundo(resultados);
-    const mejorBeneficio = ganador.beneficioHoy;
-    const tieneMembresia = mejorBeneficio && usuarioTieneMembresia(mejorBeneficio.nombre);
+    const spread = calcularSpreadAhorro(resultados);
+    const mejorPromo = ganador.beneficio;
+    const yaTieneMembresia = mejorPromo && currentProfile?.membresias?.some(m => m.slug.includes(mejorPromo.nombre.toLowerCase()));
 
     summaryDiv.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
             <div>
                 <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Spread de Ahorro</span>
                 <div style="font-size: 32px; font-weight: 800; color: var(--color-good); font-family: 'Roboto Mono';">
-                    +$${format(Math.round(ahorroSpread))}*
+                    +$${format(Math.round(spread))}*
                 </div>
             </div>
             <div style="text-align: right;">
-                <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Mejor Posición</span>
+                <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Mejor Compra</span>
                 <div style="font-size: 16px; font-weight: 800; color: var(--text-main);">${ganador.nombre.toUpperCase()}</div>
             </div>
         </div>
 
         <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="font-size: 12px; color: var(--text-muted);">Valuación Chango (Market)</span>
-                <span style="font-size: 12px; font-family: 'Roboto Mono'; font-weight: 600;">$${format(Math.round(ganador.totalFinal + ganador.ahorroTotal))}</span>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; opacity: 0.6;">
+                <span style="font-size: 12px;">Subtotal estimado</span>
+                <span style="font-size: 12px; font-family: 'Roboto Mono';">$${format(Math.round(ganador.totalFinal + ganador.ahorroTotal))}</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
                 <span style="font-size: 14px; font-weight: 800;">TOTAL ESTIMADO*</span>
-                <span style="font-size: 18px; font-weight: 800; font-family: 'Roboto Mono'; color: var(--text-main);">$${format(Math.round(ganador.totalFinal))}</span>
+                <span style="font-size: 20px; font-weight: 800; font-family: 'Roboto Mono'; color: var(--text-main);">$${format(Math.round(ganador.totalFinal))}</span>
             </div>
-            <p style="font-size: 9px; color: var(--text-muted); margin-top: 10px; line-height: 1.2;">
-                *Los precios netos son de carácter informativo. Los descuentos finales dependen de los T&C de cada entidad y la disponibilidad en sucursal.
+            <p style="font-size: 9px; color: var(--text-muted); margin-top: 10px; line-height: 1.3;">
+                *Valores de referencia. El ahorro real depende de los T&C de cada entidad y la disponibilidad en góndola.
             </p>
         </div>
 
-        ${mejorBeneficio ? `
-            <div style="background: var(--bg-app); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+        ${mejorPromo ? `
+            <div style="background: var(--bg-app); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px;">
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <i class="fa-solid fa-robot" style="color: ${tieneMembresia ? 'var(--color-good)' : 'var(--star-gold)'}; font-size: 14px;"></i>
-                    <span style="font-size: 11px; font-weight: 600;">
-                        ${tieneMembresia 
-                            ? `Posición optimizada: Aplicando -${mejorBeneficio.dto * 100}% vía ${mejorBeneficio.nombre}.` 
-                            : `Oportunidad: Podés reducir hasta un ${mejorBeneficio.dto * 100}% extra con ${mejorBeneficio.nombre}.`}
+                    <i class="fa-solid fa-bolt" style="color: ${yaTieneMembresia ? 'var(--color-good)' : 'var(--star-gold)'};"></i>
+                    <span style="font-size: 11px; font-weight: 700;">
+                        ${yaTieneMembresia 
+                            ? `Posición Optimizada: Usando ${mejorPromo.nombre} ahorrás un % extra.` 
+                            : `Oportunidad: Ahorrá hasta un ${mejorPromo.dto * 100}% más con ${mejorPromo.nombre}.`}
                     </span>
                 </div>
-                ${!tieneMembresia ? `
-                    <a href="${mejorBeneficio.link}" target="_blank" style="display: block; margin-top: 10px; text-align: center; border: 1px solid var(--color-good); color: var(--color-good); padding: 6px; border-radius: 6px; text-decoration: none; font-weight: 800; font-size: 10px; text-transform: uppercase;">
-                        Abrir Cuenta & Ahorrar
+                ${!yaTieneMembresia ? `
+                    <a href="${mejorPromo.link}" target="_blank" style="display: block; margin-top: 10px; text-align: center; background: var(--color-good); color: white; padding: 8px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 11px; text-transform: uppercase;">
+                        Abrir Cuenta y Ahorrar
                     </a>
                 ` : ''}
             </div>
@@ -1484,14 +1489,14 @@ function renderChangoSummary(container, items) {
 
         <div id="comparativaTrading" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border);">
             ${resultados.slice(1).map(o => `
-                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; opacity: 0.7; font-family: 'Roboto Mono';">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; opacity: 0.6; font-family: 'Roboto Mono';">
                     <span>${o.nombre.toUpperCase()}</span>
                     <span>$${format(Math.round(o.totalFinal))}</span>
                 </div>
             `).join('')}
         </div>
 
-        <button onclick="document.getElementById('comparativaTrading').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 15px; background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; text-transform: uppercase; letter-spacing: 1px;">
+        <button onclick="document.getElementById('comparativaTrading').style.display='block'; this.style.display='none';" style="width: 100%; margin-top: 10px; background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; text-decoration: underline; text-transform: uppercase; letter-spacing: 1px;">
             Ver comparativa de mercado
         </button>
     `;
@@ -2283,22 +2288,26 @@ function calcularAhorroTotal(superId, items) {
 // Función placeholder para evitar errores de referidos (la completaremos en el siguiente paso)
 function mostrarSugerenciaReferido(superId) { return ''; }
 
-// Busca qué beneficio de hoy es el mejor (el que da más %)
+// Calcula cuánto dinero extra gastaría el usuario si no elige la mejor opción
+function calcularSpreadAhorro(resultados) {
+    if (resultados.length < 2) return 0;
+    // Diferencia entre el 2do supermercado más barato y el 1ro
+    return resultados[1].totalFinal - resultados[0].totalFinal;
+}
+
+// Lógica para detectar el mejor beneficio disponible hoy
 function obtenerMejorBeneficioHoy(superIdx) {
     const storeNames = ["Coto", "Carrefour", "Dia", "Jumbo", "MasOnline"];
     const nombreSuper = storeNames[superIdx];
     
-    // Aquí podrías conectar con una tabla de Supabase en el futuro. 
-    // Por ahora, simulamos la lógica:
+    // Simulación de base de beneficios por día (se puede conectar a Supabase luego)
     const beneficiosMock = {
-        "Coto": { nombre: "Mercado Pago", dto: 0.30, link: "https://mpago.li/referido1" },
-        "Carrefour": { nombre: "Banco Galicia", dto: 0.20, link: "https://galicia.ar/referido2" },
-        "Dia": { nombre: "Personal Pay", dto: 0.25, link: "https://ppay.li/referido3" }
+        "Coto": { nombre: "Mercado Pago", dto: 0.30, link: "https://mpago.li/tu-referido" },
+        "Carrefour": { nombre: "Galicia", dto: 0.20, link: "https://galicia.ar/tu-referido" },
+        "Dia": { nombre: "Personal Pay", dto: 0.25, link: "https://ppay.li/tu-referido" }
     };
-    
     return beneficiosMock[nombreSuper] || null;
 }
-
 // Verifica si el usuario ya tiene esa membresía en su perfil
 function usuarioTieneMembresia(nombreMembresia) {
     if (!currentProfile || !currentProfile.membresias) return false;
