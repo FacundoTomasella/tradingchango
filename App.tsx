@@ -35,14 +35,15 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        const [prodData, histData, configData, { data: { session } }] = await Promise.all([
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        const [prodData, histData, configData] = await Promise.all([
           getProducts(),
           getPriceHistory(7),
-          getConfig(),
-          supabase.auth.getSession()
+          getConfig()
         ]);
 
-        console.log(`Cargados ${prodData?.length || 0} productos`);
+        console.log(`Loaded ${prodData?.length || 0} products`);
         setProducts(prodData || []);
         setHistory(histData || []);
         setConfig(configData || {});
@@ -52,8 +53,10 @@ const App: React.FC = () => {
           const prof = await getProfile(session.user.id);
           setProfile(prof);
           
-          setWelcomeMsg(`¡Bienvenido, ${prof?.nombre || 'Trader'}!`);
-          setTimeout(() => setWelcomeMsg(null), 4000);
+          if (prof?.nombre) {
+            setWelcomeMsg(`¡Bienvenido, ${prof.nombre}!`);
+            setTimeout(() => setWelcomeMsg(null), 4000);
+          }
 
           const savedFavs = localStorage.getItem('fav_tickers');
           if (savedFavs) {
@@ -76,24 +79,23 @@ const App: React.FC = () => {
     initApp();
   }, []);
 
-  // Theme effect
+  // Theme effect - More robust application
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
-      document.body.classList.add('dark', 'bg-black');
-      document.body.classList.remove('bg-white');
+      document.body.classList.add('dark', 'bg-black', 'text-slate-100');
+      document.body.classList.remove('bg-white', 'text-slate-900');
     } else {
       document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark', 'bg-black');
-      document.body.classList.add('bg-white');
+      document.body.classList.remove('dark', 'bg-black', 'text-slate-100');
+      document.body.classList.add('bg-white', 'text-slate-900');
     }
   }, [theme]);
 
+  // Sync favorites with localStorage
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('fav_tickers', JSON.stringify(favorites));
-    }
-  }, [favorites, user]);
+    localStorage.setItem('fav_tickers', JSON.stringify(favorites));
+  }, [favorites]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -137,13 +139,13 @@ const App: React.FC = () => {
   const filteredProducts = useMemo(() => {
     let result = processedProducts;
     
-    // Improved Category Filtering
+    // Improved Category Filtering - Case insensitive and more flexible
     if (currentTab === 'carnes') {
       result = result.filter(p => p.categoria?.toLowerCase().includes('carne'));
     } else if (currentTab === 'verdu') {
       result = result.filter(p => p.categoria?.toLowerCase().includes('verdu') || p.categoria?.toLowerCase().includes('fruta'));
     } else if (currentTab === 'varios') {
-      // Varios acts as a catch-all for everything else
+      // Varios acts as a catch-all for everything else or explicitly 'varios'
       result = result.filter(p => 
         !p.categoria?.toLowerCase().includes('carne') && 
         !p.categoria?.toLowerCase().includes('verdu') &&
@@ -178,10 +180,14 @@ const App: React.FC = () => {
     const isFav = !!favorites[id];
     const favCount = Object.keys(favorites).length;
     const isPro = profile?.subscription === 'pro' || profile?.subscription === 'premium';
+    
+    // Limit for free users
     if (!isPro && !isFav && favCount >= 5) {
+      alert("Límite de 5 productos para usuarios Free. ¡Pasate a Pro!");
       setIsAuthOpen(true);
       return;
     }
+
     setFavorites(prev => {
       const newFavs = { ...prev };
       if (newFavs[id]) delete newFavs[id];
@@ -226,7 +232,7 @@ const App: React.FC = () => {
         <i className="fa-solid fa-triangle-exclamation text-red-500 text-5xl mb-6"></i>
         <h2 className="text-2xl font-black mb-4">Error de Configuración</h2>
         <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mb-8">
-          No se pudo conectar con Supabase. Asegurate de haber configurado las variables de entorno <b>VITE_SUPABASE_URL</b> y <b>VITE_SUPABASE_ANON_KEY</b> en el panel de Vercel.
+          {error}
         </p>
         <button 
           onClick={() => window.location.reload()}

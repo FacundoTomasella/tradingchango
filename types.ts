@@ -43,6 +43,7 @@ export interface Profile {
   id: string;
   nombre?: string;
   apellido?: string;
+  fecha_nacimiento?: string;
   subscription: 'free' | 'pro' | 'premium';
   subscription_end?: string | null;
   membresias: UserMembership[];

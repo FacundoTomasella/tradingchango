@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Product, PriceHistory, Profile, Benefit } from '../types';
+import { Product, PriceHistory, Profile, Benefit, UserMembership } from '../types';
 
 // Safely access environment variables
 const getEnvVar = (name: string): string => {
@@ -14,7 +14,6 @@ const getEnvVar = (name: string): string => {
 const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL');
 const SUPABASE_KEY = getEnvVar('VITE_SUPABASE_ANON_KEY');
 
-// Validation to prevent crash if URL is missing or invalid
 const isValidUrl = (url: string) => {
   try {
     return url && (url.startsWith('http://') || url.startsWith('https://'));
@@ -23,16 +22,10 @@ const isValidUrl = (url: string) => {
   }
 };
 
-// If missing, use placeholders so createClient doesn't throw immediate exception
-// This allows the React app to at least mount and show error states.
 export const supabase = createClient(
   isValidUrl(SUPABASE_URL) ? SUPABASE_URL : 'https://placeholder-must-set-env-vars.supabase.co',
   SUPABASE_KEY || 'placeholder-key'
 );
-
-if (!isValidUrl(SUPABASE_URL) || !SUPABASE_KEY) {
-  console.warn("⚠️ Supabase credentials are missing or invalid. Check your Vercel Environment Variables.");
-}
 
 export const getProducts = async (): Promise<Product[]> => {
   const { data, error } = await supabase.from('productos').select('*');
@@ -81,6 +74,22 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
     .single();
   if (error) return null;
   return data;
+};
+
+export const updateProfile = async (userId: string, updates: Partial<Profile>) => {
+  const { error } = await supabase
+    .from('perfiles')
+    .update(updates)
+    .eq('id', userId);
+  if (error) throw error;
+};
+
+export const updateMemberships = async (userId: string, memberships: UserMembership[]) => {
+  const { error } = await supabase
+    .from('perfiles')
+    .update({ membresias: memberships })
+    .eq('id', userId);
+  if (error) throw error;
 };
 
 export const getCatalogoMembresias = async () => {

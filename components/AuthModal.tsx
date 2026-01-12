@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import { supabase, getCatalogoMembresias } from '../services/supabase';
-import { Profile, Membership, TabType } from '../types';
+import { supabase, getCatalogoMembresias, updateMemberships } from '../services/supabase';
+import { Profile, Membership, TabType, UserMembership } from '../types';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -15,8 +14,14 @@ interface AuthModalProps {
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, profile, onSignOut, onNavigate }) => {
   const [view, setView] = useState<'welcome' | 'form' | 'profile' | 'membresias'>(user ? 'profile' : 'welcome');
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  
+  // Form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [nombre, setNombre] = useState('');
+  const [apellido, setApellido] = useState('');
+  const [fechaNac, setFechaNac] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [catalogo, setCatalogo] = useState<Membership[]>([]);
 
@@ -31,18 +36,70 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, profile, o
     setLoading(true);
     try {
       if (mode === 'register') {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        alert("¡Revisá tu email para confirmar!");
+        const { data, error: signUpError } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            data: { nombre, apellido, fecha_nacimiento: fechaNac }
+          }
+        });
+        
+        if (signUpError) throw signUpError;
+
+        // If user is created (and email confirmation is off), profile should exist or we create it
+        if (data.user) {
+          const { error: profError } = await supabase.from('perfiles').insert([{
+            id: data.user.id,
+            nombre,
+            apellido,
+            fecha_nacimiento: fechaNac,
+            subscription: 'free',
+            membresias: []
+          }]);
+          // If profile exists (trigger), ignore error
+        }
+        
+        alert("¡Cuenta creada con éxito! Ya podés iniciar sesión.");
+        setMode('login');
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
         window.location.reload();
       }
     } catch (err: any) {
       alert(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const removeMembership = async (slug: string) => {
+    if (!profile || !user) return;
+    const newMemberships = profile.membresias.filter(m => m.slug !== slug);
+    try {
+      await updateMemberships(user.id, newMemberships);
+      alert("Membresía eliminada.");
+      window.location.reload();
+    } catch (err) {
+      alert("Error al eliminar membresía.");
+    }
+  };
+
+  const addMembership = async (membership: Membership) => {
+    if (!profile || !user) return;
+    const exists = profile.membresias.some(m => m.slug === membership.slug);
+    if (exists) {
+      alert("Ya tenés esta membresía.");
+      return;
+    }
+    const type = membership.opciones?.[0] || 'Standard';
+    const newMemberships = [...profile.membresias, { slug: membership.slug, tipo: type }];
+    try {
+      await updateMemberships(user.id, newMemberships);
+      alert("Membresía agregada.");
+      window.location.reload();
+    } catch (err) {
+      alert("Error al agregar membresía.");
     }
   };
 
@@ -89,6 +146,36 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, profile, o
           <div>
             <h2 className="text-2xl font-black mb-6 text-slate-900 dark:text-white tracking-tight">{mode === 'login' ? 'Iniciar Sesión' : 'Nueva Cuenta'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {mode === 'register' && (
+                <>
+                  <input 
+                    type="text" 
+                    placeholder="Nombre" 
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-sm"
+                    required
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Apellido" 
+                    value={apellido}
+                    onChange={(e) => setApellido(e.target.value)}
+                    className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-sm"
+                    required
+                  />
+                  <div className="relative">
+                    <span className="absolute top-1 left-4 text-[9px] text-slate-400 font-bold uppercase">Nacimiento</span>
+                    <input 
+                      type="date" 
+                      value={fechaNac}
+                      onChange={(e) => setFechaNac(e.target.value)}
+                      className="w-full p-4 pt-6 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-sm"
+                      required
+                    />
+                  </div>
+                </>
+              )}
               <input 
                 type="email" 
                 placeholder="Email" 
@@ -120,7 +207,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, profile, o
         {view === 'profile' && profile && (
           <div className="text-center">
             <div className="text-5xl mb-4 text-slate-900 dark:text-white">👤</div>
-            <h2 className="text-2xl font-black mb-1 text-slate-900 dark:text-white tracking-tight">{profile.nombre || 'Trader Pro'}</h2>
+            <h2 className="text-2xl font-black mb-1 text-slate-900 dark:text-white tracking-tight">{profile.nombre || 'Trader Pro'} {profile.apellido}</h2>
             <p className="text-slate-400 text-xs font-mono mb-8">{user.email}</p>
             
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 text-left mb-6 space-y-3">
@@ -134,20 +221,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, profile, o
                </div>
             </div>
 
-            {/* Renovar Subscripción Block */}
-            <div className="mb-8 p-5 bg-gradient-to-br from-amber-500 to-amber-600 rounded-3xl text-left shadow-lg shadow-amber-500/20">
-               <div className="flex justify-between items-start mb-2">
-                 <h4 className="text-white font-black text-sm uppercase tracking-tight">Acceso Trading Pro</h4>
-                 <i className="fa-solid fa-crown text-amber-200"></i>
-               </div>
-               <p className="text-white/80 text-[10px] font-medium leading-relaxed mb-4">
-                 Obtené comparativas ilimitadas, alertas de precios y soporte prioritario.
-               </p>
-               <button className="w-full bg-white text-amber-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-transform active:scale-95 shadow-sm">
-                 Renovar Suscripción (Muy Pronto)
-               </button>
-            </div>
-
             <div className="text-left mb-8">
                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4 block">Mis Membresías</span>
                <div className="grid grid-cols-3 gap-2">
@@ -158,34 +231,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, profile, o
                     <i className="fa-solid fa-plus text-lg"></i>
                     <span className="text-[9px] font-bold mt-1">Agregar</span>
                   </button>
-                  {profile.membresias.map((m, i) => (
-                    <div key={i} className="aspect-square rounded-xl border border-green-500 bg-green-50 dark:bg-green-900/10 flex flex-col items-center justify-center p-2 relative">
+                  {profile.membresias?.map((m, i) => (
+                    <div 
+                      key={i} 
+                      onClick={() => removeMembership(m.slug)}
+                      className="aspect-square rounded-xl border border-green-500 bg-green-50 dark:bg-green-900/10 flex flex-col items-center justify-center p-2 relative cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 group"
+                    >
+                      <i className="fa-solid fa-xmark absolute top-1 right-1 text-[8px] text-red-500 opacity-0 group-hover:opacity-100"></i>
                       <span className="text-[9px] font-black text-green-600 dark:text-green-400 text-center leading-tight uppercase">{m.slug}</span>
                       <span className="text-[7px] text-slate-400 absolute bottom-2">{m.tipo}</span>
                     </div>
-                  ))}
-               </div>
-            </div>
-
-            <div className="text-left mb-8 border-t border-slate-100 dark:border-slate-900 pt-6">
-               <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4 block">Información y Legal</span>
-               <div className="space-y-2">
-                  {[
-                    { id: 'about', label: 'Acerca de TradingChango', icon: 'fa-circle-info' },
-                    { id: 'contact', label: 'Contacto y Soporte', icon: 'fa-headset' },
-                    { id: 'terms', label: 'Términos y Condiciones', icon: 'fa-file-shield' }
-                  ].map(item => (
-                    <button 
-                      key={item.id}
-                      onClick={() => onNavigate && onNavigate(item.id as TabType)}
-                      className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <i className={`fa-solid ${item.icon} text-slate-400 text-xs w-4`}></i>
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{item.label}</span>
-                      </div>
-                      <i className="fa-solid fa-chevron-right text-[10px] text-slate-300"></i>
-                    </button>
                   ))}
                </div>
             </div>
@@ -205,12 +260,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, user, profile, o
             <div className="max-h-80 overflow-y-auto space-y-2 pr-2">
               {catalogo.length === 0 ? <p className="text-xs font-mono animate-pulse text-slate-400">Cargando catálogo...</p> : 
                 catalogo.map(m => (
-                  <div key={m.slug} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer">
+                  <div 
+                    key={m.slug} 
+                    onClick={() => addMembership(m)}
+                    className="flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+                  >
                     <div className="flex items-center gap-3">
                       <img src={m.logo_url} className="w-6 h-6 object-contain" alt="" />
                       <span className="text-xs font-bold text-slate-900 dark:text-white">{m.nombre}</span>
                     </div>
-                    <i className="fa-solid fa-chevron-right text-[10px] text-slate-300"></i>
+                    <i className="fa-solid fa-plus text-[10px] text-green-500"></i>
                   </div>
                 ))
               }
