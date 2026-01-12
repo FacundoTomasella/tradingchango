@@ -62,14 +62,12 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // 1. Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       const sessionUser = session?.user ?? null;
       setUser(sessionUser);
       loadData(sessionUser);
     });
 
-    // 2. Escuchar cambios de autenticación (Login/Logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const sessionUser = session?.user ?? null;
       setUser(sessionUser);
@@ -78,7 +76,6 @@ const App: React.FC = () => {
       } else if (_event === 'SIGNED_OUT') {
         setProfile(null);
         setFavorites({});
-        setProducts([]);
       }
     });
 
@@ -134,7 +131,6 @@ const App: React.FC = () => {
       result = result.filter(p => p.nombre.toLowerCase().includes(t) || p.ticker?.toLowerCase().includes(t));
     }
     
-    // Solo aplicar filtro de tendencia si no estamos en el Chango
     if (trendFilter && currentTab !== 'favs') {
       result = result.filter(p => trendFilter === 'up' ? p.stats.isUp : p.stats.isDown);
     }
@@ -144,11 +140,12 @@ const App: React.FC = () => {
 
   const toggleFavorite = (id: number) => {
     if (!user) { setIsAuthOpen(true); return; }
+    
     const isFav = !!favorites[id];
+    // Por ahora todos son PRO, pero dejamos la lógica lista para cuando habilites FREE
     const isPro = profile?.subscription === 'pro' || profile?.subscription === 'premium';
     const favCount = Object.keys(favorites).length;
 
-    // Limitación para usuarios FREE: máximo 5 favoritos
     if (!isPro && !isFav && favCount >= 5) {
       alert("Límite de 5 favoritos para usuarios FREE. ¡Pasate a PRO para ilimitados!");
       return;
@@ -189,10 +186,14 @@ const App: React.FC = () => {
               onUpdateQuantity={(id, d) => setFavorites(p => ({...p, [id]: Math.max(1, (p[id]||1)+d)}))}
             />
             {!loading && filteredProducts.length === 0 && (
-              <div className="py-20 text-center flex flex-col items-center gap-4">
-                <i className="fa-solid fa-box-open text-4xl text-slate-200"></i>
-                <div className="text-slate-400 text-sm font-bold uppercase tracking-widest">No hay resultados</div>
-                {!user && <button onClick={() => setIsAuthOpen(true)} className="text-[10px] bg-slate-900 text-white px-4 py-2 rounded-lg font-black uppercase">Debes iniciar sesión</button>}
+              <div className="py-20 text-center flex flex-col items-center gap-4 animate-in fade-in duration-700">
+                <i className="fa-solid fa-box-open text-6xl text-slate-100 dark:text-slate-900"></i>
+                <div className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">El Chango está vacío</div>
+                {!user && (
+                  <button onClick={() => setIsAuthOpen(true)} className="mt-4 px-6 py-3 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl text-xs font-bold uppercase tracking-widest active:scale-95 transition-transform">
+                    Ingresar para comprar
+                  </button>
+                )}
               </div>
             )}
           </>
