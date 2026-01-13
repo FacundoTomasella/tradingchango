@@ -43,7 +43,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
   const STORES = [
     { name: "COTO", key: 'p_coto', url: 'url_coto', color: "#ff3b30" },
     { name: "CARREFOUR", key: 'p_carrefour', url: 'url_carrefour', color: "#2962ff" },
-    { name: "DIA", key: 'p_dia', url: 'url_dia', color: "#ff3b30" },
+    { name: "DIA", key: 'p_dia', url: 'url_ff3b30', color: "#ff3b30" },
     { name: "JUMBO", key: 'p_jumbo', url: 'url_jumbo', color: "#00c853" },
     { name: "MAS ONLINE", key: 'p_masonline', url: 'url_masonline', color: "#00c853" }
   ] as const;
@@ -101,31 +101,34 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
     <div className="fixed inset-0 z-50 flex flex-col md:items-center md:justify-center bg-black/80 md:backdrop-blur-sm transition-all duration-300">
       <div 
         ref={modalRef}
-        className="w-full md:max-w-md h-full md:h-auto md:max-h-[98vh] bg-[#ffffff] dark:bg-[#000000] md:rounded-[1.5rem] flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-bottom-5"
+        className="w-full md:max-w-[440px] h-full md:h-auto md:max-h-[98vh] bg-[#ffffff] dark:bg-[#000000] md:rounded-[1.5rem] flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-bottom-5"
       >
-        {/* Header */}
+        {/* Header - Fixed to top */}
         <div className="p-4 flex justify-between items-center bg-[#ffffff] dark:bg-[#000000]">
-          <div className="flex items-center gap-3">
-            <button onClick={onClose} className="text-[#131722] dark:text-[#ffffff] p-2">
+          <div className="flex items-center gap-2">
+            <button onClick={onClose} className="text-primary dark:text-[#ffffff] p-2">
               <i className="fa-solid fa-arrow-left text-lg"></i>
             </button>
-            <span className="font-[800] text-[18px] tracking-tight text-[#131722] dark:text-[#ffffff] uppercase font-sans">{product.ticker || product.nombre.substring(0,5)}</span>
+            <span className="font-[800] text-[18px] tracking-tight text-primary dark:text-[#ffffff] uppercase font-sans">{product.ticker || product.nombre.substring(0,5)}</span>
           </div>
           <div className="flex items-center gap-5 pr-2">
-            <button onClick={() => onFavoriteToggle(product.id)} className={`text-[24px] ${isFavorite ? 'text-[#131722] dark:text-[#ffffff]' : 'text-muted opacity-40'}`}>
+            <button onClick={() => onFavoriteToggle(product.id)} className={`text-[24px] ${isFavorite ? 'text-star-gold' : 'text-primary dark:text-[#ffffff]'}`}>
               <i className="fa-solid fa-cart-shopping"></i>
             </button>
-            <button className="text-[22px] text-[#131722] dark:text-[#ffffff]" onClick={() => navigator.share({ title: 'TradingChango', text: `Precio de ${product.nombre}`, url: window.location.href })}>
+            <button className="text-[22px] text-primary dark:text-[#ffffff]" onClick={() => navigator.share({ title: 'TradingChango', text: `Precio de ${product.nombre}`, url: window.location.href })}>
               <i className="fa-solid fa-arrow-up-from-bracket"></i>
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#ffffff] dark:bg-[#000000]">
+        <div className="flex-1 overflow-y-auto no-scrollbar bg-[#ffffff] dark:bg-[#000000]">
+          {/* Section Divider */}
+          <div className="h-[1px] bg-border-light dark:bg-border-dark mx-4"></div>
+
           {/* Info Section */}
-          <div className="px-5 py-6">
-             <div className="flex gap-4 items-center">
-                <div className="w-[110px] h-[110px] bg-white rounded-2xl border border-border-light dark:border-border-dark flex-shrink-0 flex items-center justify-center p-3 shadow-sm">
+          <div className="px-5 py-8">
+             <div className="flex gap-5 items-center">
+                <div className="w-[120px] h-[120px] bg-white rounded-2xl border border-border-light dark:border-border-dark flex-shrink-0 flex items-center justify-center p-3 shadow-sm">
                   <img 
                     src={product.imagen_url || 'https://via.placeholder.com/200?text=No+Img'} 
                     alt={product.nombre} 
@@ -133,16 +136,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                   />
                 </div>
                 <div className="flex-1 flex flex-col">
-                  <h1 className="text-[28px] font-[800] text-[#131722] dark:text-[#ffffff] leading-[1] tracking-tighter mb-1">{product.nombre}</h1>
-                  <div className="text-[13px] font-[600] text-muted uppercase tracking-tight mb-2">
+                  <h1 className="text-[32px] font-[800] text-primary dark:text-[#ffffff] leading-[1] tracking-tighter mb-1 font-sans">{product.nombre}</h1>
+                  <div className="text-[13px] font-[700] text-muted dark:text-muted-dark uppercase tracking-tight mb-2 font-sans">
                     MEJOR PRECIO HOY EN {bestStoreName}
                   </div>
-                  <div className="text-[48px] font-mono font-[700] tracking-tighter text-[#131722] dark:text-[#ffffff] leading-none">
+                  <div className="text-[52px] font-mono font-[700] tracking-tighter text-primary dark:text-[#ffffff] leading-none">
                     $ {format(minPrice)}
                   </div>
-                  <div className="mt-4">
-                    <div className="bg-[#f1f3f6] dark:bg-[#1e222d] rounded-lg px-4 py-1.5 inline-flex items-center">
-                      <span className="text-[13px] font-[500] text-muted">Precio promedio: $ {format(avgPrice)}</span>
+                  <div className="mt-5">
+                    <div className="bg-[#f1f3f6] dark:bg-bg-card-dark rounded-lg px-4 py-2 inline-flex items-center">
+                      <span className="text-[13px] font-[500] text-muted dark:text-muted-dark font-sans">Precio promedio: $ {format(avgPrice)}</span>
                     </div>
                   </div>
                 </div>
@@ -152,22 +155,22 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
           {/* Section Divider */}
           <div className="h-[1px] bg-border-light dark:bg-border-dark mx-4"></div>
 
-          {/* Temporal Selection */}
-          <div className="px-5 pt-8 pb-4">
-            <div className="flex gap-1 justify-between mb-8">
+          {/* Temporal Selection & Chart */}
+          <div className="px-5 py-10">
+            <div className="flex gap-1 justify-between mb-10">
               {[7, 15, 30, 90, 180, 365].map(d => (
                 <button 
                   key={d} 
                   onClick={() => setDays(d)} 
-                  className={`flex-1 py-2 text-[11px] font-[800] rounded-md border transition-all ${days === d ? 'bg-[#131722] dark:bg-[#ffffff] text-[#ffffff] dark:text-[#000000] border-[#131722] dark:border-[#ffffff]' : 'bg-[#ffffff] dark:bg-transparent text-muted border-border-light dark:border-border-dark'}`}
+                  className={`flex-1 py-2 text-[11px] font-[800] rounded-md border transition-all font-sans ${days === d ? 'bg-primary dark:bg-[#ffffff] text-[#ffffff] dark:text-[#000000] border-primary dark:border-[#ffffff]' : 'bg-[#ffffff] dark:bg-transparent text-muted dark:text-muted-dark border-border-light dark:border-border-dark'}`}
                 >
                   {d === 7 ? '7D' : d === 15 ? '15D' : d === 30 ? '1M' : d === 90 ? '3M' : d === 180 ? '6M' : '1Y'}
                 </button>
               ))}
             </div>
 
-            <h3 className="text-[12px] font-[800] uppercase tracking-wider text-[#131722] dark:text-[#ffffff] mb-1">GRÁFICO DE TENDENCIAS</h3>
-            <div className={`text-[12px] font-[700] mb-6 ${isUp ? 'text-chart-red' : 'text-chart-green'}`}>
+            <h3 className="text-[12px] font-[800] uppercase tracking-wider text-primary dark:text-[#ffffff] mb-1 font-sans">GRÁFICO DE TENDENCIAS</h3>
+            <div className={`text-[12px] font-[700] mb-8 font-sans ${isUp ? 'text-chart-red' : 'text-chart-green'}`}>
               {variation ? `${parseFloat(variation) > 0 ? '+' : ''}${variation}% últimos días` : '- 0.0%'}
             </div>
             
@@ -185,21 +188,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                       dataKey="date" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{fontSize: 9, fill: '#94a3b8', fontWeight: 'bold'}} 
+                      tick={{fontSize: 10, fill: '#787b86', fontWeight: 'bold'}} 
                       minTickGap={60} 
                     />
                     <YAxis 
                       orientation="right" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{fontSize: 9, fill: '#94a3b8', fontWeight: 'bold'}} 
+                      tick={{fontSize: 10, fill: '#787b86', fontWeight: 'bold'}} 
                       tickFormatter={v => `$${format(v)}`} 
                       domain={['auto', 'auto']} 
                     />
                     <Tooltip 
                       contentStyle={{backgroundColor: theme === 'dark' ? '#000' : '#fff', borderRadius: '8px', border: '1px solid #e0e3eb', padding: '8px', boxShadow: 'none'}}
-                      labelStyle={{fontSize: '9px', fontWeight: '800', marginBottom: '2px', color: '#94a3b8'}}
-                      itemStyle={{fontSize: '12px', fontWeight: '800', fontFamily: 'Roboto Mono', color: theme === 'dark' ? '#fff' : '#000'}}
+                      labelStyle={{fontSize: '9px', fontWeight: '800', marginBottom: '2px', color: '#787b86', textTransform: 'uppercase'}}
+                      itemStyle={{fontSize: '12px', fontWeight: '800', fontFamily: 'Roboto Mono', color: theme === 'dark' ? '#fff' : '#131722'}}
                     />
                     <Area 
                       type="monotone" 
@@ -214,8 +217,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center font-mono text-[9px] text-muted bg-slate-50 dark:bg-[#080808] rounded-xl border border-dashed border-border-light dark:border-border-dark">
-                  {loading ? 'ANALIZANDO...' : 'SIN DATOS SUFICIENTES'}
+                <div className="h-full flex items-center justify-center font-mono text-[10px] text-muted dark:text-muted-dark bg-bg-card-light dark:bg-bg-card-dark rounded-xl border border-dashed border-border-light dark:border-border-dark uppercase tracking-widest">
+                  {loading ? 'ANALIZANDO...' : 'SIN DATOS'}
                 </div>
               )}
             </div>
@@ -225,8 +228,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
           <div className="h-[1px] bg-border-light dark:bg-border-dark mx-4"></div>
 
           {/* Market Comparison */}
-          <section className="px-5 py-8 pb-4">
-            <h3 className="text-[12px] font-[800] uppercase tracking-wider text-[#131722] dark:text-[#ffffff] mb-8">COMPARACION DE MERCADO</h3>
+          <section className="px-5 py-10 pb-4">
+            <h3 className="text-[12px] font-[800] uppercase tracking-wider text-primary dark:text-[#ffffff] mb-8 font-sans">COMPARACION DE MERCADO</h3>
             <div className="space-y-6">
               {STORES.map((s) => {
                 const price = (product as any)[s.key];
@@ -243,13 +246,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                 }
 
                 return (
-                  <div key={s.name} className="flex items-center justify-between border-b border-dotted border-border-light dark:border-border-dark pb-5 last:border-0 last:pb-0">
+                  <div key={s.name} className="flex items-center justify-between border-b border-dotted border-border-light dark:border-border-dark pb-6 last:border-0 last:pb-0">
                     <div className="flex items-center gap-3">
                       <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: s.color}}></div>
-                      <span className="text-[15px] font-[400] text-[#131722] dark:text-[#ffffff] uppercase font-sans">{s.name}</span>
+                      <span className="text-[16px] font-[400] text-primary dark:text-[#ffffff] uppercase font-sans tracking-tight">{s.name}</span>
                       {of && (
-                        <span className="bg-chart-green text-white text-[9px] font-[800] px-2 py-0.5 rounded-sm uppercase ml-1">
-                          {of.etiqueta || (typeof of === 'string' ? of : 'OFERTA')}
+                        <span className="bg-chart-green text-white text-[9px] font-[800] px-2 py-0.5 rounded-sm uppercase ml-1 font-sans leading-none">
+                          {of.etiqueta || (typeof of === 'string' ? of : 'PROMO')}
                         </span>
                       )}
                     </div>
@@ -258,12 +261,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                         href={productUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className={`font-mono text-[17px] font-[700] transition-opacity hover:opacity-70 ${isBest ? 'text-chart-green' : 'text-[#131722] dark:text-[#ffffff]'}`}
+                        className={`font-mono text-[18px] font-[700] transition-opacity hover:opacity-70 ${isBest ? 'text-chart-green' : 'text-primary dark:text-[#ffffff]'}`}
                       >
                         ${format(price)}
                       </a>
                     ) : (
-                      <div className={`font-mono text-[17px] font-[700] ${isBest ? 'text-chart-green' : 'text-[#131722] dark:text-[#ffffff]'}`}>
+                      <div className={`font-mono text-[18px] font-[700] ${isBest ? 'text-chart-green' : 'text-primary dark:text-[#ffffff]'}`}>
                         ${format(price)}
                       </div>
                     )}
