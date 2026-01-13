@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, getProducts, getPriceHistory, getProfile, getConfig, getBenefits } from './services/supabase';
@@ -43,7 +42,6 @@ const App: React.FC = () => {
       } else if (['home', 'carnes', 'verdu', 'varios', 'favs'].includes(hash)) {
         setCurrentTab(hash as TabType);
       } else {
-        // Default to home if no valid hash
         if (!hash) window.location.hash = 'home';
       }
     };
@@ -220,14 +218,14 @@ const App: React.FC = () => {
               <div className="py-20 text-center flex flex-col items-center gap-4 animate-in fade-in duration-700 px-8">
                 {currentTab === 'favs' ? (
                   <>
-                    <i className="fa-solid fa-box-open text-6xl text-slate-100 dark:text-slate-900"></i>
-                    <div className="text-black dark:text-white text-base font-extrabold uppercase tracking-tight">Tu chango está vacío</div>
+                    <i className="fa-solid fa-cart-shopping text-6xl text-slate-100 dark:text-slate-900"></i>
+                    <div className="text-black dark:text-white text-base font-[800] uppercase tracking-tight">Tu chango está vacío</div>
                     <p className="text-slate-500 text-sm font-medium">Agregá productos para comparar el total en los distintos supermercados.</p>
                   </>
                 ) : (
                   <>
                     <i className="fa-solid fa-magnifying-glass text-6xl text-slate-100 dark:text-slate-900"></i>
-                    <div className="text-black dark:text-white text-base font-extrabold uppercase tracking-tight">No se encontraron resultados</div>
+                    <div className="text-black dark:text-white text-base font-[800] uppercase tracking-tight">No se encontraron resultados</div>
                     <p className="text-slate-500 text-sm font-medium">Probá buscando con otras palabras o filtros.</p>
                   </>
                 )}

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { TabType } from '../types';
 
@@ -47,7 +46,6 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-white dark:bg-black p-4 border-b border-slate-100 dark:border-transparent">
       <div className="flex justify-between items-center mb-4">
-        {/* Logo Section */}
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => onNavigate('home')}>
           <div className="relative flex items-center justify-center h-8 w-8">
             <i className="fa-solid fa-cart-shopping text-[22px] text-black dark:text-white"></i>
@@ -56,13 +54,12 @@ const Header: React.FC<HeaderProps> = ({
           <span className="font-[800] text-[22px] tracking-[-1px] text-black dark:text-white leading-none">TradingChango</span>
         </div>
 
-        {/* Navigation / Actions */}
-        <div className="flex items-center gap-2">
-          {/* Desktop Info Links */}
-          <div className="hidden md:flex items-center gap-4 mr-4">
-            <button onClick={() => onNavigate('about')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-black dark:hover:text-white">Acerca de</button>
-            <button onClick={() => onNavigate('terms')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-black dark:hover:text-white">Términos</button>
-            <button onClick={() => onNavigate('contact')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-black dark:hover:text-white">Contacto</button>
+        <div className="flex items-center gap-3">
+          {/* Desktop Links */}
+          <div className="hidden md:flex items-center gap-4 mr-2">
+            <button onClick={() => onNavigate('about')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-black dark:hover:text-white transition-colors">Acerca de</button>
+            <button onClick={() => onNavigate('terms')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-black dark:hover:text-white transition-colors">Términos</button>
+            <button onClick={() => onNavigate('contact')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-black dark:hover:text-white transition-colors">Contacto</button>
           </div>
 
           {/* Mobile Info Menu */}
@@ -71,19 +68,18 @@ const Header: React.FC<HeaderProps> = ({
               <i className="fa-solid fa-circle-info text-xl"></i>
             </button>
             {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#2a2a2a] rounded-xl shadow-xl p-2 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
-                <button onClick={() => { onNavigate('about'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold uppercase dark:text-white hover:bg-slate-50 dark:hover:bg-[#1a1a1a]">Acerca de</button>
-                <button onClick={() => { onNavigate('terms'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold uppercase dark:text-white hover:bg-slate-50 dark:hover:bg-[#1a1a1a]">Términos</button>
-                <button onClick={() => { onNavigate('contact'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-xs font-bold uppercase dark:text-white hover:bg-slate-50 dark:hover:bg-[#1a1a1a]">Contacto</button>
+              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#2a2a2a] rounded-xl shadow-xl p-1 z-50 animate-in fade-in zoom-in duration-200">
+                <button onClick={() => { onNavigate('about'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase dark:text-white hover:bg-slate-50 dark:hover:bg-[#1a1a1a] rounded-lg">Acerca de</button>
+                <button onClick={() => { onNavigate('terms'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase dark:text-white hover:bg-slate-50 dark:hover:bg-[#1a1a1a] rounded-lg">Términos</button>
+                <button onClick={() => { onNavigate('contact'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase dark:text-white hover:bg-slate-50 dark:hover:bg-[#1a1a1a] rounded-lg">Contacto</button>
               </div>
             )}
           </div>
 
-          {/* Theme & User */}
           <button onClick={onUserClick} className="w-8 h-8 flex items-center justify-center text-black dark:text-white">
             <i className="fa-solid fa-circle-user text-xl"></i>
           </button>
-          <button onClick={toggleTheme} className="w-8 h-8 flex items-center justify-center text-black dark:text-white">
+          <button onClick={toggleTheme} className="text-black dark:text-white hover:opacity-70 transition-opacity">
             <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-xl`}></i>
           </button>
         </div>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { getProductHistory } from '../services/supabase';
@@ -31,7 +30,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
     }
   }, [product]);
 
-  // Click outside listener
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
@@ -98,7 +96,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
     return parseFloat(variation) > 0 ? "#f23645" : "#00c853";
   }, [variation]);
 
-  if (!product) return null;
+  if (!product) return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      <div className="text-white font-mono text-[10px] uppercase tracking-widest animate-pulse">Producto no encontrado</div>
+    </div>
+  );
+  
   const format = (n: number) => new Intl.NumberFormat('es-AR').format(n);
 
   return (
@@ -120,14 +123,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-white dark:bg-black">
-          {/* Main info row */}
+          {/* Top Info */}
           <div className="flex gap-5 items-start mb-6">
             <div className="w-28 h-28 bg-white rounded-2xl border border-slate-100 dark:border-[#2a2a2a] flex-shrink-0 flex items-center justify-center p-2 overflow-hidden shadow-sm">
               <img 
                 src={product.imagen_url || 'https://via.placeholder.com/200?text=No+Img'} 
                 alt={product.nombre} 
                 className="w-full h-full object-contain"
-                loading="lazy"
                 onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/200?text=No+Img')}
               />
             </div>
@@ -142,7 +144,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
             </div>
           </div>
 
-          {/* Average Price Capsule */}
+          {/* Average Capsule */}
           <div className="mb-8">
             <div className="bg-[#f1f3f6] dark:bg-[#1e222d] border border-slate-100 dark:border-[#2a2e39] rounded-lg px-4 py-2 inline-flex items-center gap-2.5">
               <span className="text-[11px] font-[700] text-slate-500 dark:text-[#b2b5be] uppercase tracking-widest">Precio promedio:</span>
@@ -150,7 +152,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
             </div>
           </div>
 
-          {/* Range Buttons */}
+          {/* Range Selection */}
           <div className="flex gap-1.5 mb-8 justify-between">
             {[7, 15, 30, 90, 180, 365].map(d => (
               <button 
@@ -172,7 +174,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
             
             <div className="h-72 w-full">
               {loading ? (
-                <div className="h-full flex items-center justify-center font-mono text-[10px] text-slate-400 animate-pulse uppercase tracking-[0.2em]">Cargando tendencias...</div>
+                <div className="h-full flex items-center justify-center font-mono text-[10px] text-slate-400 animate-pulse uppercase tracking-widest">Analizando mercado...</div>
               ) : chartData.length > 1 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
@@ -181,7 +183,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                         <stop offset="5%" stopColor={trendColor} stopOpacity={0.05}/><stop offset="95%" stopColor={trendColor} stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#1a1a1a' : '#f1f5f9'} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? 'transparent' : '#f1f5f9'} />
                     <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#94a3b8', fontWeight: 'bold'}} minTickGap={40} />
                     <YAxis orientation="right" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#94a3b8', fontWeight: 'bold'}} tickFormatter={v => `$${format(v)}`} domain={['auto', 'auto']} />
                     <Tooltip 
@@ -204,12 +206,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center font-mono text-[10px] text-slate-400">SIN HISTORIAL SUFICIENTE</div>
+                <div className="h-full flex items-center justify-center font-mono text-[10px] text-slate-400 bg-slate-50 dark:bg-[#121212] rounded-xl border border-dashed border-slate-200 dark:border-[#2a2a2a]">SIN DATOS SUFICIENTES</div>
               )}
             </div>
           </div>
 
-          {/* Comparison List */}
+          {/* Comparison */}
           <section className="pb-24">
             <h3 className="text-[11px] font-[800] uppercase tracking-[0.2em] text-black dark:text-white mb-6">COMPARACION DE MERCADO</h3>
             <div className="space-y-4">
@@ -228,13 +230,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                 }
 
                 return (
-                  <div key={s.name} className="flex items-center justify-between border-b border-dashed border-slate-100 dark:border-[#2a2a2a] pb-4 group">
+                  <div key={s.name} className="flex items-center justify-between border-b border-dashed border-slate-100 dark:border-[#2a2a2a] pb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: s.color}}></div>
                       <span className="text-sm font-[800] text-black dark:text-white uppercase tracking-tight">{s.name}</span>
                       {of && (
                         <span className="bg-[#00c853] text-white text-[9px] font-[800] px-1.5 py-0.5 rounded-sm uppercase">
-                          {of}
+                          {of.etiqueta || of}
                         </span>
                       )}
                     </div>
@@ -243,7 +245,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                         href={productUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className={`font-mono text-[16px] font-[700] hover:underline ${isBest ? 'text-[#00c853]' : 'text-black dark:text-white'}`}
+                        className={`font-mono text-[16px] font-[700] hover:underline transition-all ${isBest ? 'text-[#00c853]' : 'text-black dark:text-white'}`}
                       >
                         ${format(price)}
                       </a>
