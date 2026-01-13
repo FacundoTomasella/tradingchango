@@ -32,44 +32,7 @@ const App: React.FC = () => {
     (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
   );
 
-  useEffect(() => {
-  // --- 1. CONFIGURACIÓN INICIAL DEL TEMA (MODO OSCURO) ---
-  const savedTheme = localStorage.getItem('theme');
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  // Si el usuario ya eligió 'dark' o si no eligió nada pero su sistema es dark, aplicamos la clase
-  if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-
-  // --- 2. LÓGICA DE NAVEGACIÓN POR HASH ---
-  const handleHash = () => {
-    const hash = window.location.hash.replace('#', '');
-    
-    if (hash.startsWith('product/')) {
-      const id = parseInt(hash.split('/')[1]);
-      if (!isNaN(id)) setSelectedProductId(id);
-    } else if (['about', 'terms', 'contact', 'home', 'carnes', 'verdu', 'varios', 'favs'].includes(hash)) {
-      setCurrentTab(hash as TabType);
-      // Al cambiar de pestaña, cerramos la vista de producto si estuviera abierta
-      setSelectedProductId(null);
-    } else if (!hash) {
-      // Si entran a la raíz, los mandamos a #home por defecto
-      window.location.hash = 'home';
-    }
-  };
-
-  // Escuchar cambios en la URL (botón atrás/adelante del navegador)
-  window.addEventListener('hashchange', handleHash);
-  
-  // Ejecutar una vez al cargar la página
-  handleHash();
-
-  // Limpieza al desmontar el componente
-  return () => window.removeEventListener('hashchange', handleHash);
-}, []); // Se ejecuta solo una vez al montar
+  useEffect(() => { // 1. Configuración del Tema al cargar const savedTheme = localStorage.getItem('theme'); const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) { document.documentElement.classList.add('dark'); } else { document.documentElement.classList.remove('dark'); } // 2. Manejo de Navegación por Hash const handleHash = () => { const hash = window.location.hash.replace('#', ''); if (hash.startsWith('product/')) { const id = parseInt(hash.split('/')[1]); if (!isNaN(id)) setSelectedProductId(id); } else if (['about', 'terms', 'contact', 'home', 'carnes', 'verdu', 'varios', 'favs'].includes(hash)) { setCurrentTab(hash as TabType); setSelectedProductId(null); } else if (!hash) { window.location.hash = 'home'; } }; window.addEventListener('hashchange', handleHash); handleHash(); return () => window.removeEventListener('hashchange', handleHash); }, []); // <--- Revisá que este cierre de paréntesis y llave esté así
 
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
