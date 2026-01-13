@@ -49,7 +49,7 @@ const ProductList: React.FC<ProductListProps> = ({
   };
 
   return (
-    <div className="divide-y divide-slate-100 dark:divide-[#121212]">
+    <div className="divide-y divide-border-light dark:divide-border-dark">
       {products.map((p) => {
         const fav = isFavorite(p.id);
         const qty = quantities ? (quantities[p.id] || 1) : 1;
@@ -59,27 +59,27 @@ const ProductList: React.FC<ProductListProps> = ({
           <div 
             key={p.id} 
             onClick={() => onProductClick(p.id)}
-            className="flex items-center justify-between px-[20px] py-[16px] bg-white dark:bg-black hover:bg-slate-50 dark:hover:bg-[#080808] cursor-pointer transition-colors border-b border-slate-50 dark:border-transparent"
+            className="flex items-center justify-between px-[20px] py-[16px] bg-[#ffffff] dark:bg-[#000000] hover:bg-[#f9f9f9] dark:hover:bg-[#121212] cursor-pointer transition-colors"
           >
             <div className="flex-1 flex items-center justify-between pr-4">
               <div className="flex flex-col gap-0.5">
                 <div className="flex items-center flex-wrap gap-1.5">
-                  <span className="font-[800] text-black dark:text-white text-[15px] tracking-tight uppercase font-mono">
+                  <span className="font-[700] text-[#131722] dark:text-[#ffffff] text-[16px] tracking-tight uppercase font-mono">
                     {p.ticker || p.nombre.substring(0, 5).toUpperCase()}
                   </span>
                   {badges && badges.map((b, idx) => (
-                    <span key={idx} className="bg-[#00c853] text-white text-[9px] font-[800] px-1.5 py-0.5 rounded-sm uppercase leading-none">
+                    <span key={idx} className="bg-chart-green text-white text-[9px] font-[800] px-1.5 py-0.5 rounded-sm uppercase leading-none">
                       {b}
                     </span>
                   ))}
                 </div>
-                <span className="text-[13px] font-medium text-slate-500 dark:text-slate-400 line-clamp-1">
+                <span className="text-[13px] font-medium text-muted line-clamp-1">
                   {p.nombre}
                 </span>
               </div>
 
               <div className="text-right flex flex-col items-end min-w-[100px]">
-                <span className="font-mono font-[700] text-black dark:text-white text-[16px]">
+                <span className="font-mono font-[700] text-[#131722] dark:text-[#ffffff] text-[16px]">
                   ${format(p.stats.min)}
                 </span>
                 <span className={`font-mono text-[11px] font-[700] mt-0.5 ${p.stats.trendClass}`}>
@@ -91,12 +91,12 @@ const ProductList: React.FC<ProductListProps> = ({
             <div className="flex items-center gap-4">
               {isCartView && onUpdateQuantity && (
                 <div 
-                  className="flex items-center gap-3 bg-slate-50 dark:bg-[#121212] px-2 py-1 rounded-lg border border-slate-200 dark:border-[#2a2a2a]"
+                  className="flex items-center gap-3 bg-[#f9f9f9] dark:bg-[#121212] px-2 py-1 rounded-lg border border-border-light dark:border-border-dark"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button onClick={() => onUpdateQuantity(p.id, -1)} className="text-slate-400 hover:text-white px-1 font-bold">-</button>
-                  <span className="font-mono text-sm font-bold min-w-[15px] text-center text-black dark:text-white">{qty}</span>
-                  <button onClick={() => onUpdateQuantity(p.id, 1)} className="text-slate-400 hover:text-white px-1 font-bold">+</button>
+                  <button onClick={() => onUpdateQuantity(p.id, -1)} className="text-muted hover:text-[#131722] dark:hover:text-[#ffffff] px-1 font-bold">-</button>
+                  <span className="font-mono text-sm font-bold min-w-[15px] text-center text-[#131722] dark:text-[#ffffff]">{qty}</span>
+                  <button onClick={() => onUpdateQuantity(p.id, 1)} className="text-muted hover:text-[#131722] dark:hover:text-[#ffffff] px-1 font-bold">+</button>
                 </div>
               )}
               
@@ -105,7 +105,7 @@ const ProductList: React.FC<ProductListProps> = ({
                   e.stopPropagation();
                   onFavoriteToggle(p.id);
                 }}
-                className={`text-[20px] transition-transform active:scale-90 ${fav ? 'text-green-500' : 'text-slate-200 dark:text-[#121212]'}`}
+                className={`text-[20px] transition-transform active:scale-90 ${fav ? 'text-chart-green' : 'text-border-light dark:text-border-dark'}`}
               >
                 <i className="fa-solid fa-cart-shopping"></i>
               </button>

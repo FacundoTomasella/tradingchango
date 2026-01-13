@@ -92,7 +92,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
   }, [chartData]);
 
   const isUp = variation ? parseFloat(variation) > 0 : false;
-  const trendColor = isUp ? "#f23645" : "#00c853";
+  const trendColor = isUp ? "#ff3b30" : "#00c853";
 
   if (!product) return null;
   const format = (n: number) => new Intl.NumberFormat('es-AR').format(n);
@@ -101,34 +101,31 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
     <div className="fixed inset-0 z-50 flex flex-col md:items-center md:justify-center bg-black/80 md:backdrop-blur-sm transition-all duration-300">
       <div 
         ref={modalRef}
-        className="w-full md:max-w-md h-full md:h-auto md:max-h-[98vh] bg-white dark:bg-black md:rounded-[2rem] flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-bottom-5"
+        className="w-full md:max-w-md h-full md:h-auto md:max-h-[98vh] bg-[#ffffff] dark:bg-[#000000] md:rounded-[1.5rem] flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-bottom-5"
       >
-        {/* Header - Fixed to top */}
-        <div className="p-4 flex justify-between items-center bg-white dark:bg-black">
+        {/* Header */}
+        <div className="p-4 flex justify-between items-center bg-[#ffffff] dark:bg-[#000000]">
           <div className="flex items-center gap-3">
-            <button onClick={onClose} className="text-black dark:text-white p-2">
+            <button onClick={onClose} className="text-[#131722] dark:text-[#ffffff] p-2">
               <i className="fa-solid fa-arrow-left text-lg"></i>
             </button>
-            <span className="font-[800] text-[18px] tracking-tight text-black dark:text-white uppercase font-mono">{product.ticker || product.nombre.substring(0,5)}</span>
+            <span className="font-[800] text-[18px] tracking-tight text-[#131722] dark:text-[#ffffff] uppercase font-sans">{product.ticker || product.nombre.substring(0,5)}</span>
           </div>
           <div className="flex items-center gap-5 pr-2">
-            <button onClick={() => onFavoriteToggle(product.id)} className={`text-[24px] ${isFavorite ? 'text-black dark:text-white' : 'text-black dark:text-white opacity-40'}`}>
+            <button onClick={() => onFavoriteToggle(product.id)} className={`text-[24px] ${isFavorite ? 'text-[#131722] dark:text-[#ffffff]' : 'text-muted opacity-40'}`}>
               <i className="fa-solid fa-cart-shopping"></i>
             </button>
-            <button className="text-[22px] text-black dark:text-white" onClick={() => navigator.share({ title: 'TradingChango', text: `Precio de ${product.nombre}`, url: window.location.href })}>
+            <button className="text-[22px] text-[#131722] dark:text-[#ffffff]" onClick={() => navigator.share({ title: 'TradingChango', text: `Precio de ${product.nombre}`, url: window.location.href })}>
               <i className="fa-solid fa-arrow-up-from-bracket"></i>
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-white dark:bg-black">
-          {/* Section Divider Top */}
-          <div className="h-[1px] bg-slate-100 dark:bg-slate-900 mx-4"></div>
-
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#ffffff] dark:bg-[#000000]">
           {/* Info Section */}
-          <div className="px-5 py-6 flex flex-col items-center">
-             <div className="flex gap-4 w-full items-center">
-                <div className="w-[110px] h-[110px] bg-white rounded-2xl border border-slate-100 dark:border-[#2a2a2a] flex-shrink-0 flex items-center justify-center p-3 shadow-sm">
+          <div className="px-5 py-6">
+             <div className="flex gap-4 items-center">
+                <div className="w-[110px] h-[110px] bg-white rounded-2xl border border-border-light dark:border-border-dark flex-shrink-0 flex items-center justify-center p-3 shadow-sm">
                   <img 
                     src={product.imagen_url || 'https://via.placeholder.com/200?text=No+Img'} 
                     alt={product.nombre} 
@@ -136,16 +133,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                   />
                 </div>
                 <div className="flex-1 flex flex-col">
-                  <h1 className="text-[28px] font-[800] text-black dark:text-white leading-[1] tracking-tighter mb-1.5">{product.nombre}</h1>
-                  <div className="text-[11px] font-[700] text-slate-400 dark:text-slate-500 uppercase tracking-tight mb-2">
+                  <h1 className="text-[28px] font-[800] text-[#131722] dark:text-[#ffffff] leading-[1] tracking-tighter mb-1">{product.nombre}</h1>
+                  <div className="text-[13px] font-[600] text-muted uppercase tracking-tight mb-2">
                     MEJOR PRECIO HOY EN {bestStoreName}
                   </div>
-                  <div className="text-[48px] font-mono font-[700] tracking-tighter text-black dark:text-white leading-none">
+                  <div className="text-[48px] font-mono font-[700] tracking-tighter text-[#131722] dark:text-[#ffffff] leading-none">
                     $ {format(minPrice)}
                   </div>
                   <div className="mt-4">
-                    <div className="bg-[#f1f3f6] dark:bg-[#1e222d] rounded-lg px-4 py-1.5 inline-flex items-center gap-2">
-                      <span className="text-[12px] font-[500] text-slate-500 dark:text-[#b2b5be]">Precio promedio: $ {format(avgPrice)}</span>
+                    <div className="bg-[#f1f3f6] dark:bg-[#1e222d] rounded-lg px-4 py-1.5 inline-flex items-center">
+                      <span className="text-[13px] font-[500] text-muted">Precio promedio: $ {format(avgPrice)}</span>
                     </div>
                   </div>
                 </div>
@@ -153,24 +150,24 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
           </div>
 
           {/* Section Divider */}
-          <div className="h-[1px] bg-slate-100 dark:bg-slate-900 mx-4"></div>
+          <div className="h-[1px] bg-border-light dark:bg-border-dark mx-4"></div>
 
-          {/* Range Selection & Chart */}
-          <div className="px-5 py-8">
-            <div className="flex gap-2 mb-8 justify-between overflow-x-auto pb-1 no-scrollbar">
+          {/* Temporal Selection */}
+          <div className="px-5 pt-8 pb-4">
+            <div className="flex gap-1 justify-between mb-8">
               {[7, 15, 30, 90, 180, 365].map(d => (
                 <button 
                   key={d} 
                   onClick={() => setDays(d)} 
-                  className={`flex-1 min-w-[48px] py-2 text-[11px] font-[800] rounded-md border transition-all ${days === d ? 'bg-[#131722] dark:bg-white text-white dark:text-black border-[#131722] dark:border-white' : 'bg-white dark:bg-transparent text-slate-400 dark:text-[#b2b5be] border-slate-200 dark:border-[#363a45]'}`}
+                  className={`flex-1 py-2 text-[11px] font-[800] rounded-md border transition-all ${days === d ? 'bg-[#131722] dark:bg-[#ffffff] text-[#ffffff] dark:text-[#000000] border-[#131722] dark:border-[#ffffff]' : 'bg-[#ffffff] dark:bg-transparent text-muted border-border-light dark:border-border-dark'}`}
                 >
                   {d === 7 ? '7D' : d === 15 ? '15D' : d === 30 ? '1M' : d === 90 ? '3M' : d === 180 ? '6M' : '1Y'}
                 </button>
               ))}
             </div>
 
-            <h3 className="text-[12px] font-[800] uppercase tracking-wider text-black dark:text-white mb-1">GRÁFICO DE TENDENCIAS</h3>
-            <div className={`text-[12px] font-[700] mb-6 ${trendColor === "#f23645" ? 'text-[#f23645]' : 'text-[#00c853]'}`}>
+            <h3 className="text-[12px] font-[800] uppercase tracking-wider text-[#131722] dark:text-[#ffffff] mb-1">GRÁFICO DE TENDENCIAS</h3>
+            <div className={`text-[12px] font-[700] mb-6 ${isUp ? 'text-chart-red' : 'text-chart-green'}`}>
               {variation ? `${parseFloat(variation) > 0 ? '+' : ''}${variation}% últimos días` : '- 0.0%'}
             </div>
             
@@ -204,7 +201,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                       labelStyle={{fontSize: '9px', fontWeight: '800', marginBottom: '2px', color: '#94a3b8'}}
                       itemStyle={{fontSize: '12px', fontWeight: '800', fontFamily: 'Roboto Mono', color: theme === 'dark' ? '#fff' : '#000'}}
                     />
-                    {/* Fix: Remove unsupported 'tension' prop from Area component */}
                     <Area 
                       type="monotone" 
                       dataKey="price" 
@@ -218,7 +214,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center font-mono text-[9px] text-slate-400 bg-slate-50 dark:bg-[#080808] rounded-xl border border-dashed border-slate-200 dark:border-[#1a1a1a]">
+                <div className="h-full flex items-center justify-center font-mono text-[9px] text-muted bg-slate-50 dark:bg-[#080808] rounded-xl border border-dashed border-border-light dark:border-border-dark">
                   {loading ? 'ANALIZANDO...' : 'SIN DATOS SUFICIENTES'}
                 </div>
               )}
@@ -226,11 +222,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
           </div>
 
           {/* Section Divider */}
-          <div className="h-[1px] bg-slate-100 dark:bg-slate-900 mx-4"></div>
+          <div className="h-[1px] bg-border-light dark:bg-border-dark mx-4"></div>
 
           {/* Market Comparison */}
-          <section className="px-5 py-8 pb-10">
-            <h3 className="text-[12px] font-[800] uppercase tracking-wider text-black dark:text-white mb-8">COMPARACION DE MERCADO</h3>
+          <section className="px-5 py-8 pb-4">
+            <h3 className="text-[12px] font-[800] uppercase tracking-wider text-[#131722] dark:text-[#ffffff] mb-8">COMPARACION DE MERCADO</h3>
             <div className="space-y-6">
               {STORES.map((s) => {
                 const price = (product as any)[s.key];
@@ -247,12 +243,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                 }
 
                 return (
-                  <div key={s.name} className="flex items-center justify-between border-b border-dotted border-slate-100 dark:border-[#1a1a1a] pb-5 last:border-0 last:pb-0">
+                  <div key={s.name} className="flex items-center justify-between border-b border-dotted border-border-light dark:border-border-dark pb-5 last:border-0 last:pb-0">
                     <div className="flex items-center gap-3">
                       <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: s.color}}></div>
-                      <span className="text-[15px] font-[500] text-black dark:text-white uppercase">{s.name}</span>
+                      <span className="text-[15px] font-[400] text-[#131722] dark:text-[#ffffff] uppercase font-sans">{s.name}</span>
                       {of && (
-                        <span className="bg-[#00c853] text-white text-[9px] font-[800] px-2 py-0.5 rounded-sm uppercase ml-1">
+                        <span className="bg-chart-green text-white text-[9px] font-[800] px-2 py-0.5 rounded-sm uppercase ml-1">
                           {of.etiqueta || (typeof of === 'string' ? of : 'OFERTA')}
                         </span>
                       )}
@@ -262,12 +258,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                         href={productUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className={`font-mono text-[17px] font-[700] transition-opacity hover:opacity-70 ${isBest ? 'text-[#00c853]' : 'text-black dark:text-white'}`}
+                        className={`font-mono text-[17px] font-[700] transition-opacity hover:opacity-70 ${isBest ? 'text-chart-green' : 'text-[#131722] dark:text-[#ffffff]'}`}
                       >
                         ${format(price)}
                       </a>
                     ) : (
-                      <div className={`font-mono text-[17px] font-[700] ${isBest ? 'text-[#00c853]' : 'text-black dark:text-white'}`}>
+                      <div className={`font-mono text-[17px] font-[700] ${isBest ? 'text-chart-green' : 'text-[#131722] dark:text-[#ffffff]'}`}>
                         ${format(price)}
                       </div>
                     )}

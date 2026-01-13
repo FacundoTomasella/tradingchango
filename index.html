@@ -16,6 +16,23 @@
               sans: ['Inter', 'sans-serif'],
               mono: ['Roboto Mono', 'monospace'],
             },
+            colors: {
+              primary: '#131722',
+              muted: '#787b86',
+              border: {
+                light: '#e0e3eb',
+                dark: '#2a2a2a'
+              },
+              trading: {
+                green: '#00a650',
+                red: '#f23645',
+                gold: '#f2a900'
+              },
+              chart: {
+                green: '#00c853',
+                red: '#ff3b30'
+              }
+            }
           }
         }
       }
@@ -24,18 +41,19 @@
         body {
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
-            background-color: white;
-            color: black;
+            background-color: #ffffff;
+            color: #131722;
         }
         .dark body {
-            background-color: black;
-            color: white;
+            background-color: #000000;
+            color: #ffffff;
         }
         * {
             transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
         }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 <script type="importmap">
 {
@@ -51,7 +69,7 @@
 }
 </script>
 </head>
-<body class="bg-white dark:bg-black text-black dark:text-white">
+<body class="bg-[#ffffff] dark:bg-[#000000] text-[#131722] dark:text-[#ffffff]">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>
