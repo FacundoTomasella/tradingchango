@@ -157,7 +157,7 @@ const App: React.FC = () => {
     }
   }, [favorites, user]);
 
-  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  const toggleTheme = () => { const newTheme = theme === 'light' ? 'dark' : 'light'; // Calculamos el nuevo estado setTheme(newTheme); // Actualizamos React // 1. Guardamos en el navegador para la próxima visita localStorage.setItem('theme', newTheme); // 2. Aplicamos el cambio visual al HTML para que Tailwind/CSS reaccione if (newTheme === 'dark') { document.documentElement.classList.add('dark'); } else { document.documentElement.classList.remove('dark'); } };
 
   const getStats = (p: number[], h: number): ProductStats => {
     const v = p.filter(x => x > 0);
