@@ -89,7 +89,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
   if (!product) return null;
   const format = (n: number) => new Intl.NumberFormat('es-AR').format(n);
   
-  // Lógica de color de Trading: Verde si baja (bueno para el usuario), Rojo si sube (malo)
   const trendColor = isTrendUp ? '#f23645' : '#00c853';
   const ticker = product.ticker || product.nombre.substring(0, 5).toUpperCase();
 
@@ -99,7 +98,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
         ref={modalRef}
         className="w-full max-w-2xl h-full md:h-auto md:max-h-[90vh] bg-white dark:bg-slate-950 md:rounded-[1rem] overflow-y-auto no-scrollbar shadow-2xl relative"
       >
-        {/* Top Navigation Bar */}
         <div className="sticky top-0 z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-900">
           <div className="flex items-center gap-4">
             <button onClick={onClose} className="text-slate-900 dark:text-white">
@@ -118,7 +116,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
         </div>
 
         <div className="p-6 md:p-8">
-          {/* Row: Image + Title/Price */}
           <div className="flex gap-5 items-start mb-6">
             <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-xl border border-slate-100 shadow-sm flex-shrink-0 flex items-center justify-center p-2">
               <img src={product.imagen_url || 'https://via.placeholder.com/200?text=No+Img'} alt={product.nombre} className="w-full h-full object-contain" />
@@ -142,7 +139,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
             </div>
           </div>
 
-          {/* Average Price Pill */}
           <div className="mb-8">
             <div className="inline-flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-800">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">Precio promedio:</span>
@@ -152,7 +148,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
 
           <hr className="border-slate-100 dark:border-slate-900 mb-6" />
 
-          {/* Time Filter Controls */}
           <div className="flex justify-start md:justify-end gap-1 mb-8">
             {[7, 15, 30, 90, 180, 365].map((d) => (
               <button 
@@ -165,7 +160,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
             ))}
           </div>
 
-          {/* Chart Section */}
           <div className="mb-10">
             <div className="mb-6">
               <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Gráfico de tendencias</h3>
@@ -235,7 +229,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
             </div>
           </div>
 
-          {/* Market Comparison Collapsible */}
           <div className="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden mb-6">
             <button 
               onClick={() => setIsPricesOpen(!isPricesOpen)}
@@ -258,7 +251,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                     <div key={s.name} className="flex items-center justify-between pb-4 border-b border-slate-50 dark:border-slate-900 last:border-0 last:pb-0">
                       <div className="flex flex-col">
                         <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight">{s.name}</span>
-                        {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold text-blue-500 uppercase hover:underline">Ir a la web</a>}
+                        {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold text-slate-900 dark:text-white uppercase hover:underline">Ir a la web</a>}
                       </div>
                       <span className={`text-xl font-mono font-black ${price === minPrice ? 'text-green-500' : 'text-slate-900 dark:text-white'}`}>
                         ${format(price)}

@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { Product, Benefit, UserMembership } from '../types';
 
@@ -80,7 +81,7 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
   if (results.length === 0) {
     return (
       <div className="p-4 animate-in fade-in duration-700">
-        <div className="bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-[2rem] p-6 shadow-xl text-center">
+        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-6 shadow-xl text-center">
           <div className="w-12 h-12 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
             <i className="fa-solid fa-circle-exclamation text-xl"></i>
           </div>
@@ -119,7 +120,6 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
 
   return (
     <div className="p-4 space-y-3 animate-in fade-in duration-700">
-      {/* Tarjeta de Ganador Compacta Rediseñada */}
       <div className="bg-white dark:bg-slate-950 border border-green-500/30 rounded-[1.5rem] p-6 shadow-lg shadow-green-500/5 relative overflow-hidden">
         <div className="absolute -top-4 -right-4 text-green-500/10 text-6xl rotate-12 pointer-events-none">
           <i className="fa-solid fa-trophy"></i>
@@ -142,31 +142,29 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
           </div>
 
           <div className="flex flex-wrap items-center gap-3 mb-6">
-            {/* Ahorro como accesorio */}
             <div className="bg-green-500/10 dark:bg-green-500/20 px-3 py-1.5 rounded-full border border-green-500/20 flex items-center gap-2">
               <span className="text-[9px] font-black uppercase text-green-600 dark:text-green-400">Ahorrás</span>
               <span className="text-sm font-black text-green-600 dark:text-green-400 font-mono">${format(Math.round(potentialSavings))}</span>
             </div>
             
             <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-tight ml-auto">
-              <div>Subtotal: <span className="font-mono text-slate-600 dark:text-slate-300">${format(Math.round(best.subtotal))}</span></div>
-              <div>Descuentos: <span className="font-mono text-green-500">-${format(Math.round(best.gondolaDiscount))}</span></div>
+              <div>Subtotal: <span className="font-mono text-slate-600 dark:text-slate-300 font-bold">${format(Math.round(best.subtotal))}</span></div>
+              <div>Descuentos: <span className="font-mono text-green-500 font-bold">-${format(Math.round(best.gondolaDiscount))}</span></div>
             </div>
           </div>
 
-          {/* Estrategia de Pago */}
           {(paymentAdvice?.owned || paymentAdvice?.recommend) && (
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-4 border-t border-slate-100 dark:border-slate-800">
               {paymentAdvice.owned && (
-                <div className="flex-shrink-0 flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-900/30">
-                  <i className="fa-solid fa-id-card text-[10px] text-blue-600"></i>
-                  <span className="text-[9px] font-bold text-blue-600 uppercase tracking-tight">Pagá con {paymentAdvice.owned.entidad_nombre}</span>
+                <div className="flex-shrink-0 flex items-center gap-2 bg-slate-900 dark:bg-white px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800">
+                  <i className="fa-solid fa-id-card text-[10px] text-white dark:text-black"></i>
+                  <span className="text-[9px] font-bold text-white dark:text-black uppercase tracking-tight">Pagá con {paymentAdvice.owned.entidad_nombre}</span>
                 </div>
               )}
               {paymentAdvice.recommend && (
-                <a href={paymentAdvice.recommend.link_referido} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-full border border-amber-100 dark:border-amber-900/30">
-                  <i className="fa-solid fa-link text-[10px] text-amber-600"></i>
-                  <span className="text-[9px] font-bold text-amber-600 uppercase tracking-tight">Vincular {paymentAdvice.recommend.entidad_nombre}</span>
+                <a href={paymentAdvice.recommend.link_referido} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-900 dark:border-white">
+                  <i className="fa-solid fa-link text-[10px] text-slate-900 dark:text-white"></i>
+                  <span className="text-[9px] font-bold text-slate-900 dark:text-white uppercase tracking-tight">Vincular {paymentAdvice.recommend.entidad_nombre}</span>
                 </a>
               )}
             </div>
@@ -174,7 +172,6 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
         </div>
       </div>
 
-      {/* Comparativa Desplegable */}
       {others.length > 0 && (
         <div className="px-2">
           <button 
