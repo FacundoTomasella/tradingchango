@@ -97,7 +97,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
         ref={modalRef}
         className="w-full max-w-2xl h-full md:h-auto md:max-h-[90vh] bg-white dark:bg-black md:rounded-[2rem] overflow-y-auto no-scrollbar shadow-2xl relative"
       >
-        {/* Header Modal - Centrado */}
+        {/* Header Modal */}
         <div className="sticky top-0 z-20 bg-white/95 dark:bg-black/95 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-neutral-100 dark:border-neutral-900">
           <button onClick={onClose} className="text-black dark:text-white p-2 -ml-2">
             <i className="fa-solid fa-arrow-left text-lg"></i>
@@ -110,38 +110,42 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
           </div>
         </div>
 
-        <div className="p-8 flex flex-col items-center">
-          {/* Info Principal - Centrada */}
-          <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-32 h-32 md:w-40 md:h-40 bg-white rounded-3xl border border-neutral-100 shadow-sm flex items-center justify-center p-4 mb-6 transition-transform hover:scale-105">
+        <div className="p-6 md:p-10 flex flex-col">
+          {/* Top Section: Imagen a la izquierda, Texto a la derecha */}
+          <div className="flex gap-6 md:gap-10 items-start mb-10">
+            <div className="w-28 h-28 md:w-44 md:h-44 bg-white rounded-3xl border border-neutral-100 shadow-sm flex items-center justify-center p-4 transition-transform hover:scale-105 shrink-0">
               <img src={product.imagen_url || 'https://via.placeholder.com/200?text=No+Img'} alt={product.nombre} className="w-full h-full object-contain" />
             </div>
             
-            <h1 className="text-2xl md:text-3xl font-black text-black dark:text-white leading-tight mb-4 tracking-tighter max-w-md">
-              {product.nombre}
-            </h1>
-            
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">
-                Mejor precio hoy en {minStore}
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-black dark:text-white">$</span>
-                <span className="text-5xl md:text-6xl font-black text-black dark:text-white tracking-tighter font-mono">
-                  {format(minPrice)}
+            <div className="flex flex-col flex-1 pt-2">
+              <h1 className="text-xl md:text-3xl font-black text-black dark:text-white leading-tight mb-4 tracking-tighter">
+                {product.nombre}
+              </h1>
+              
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">
+                  Mejor precio hoy en {minStore}
                 </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl md:text-2xl font-bold text-black dark:text-white">$</span>
+                  <span className="text-4xl md:text-6xl font-black text-black dark:text-white tracking-tighter font-mono">
+                    {format(minPrice)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mb-8 w-full flex justify-center">
-            <div className="inline-flex items-center gap-3 bg-neutral-50 dark:bg-neutral-900/50 px-5 py-2.5 rounded-2xl border border-neutral-100 dark:border-neutral-800">
+          {/* Fila de Indicadores */}
+          <div className="mb-10 w-full flex flex-wrap gap-4 justify-center">
+            <div className="inline-flex items-center gap-3 bg-neutral-50 dark:bg-neutral-900/50 px-5 py-3 rounded-2xl border border-neutral-100 dark:border-neutral-800">
               <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-tight">Precio promedio:</span>
-              <span className="text-[14px] font-black text-black dark:text-white font-mono">$ {format(Math.round(avgPrice))}</span>
+              <span className="text-[15px] font-black text-black dark:text-white font-mono">$ {format(Math.round(avgPrice))}</span>
             </div>
+            {/* Aquí podrían ir otros indicadores en el futuro */}
           </div>
 
-          <hr className="w-full border-neutral-100 dark:border-neutral-900 mb-8" />
+          <hr className="w-full border-neutral-100 dark:border-neutral-900 mb-10" />
 
           {/* Selector de Temporalidad - Centrado */}
           <div className="w-full flex justify-center gap-1.5 mb-10 overflow-x-auto no-scrollbar py-1">
@@ -227,7 +231,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
             </div>
           </div>
 
-          {/* Precio por Mercado - Centrado */}
+          {/* Comparativa por Mercado */}
           <div className="w-full border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] overflow-hidden mb-8">
             <button 
               onClick={() => setIsPricesOpen(!isPricesOpen)}
@@ -273,7 +277,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
             )}
           </div>
 
-          {/* Botón Acción - Ancho Completo pero Centrado Texto */}
+          {/* Botón Acción - Sticky al fondo */}
           <div className="w-full mt-4 sticky bottom-0 bg-white/95 dark:bg-black/95 backdrop-blur-md pb-8 pt-4">
             <button 
               onClick={() => onFavoriteToggle(product.id)} 
