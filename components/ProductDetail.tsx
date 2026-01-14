@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { getProductHistory } from '../services/supabase';
@@ -115,7 +116,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
           <button onClick={onClose} className="text-black dark:text-white p-2">
             <i className="fa-solid fa-arrow-left text-lg"></i>
           </button>
-          <span className="text-[9px] font-black tracking-widest text-black dark:text-white uppercase">{ticker}</span>
+          <span className="text-[10px] font-black tracking-widest text-black dark:text-white uppercase">{ticker}</span>
           <div className="flex items-center gap-2">
             <button onClick={handleShare} className="text-black dark:text-white p-2">
               <i className="fa-solid fa-share-nodes text-base"></i>
@@ -128,30 +129,29 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
 
         <div className="p-4 md:p-5 flex flex-col">
           <div className="flex gap-4 items-start mb-3">
-            <div className="w-16 h-16 md:w-24 md:h-24 bg-white rounded-lg border border-neutral-100 shadow-sm flex items-center justify-center p-1.5 shrink-0">
+            <div className="w-20 h-20 md:w-28 md:h-28 bg-white rounded-lg border border-neutral-100 shadow-sm flex items-center justify-center p-1.5 shrink-0">
               <img src={product.imagen_url || 'https://via.placeholder.com/200?text=No+Img'} alt={product.nombre} className="w-full h-full object-contain" />
             </div>
             
             <div className="flex flex-col flex-1">
-              <h1 className="text-sm md:text-lg font-black text-black dark:text-white leading-tight mb-1 tracking-tighter">
+              <h1 className="text-base md:text-xl font-black text-black dark:text-white leading-tight mb-1 tracking-tighter">
                 {product.nombre}
               </h1>
               
               <div className="flex flex-col">
-                <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">
+                <span className="text-[9px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">
                   Mejor precio hoy en {minStore}
                 </span>
                 <div className="flex items-end gap-2">
                   <div className="flex items-baseline gap-0.5">
-                    <span className="text-xs font-bold text-black dark:text-white">$</span>
-                    <span className="text-xl md:text-3xl font-black text-black dark:text-white tracking-tighter font-mono leading-none">
+                    <span className="text-sm font-bold text-black dark:text-white">$</span>
+                    <span className="text-2xl md:text-4xl font-black text-black dark:text-white tracking-tighter font-mono leading-none">
                       {format(minPrice)}
                     </span>
                   </div>
-                  {/* Caja de promedio con contorno */}
-                  <div className="flex items-baseline gap-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 px-1.5 py-0.5 rounded-md mb-0.5">
-                    <span className="text-[7px] font-bold text-neutral-400 uppercase">Promedio:</span>
-                    <span className="text-[9px] font-black text-neutral-600 dark:text-neutral-400 font-mono">$ {format(Math.round(avgPrice))}</span>
+                  <div className="flex items-baseline gap-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 px-2 py-1 rounded-md mb-0.5 shadow-sm">
+                    <span className="text-[8px] font-bold text-neutral-400 uppercase">Promedio:</span>
+                    <span className="text-[11px] font-black text-neutral-600 dark:text-neutral-400 font-mono">$ {format(Math.round(avgPrice))}</span>
                   </div>
                 </div>
               </div>
@@ -165,7 +165,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
               <button 
                 key={d} 
                 onClick={() => setDays(d)}
-                className={`min-w-[36px] py-1 px-1 text-[7px] font-black rounded-md transition-all border ${days === d ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white' : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-500 border-neutral-100 dark:border-neutral-800'}`}
+                className={`min-w-[42px] py-1.5 px-1 text-[8px] font-black rounded-md transition-all border ${days === d ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white' : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-500 border-neutral-100 dark:border-neutral-800'}`}
               >
                 {d < 30 ? `${d}D` : d < 365 ? `${Math.floor(d / 30)}M` : '1Y'}
               </button>
@@ -175,14 +175,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
           <div className="mb-3 w-full">
             <div className="flex flex-col items-center text-center mb-2">
               <div className="flex items-center gap-1.5">
-                 <span className={`text-[9px] font-black px-1 py-0.5 rounded-md ${isTrendUp ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
+                 <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${isTrendUp ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
                    {isTrendUp ? '▲' : '▼'} {Math.abs(percentageChange).toFixed(1)}%
                  </span>
-                 <span className="text-[7px] font-bold text-neutral-500 uppercase tracking-widest">Variación en {days} días</span>
+                 <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">Variación en {days} días</span>
               </div>
             </div>
             
-            <div className="h-40 md:h-48 w-full relative">
+            <div className="h-44 md:h-52 w-full relative">
               {chartData.length > 1 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -35, bottom: 0 }}>
@@ -194,13 +194,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                     </defs>
                     <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={theme === 'dark' ? '#262626' : '#f0f0f0'} />
                     <XAxis dataKey="date" hide />
-                    <YAxis orientation="right" axisLine={false} tickLine={false} tick={{fontSize: 7, fill: '#737373'}} domain={['auto', 'auto']} />
+                    <YAxis orientation="right" axisLine={false} tickLine={false} tick={{fontSize: 8, fill: '#737373'}} domain={['auto', 'auto']} />
                     <Tooltip content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
                           return (
-                            <div className="bg-white dark:bg-neutral-900 p-1.5 rounded-lg shadow-xl border border-neutral-100 dark:border-neutral-800">
-                              <p className="text-[10px] font-mono font-black text-black dark:text-white">${format(data.price)}</p>
+                            <div className="bg-white dark:bg-neutral-900 p-2 rounded-lg shadow-xl border border-neutral-100 dark:border-neutral-800">
+                              <p className="text-[12px] font-mono font-black text-black dark:text-white">${format(data.price)}</p>
                             </div>
                           );
                         }
@@ -211,7 +211,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-[7px] font-black text-neutral-400 uppercase tracking-[0.2em] bg-neutral-50 dark:bg-neutral-900/20 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800">
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-[8px] font-black text-neutral-400 uppercase tracking-[0.2em] bg-neutral-50 dark:bg-neutral-900/20 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800">
                   Sin datos suficientes
                 </div>
               )}
@@ -219,19 +219,19 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
           </div>
 
           <div className="w-full border border-neutral-100 dark:border-neutral-800 rounded-lg overflow-hidden mb-4">
-            <button onClick={() => setIsPricesOpen(!isPricesOpen)} className="w-full flex items-center justify-between p-2 bg-neutral-50 dark:bg-neutral-900/50">
-              <span className="text-[8px] font-black uppercase tracking-[0.1em] text-black dark:text-white">Comparativa por Mercado</span>
-              <i className={`fa-solid fa-chevron-${isPricesOpen ? 'up' : 'down'} text-neutral-500 text-[8px]`}></i>
+            <button onClick={() => setIsPricesOpen(!isPricesOpen)} className="w-full flex items-center justify-between p-2.5 bg-neutral-50 dark:bg-neutral-900/50">
+              <span className="text-[9px] font-black uppercase tracking-[0.1em] text-black dark:text-white">Comparativa por Mercado</span>
+              <i className={`fa-solid fa-chevron-${isPricesOpen ? 'up' : 'down'} text-neutral-500 text-[9px]`}></i>
             </button>
             {isPricesOpen && (
-              <div className="px-3 py-1.5 space-y-1.5 bg-white dark:bg-neutral-950">
+              <div className="px-3 py-2 space-y-2 bg-white dark:bg-neutral-950">
                 {STORES.map((s) => {
                   const price = (product as any)[s.key];
                   if (!price || price <= 0) return null;
                   return (
-                    <div key={s.name} className="flex items-center justify-between py-1 border-b border-neutral-50 dark:border-neutral-900 last:border-0">
-                      <span className="text-[8px] font-black text-neutral-500 uppercase">{s.name}</span>
-                      <span className={`text-xs font-mono font-black ${price === minPrice ? 'text-green-500' : 'text-black dark:text-white'}`}>
+                    <div key={s.name} className="flex items-center justify-between py-1.5 border-b border-neutral-50 dark:border-neutral-900 last:border-0">
+                      <span className="text-[9px] font-black text-neutral-500 uppercase">{s.name}</span>
+                      <span className={`text-sm font-mono font-black ${price === minPrice ? 'text-green-500' : 'text-black dark:text-white'}`}>
                         ${format(price)}
                       </span>
                     </div>
@@ -244,7 +244,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
           <div className="w-full sticky bottom-0 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md pb-2 pt-1">
             <button 
               onClick={() => onFavoriteToggle(product.id)} 
-              className={`w-full py-3 rounded-lg font-black uppercase tracking-[0.1em] text-[9px] transition-all flex items-center justify-center gap-2 active:scale-95 ${isFavorite ? 'bg-star-gold text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}
+              className={`w-full py-3.5 rounded-lg font-black uppercase tracking-[0.1em] text-[10px] transition-all flex items-center justify-center gap-2 active:scale-95 ${isFavorite ? 'bg-star-gold text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}
             >
               <i className="fa-solid fa-cart-shopping"></i>
               {isFavorite ? 'En el Chango' : 'Añadir al Chango'}

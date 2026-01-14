@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, getProducts, getPriceHistory, getProfile, getConfig, getBenefits, getSavedCartData, saveCartData } from './services/supabase';
@@ -232,13 +233,13 @@ const App: React.FC = () => {
     navigateTo('favs');
   };
 
-  if (loading && products.length === 0) return <div className="min-h-screen flex items-center justify-center dark:bg-black dark:text-white font-mono text-[9px] uppercase tracking-[0.2em]">Analizando precios...</div>;
+  if (loading && products.length === 0) return <div className="min-h-screen flex items-center justify-center dark:bg-black dark:text-white font-mono text-[11px] uppercase tracking-[0.2em]">Analizando precios...</div>;
 
   return (
     <div className="max-w-screen-md mx-auto min-h-screen bg-white dark:bg-black shadow-2xl transition-colors font-sans">
       {showPwaPill && (
         <div onClick={handleInstallClick} className="fixed bottom-[80px] left-1/2 -translate-x-1/2 z-[1000] bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full flex items-center gap-2 shadow-2xl cursor-pointer">
-          <span className="text-[9px] font-[800] uppercase tracking-wider">Instalar App 🛒</span>
+          <span className="text-[10px] font-[800] uppercase tracking-wider">Instalar App 🛒</span>
         </div>
       )}
       <Header 

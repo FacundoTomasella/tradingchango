@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Product } from '../types';
 
@@ -60,8 +61,8 @@ const ProductList: React.FC<ProductListProps> = ({
         <div className="w-12 h-12 bg-neutral-100 dark:bg-neutral-900 rounded-xl flex items-center justify-center text-neutral-500 mb-4 text-lg">
           <i className="fa-solid fa-magnifying-glass"></i>
         </div>
-        <h3 className="text-xs font-black text-neutral-900 dark:text-neutral-100 uppercase tracking-tighter">Sin resultados</h3>
-        <p className="text-[10px] text-neutral-500 dark:text-neutral-500 font-medium">Probá con otros términos.</p>
+        <h3 className="text-sm font-black text-neutral-900 dark:text-neutral-100 uppercase tracking-tighter">Sin resultados</h3>
+        <p className="text-[12px] text-neutral-500 dark:text-neutral-500 font-medium">Probá con otros términos.</p>
       </div>
     );
   }
@@ -73,7 +74,7 @@ const ProductList: React.FC<ProductListProps> = ({
           <i className="fa-solid fa-cart-shopping"></i>
         </div>
         <h3 className="text-base font-black text-neutral-900 dark:text-neutral-100 uppercase tracking-tighter">Tu lista está vacía</h3>
-        <p className="text-[10px] text-neutral-500 dark:text-neutral-500 font-medium max-w-[200px]">Agregá productos para empezar a ahorrar.</p>
+        <p className="text-[12px] text-neutral-500 dark:text-neutral-500 font-medium max-w-[200px]">Agregá productos para empezar a ahorrar.</p>
       </div>
     );
   }
@@ -96,39 +97,38 @@ const ProductList: React.FC<ProductListProps> = ({
                {isCartView && (
                  <button 
                   onClick={(e) => { e.stopPropagation(); onTogglePurchased?.(p.id); }}
-                  className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${purchased ? 'bg-green-500 border-green-500 text-white' : 'border-neutral-300 dark:border-neutral-700'}`}
+                  className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${purchased ? 'bg-green-500 border-green-500 text-white' : 'border-neutral-300 dark:border-neutral-700'}`}
                  >
-                   {purchased && <i className="fa-solid fa-check text-[8px]"></i>}
+                   {purchased && <i className="fa-solid fa-check text-[10px]"></i>}
                  </button>
                )}
-               {/* Miniatura de imagen al lado del ticker */}
-               <div className="w-8 h-8 rounded-lg bg-white border border-neutral-100 flex items-center justify-center overflow-hidden shrink-0">
+               <div className="w-10 h-10 rounded-lg bg-white border border-neutral-100 flex items-center justify-center overflow-hidden shrink-0">
                   <img src={p.imagen_url || 'https://via.placeholder.com/50?text=N/A'} alt={p.nombre} className="w-full h-full object-contain p-0.5" />
                </div>
             </div>
 
-            <div className="flex-1 flex items-center justify-between pr-3 min-w-0 ml-2">
+            <div className="flex-1 flex items-center justify-between pr-3 min-w-0 ml-3">
               <div className="flex flex-col gap-0 min-w-0">
                 <div className="flex items-center flex-wrap gap-1">
-                  <span className={`font-[800] text-black dark:text-white text-[13px] tracking-tight uppercase font-mono leading-none ${purchased ? 'line-through' : ''}`}>
+                  <span className={`font-[800] text-black dark:text-white text-[14px] tracking-tight uppercase font-mono leading-none ${purchased ? 'line-through' : ''}`}>
                     {p.ticker || p.nombre.substring(0, 5).toUpperCase()}
                   </span>
                   {badges && !purchased && badges.map((b, idx) => (
-                    <span key={idx} className="bg-green-500 text-white text-[6px] font-[900] px-1 py-0.5 rounded-[1px] uppercase leading-none font-sans">
+                    <span key={idx} className="bg-green-500 text-white text-[7px] font-[900] px-1 py-0.5 rounded-[1px] uppercase leading-none font-sans">
                       {b}
                     </span>
                   ))}
                 </div>
-                <span className={`text-[10px] font-medium text-neutral-700 dark:text-neutral-400 line-clamp-1 font-sans mt-0.5 ${purchased ? 'line-through' : ''}`}>
+                <span className={`text-[12px] font-medium text-neutral-700 dark:text-neutral-400 line-clamp-1 font-sans mt-0.5 ${purchased ? 'line-through' : ''}`}>
                   {p.nombre}
                 </span>
               </div>
 
-              <div className="text-right flex flex-col items-end min-w-[75px]">
-                <span className="font-mono font-[800] text-black dark:text-white text-[14px] leading-none">
+              <div className="text-right flex flex-col items-end min-w-[80px]">
+                <span className="font-mono font-[800] text-black dark:text-white text-[15px] leading-none">
                   ${format(p.stats.min)}
                 </span>
-                <span className={`font-mono text-[9px] font-[700] mt-0.5 ${p.stats.trendClass} leading-none`}>
+                <span className={`font-mono text-[10px] font-[700] mt-0.5 ${p.stats.trendClass} leading-none`}>
                   {p.stats.icon} {p.stats.spread}%
                 </span>
               </div>
@@ -137,12 +137,12 @@ const ProductList: React.FC<ProductListProps> = ({
             <div className="flex items-center gap-2">
               {isCartView && onUpdateQuantity && !purchased && (
                 <div 
-                  className="flex items-center bg-neutral-100 dark:bg-neutral-900 px-0.5 rounded-md border border-neutral-200 dark:border-neutral-800"
+                  className="flex items-center bg-neutral-100 dark:bg-neutral-900 px-1 rounded-md border border-neutral-200 dark:border-neutral-800"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button onClick={() => onUpdateQuantity(p.id, -1)} className="text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white px-1 font-black text-[10px]">-</button>
-                  <span className="font-mono text-[9px] font-black min-w-[12px] text-center text-black dark:text-white">{qty}</span>
-                  <button onClick={() => onUpdateQuantity(p.id, 1)} className="text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white px-1 font-black text-[10px]">+</button>
+                  <button onClick={() => onUpdateQuantity(p.id, -1)} className="text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white px-1.5 font-black text-[12px]">-</button>
+                  <span className="font-mono text-[11px] font-black min-w-[14px] text-center text-black dark:text-white">{qty}</span>
+                  <button onClick={() => onUpdateQuantity(p.id, 1)} className="text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white px-1.5 font-black text-[12px]">+</button>
                 </div>
               )}
               
@@ -154,7 +154,7 @@ const ProductList: React.FC<ProductListProps> = ({
                   }}
                   className={`transition-all flex items-center justify-center active:scale-90 p-1.5 ${fav ? 'text-star-gold' : 'text-neutral-300 dark:text-neutral-800'}`}
                 >
-                  <i className="fa-solid fa-cart-shopping text-[15px]"></i>
+                  <i className="fa-solid fa-cart-shopping text-[16px]"></i>
                 </button>
               )}
             </div>

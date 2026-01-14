@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { TabType } from '../types';
 
@@ -58,9 +59,9 @@ const Header: React.FC<HeaderProps> = ({
 
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-4 mr-2">
-            <button onClick={() => onNavigate('about')} className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-black dark:hover:text-white transition-colors">Acerca de</button>
-            <button onClick={() => onNavigate('terms')} className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-black dark:hover:text-white transition-colors">Términos</button>
-            <button onClick={() => onNavigate('contact')} className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-black dark:hover:text-white transition-colors">Contacto</button>
+            <button onClick={() => onNavigate('about')} className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 hover:text-black dark:hover:text-white transition-colors">Acerca de</button>
+            <button onClick={() => onNavigate('terms')} className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 hover:text-black dark:hover:text-white transition-colors">Términos</button>
+            <button onClick={() => onNavigate('contact')} className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 hover:text-black dark:hover:text-white transition-colors">Contacto</button>
           </div>
 
           <div className="relative md:hidden" ref={menuRef}>
@@ -69,9 +70,9 @@ const Header: React.FC<HeaderProps> = ({
             </button>
             {isMenuOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xl p-1 z-50 animate-in fade-in zoom-in duration-200">
-                <button onClick={() => { onNavigate('about'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">Acerca de</button>
-                <button onClick={() => { onNavigate('terms'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">Términos</button>
-                <button onClick={() => { onNavigate('contact'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">Contacto</button>
+                <button onClick={() => { onNavigate('about'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">Acerca de</button>
+                <button onClick={() => { onNavigate('terms'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">Términos</button>
+                <button onClick={() => { onNavigate('contact'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">Contacto</button>
               </div>
             )}
           </div>
@@ -108,13 +109,13 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex gap-2">
           <button 
             onClick={() => setTrendFilter(trendFilter === 'down' ? null : 'down')} 
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-[10px] font-[800] uppercase border transition-all ${trendFilter === 'down' ? 'bg-green-500 text-white border-green-500 shadow-lg shadow-green-500/20' : 'bg-white dark:bg-black text-green-500 border-neutral-100 dark:border-neutral-900'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-[11px] font-[800] uppercase border transition-all ${trendFilter === 'down' ? 'bg-green-500 text-white border-green-500 shadow-lg shadow-green-500/20' : 'bg-white dark:bg-black text-green-500 border-neutral-100 dark:border-neutral-900'}`}
           >
             <i className="fa-solid fa-arrow-trend-down"></i> Precios bajando
           </button>
           <button 
             onClick={() => setTrendFilter(trendFilter === 'up' ? null : 'up')} 
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-[10px] font-[800] uppercase border transition-all ${trendFilter === 'up' ? 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20' : 'bg-white dark:bg-black text-red-500 border-neutral-100 dark:border-neutral-900'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-[11px] font-[800] uppercase border transition-all ${trendFilter === 'up' ? 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20' : 'bg-white dark:bg-black text-red-500 border-neutral-100 dark:border-neutral-900'}`}
           >
             <i className="fa-solid fa-arrow-trend-up"></i> Precios subiendo
           </button>
@@ -123,8 +124,8 @@ const Header: React.FC<HeaderProps> = ({
 
       {showHero && (
         <div className="mt-8 text-center px-4 animate-in fade-in duration-500">
-          <h2 className="text-[20px] font-[800] text-black dark:text-white leading-none tracking-tight font-sans">Los precios del super como nunca los viste</h2>
-          <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-500 font-medium tracking-tight">Analizá tendencias y ahorrá en cada compra.</p>
+          <h2 className="text-[22px] font-[800] text-black dark:text-white leading-none tracking-tight font-sans">Los precios del super como nunca los viste</h2>
+          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-500 font-medium tracking-tight">Analizá tendencias y ahorrá en cada compra.</p>
         </div>
       )}
     </header>
