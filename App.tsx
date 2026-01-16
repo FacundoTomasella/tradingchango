@@ -196,7 +196,19 @@ const App: React.FC = () => {
   }, [products, history, currentTab, searchTerm, trendFilter, favorites]);
 
   const toggleFavorite = (id: number) => {
-    if (!user) { setIsAuthOpen(true); return; }
+    if (!user) {
+      setIsAuthOpen(true);
+      return;
+    }
+
+    const isPro = profile?.subscription_tier === 'PRO';
+    const favoritesCount = Object.keys(favorites).length;
+
+    if (!isPro && favoritesCount >= 5 && !favorites[id]) {
+      alert('Los usuarios FREE solo pueden tener hasta 5 productos en favoritos.');
+      return;
+    }
+
     setFavorites(prev => {
       const next = { ...prev };
       if (next[id]) {
@@ -204,7 +216,9 @@ const App: React.FC = () => {
         const newPurchased = new Set(purchasedItems);
         newPurchased.delete(id);
         setPurchasedItems(newPurchased);
-      } else next[id] = 1;
+      } else {
+        next[id] = 1;
+      }
       return next;
     });
   };
@@ -264,7 +278,7 @@ const App: React.FC = () => {
   if (loading && products.length === 0) return <div className="min-h-screen flex items-center justify-center dark:bg-black dark:text-white font-mono text-[11px] uppercase tracking-[0.2em]">Cargando...</div>;
 
   return (
-    <div className="max-w-screen-md mx-auto min-h-screen bg-white dark:bg-black shadow-2xl transition-colors font-sans">
+    <div className="max-w-screen-md mx-auto min-h-screen bg-white dark:bg-black shadow-2xl transition-colors font-sans pb-24">
       {showPwaPill && (
         <div onClick={handleInstallClick} className="fixed bottom-[80px] left-1/2 -translate-x-1/2 z-[1000] bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full flex items-center gap-2 shadow-2xl cursor-pointer">
           <span className="text-[10px] font-[800] uppercase tracking-wider">Instalar App 🛒</span>
@@ -278,7 +292,7 @@ const App: React.FC = () => {
         showHero={currentTab === 'home' && !searchTerm && !trendFilter}
         onNavigate={navigateTo} currentTab={currentTab}
       />
-      <main className="pb-16">
+      <main>
         {['home', 'carnes', 'verdu', 'varios', 'favs'].includes(currentTab) ? (
           <>
             {currentTab === 'favs' && filteredProducts.length > 0 && (
