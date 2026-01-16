@@ -2,7 +2,7 @@ import React from 'react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="mt-2 mb-1 px-4 py-6 border-t border-neutral-100 dark:border-neutral-900">
+    <footer className="mt-4 mb-6 px-4 py-6 border-t border-neutral-100 dark:border-neutral-900">
       <div className="flex flex-col items-center text-center">
         <div className="flex justify-center w-full max-w-screen-md mx-auto mb-4 text-xs gap-8">
           <a href="https://linktr.ee/facutom" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white">
