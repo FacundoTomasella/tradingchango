@@ -201,7 +201,7 @@ const App: React.FC = () => {
       return;
     }
 
-    const isPro = profile?.subscription_tier === 'PRO';
+    const isPro = profile?.subscription_end === 'PRO';
     const favoritesCount = Object.keys(favorites).length;
 
     if (!isPro && favoritesCount >= 5 && !favorites[id]) {
