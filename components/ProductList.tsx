@@ -158,7 +158,7 @@ const ProductList: React.FC<ProductListProps> = ({
                   className={`transition-all flex items-center justify-center active:scale-90 p-1.5 ${fav ? 'text-star-gold' : 'text-neutral-300 dark:text-neutral-800'}`}
                   style={{ transform: 'scale(0.95)' }}
                 >
-                  <i className="fa-solid fa-cart-shopping text-[22px]"></i>
+                  <i className="fa-solid fa-cart-shopping text-[20px]"></i>
                 </button>
               )}
             </div>

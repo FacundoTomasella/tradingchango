@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 1. Variables de Identidad */
+:root {
+    --trading-green: #00a650;
+    --text-main-light: #131722;
+    --text-main-dark: #ffffff;
+}
+
+/* 2. Estructura del Logo (Referencia Imagen 88f946) */
+.logo {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 24px !important;
+    letter-spacing: -1.2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    text-decoration: none !important;
+    user-select: none;
+    /* Color dinámico según el tema */
+    color: var(--text-main-light) !important;
+}
+
+/* Modo Oscuro: Texto a blanco */
+.dark .logo {
+    color: var(--text-main-dark) !important;
+}
+
+/* 3. El icono compuesto (Carrito + Flecha) */
+.logo-icon-wrapper {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Carrito principal */
+.fa-cart-shopping {
+    font-size: 20px !important;
+    color: inherit !important; /* Hereda el blanco o negro del padre .logo */
+}
+
+/* La flecha verde (Trend Icon) */
+.trend-icon-overlay {
+    position: absolute !important;
+    top: -5px !important;
+    right: -7px !important;
+    font-size: 13px !important;
+    color: var(--trading-green) !important;
+    /* Fondo para separar la flecha del carrito */
+    background-color: white !important;
+    border-radius: 50% !important;
+    padding: 1px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Ajuste de fondo de la flecha en Modo Oscuro */
+.dark .trend-icon-overlay {
+    background-color: #000000 !important;
+}
