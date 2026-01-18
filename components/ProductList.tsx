@@ -125,7 +125,7 @@ const ProductList: React.FC<ProductListProps> = ({
               </div>
 
               <div className="text-right flex flex-col items-end min-w-[80px]">
-                <span className="font-mono font-[800] text-black dark:text-white text-[17px] leading-none">
+                <span className="font-mono font-[800] text-black dark:text-white text-[15px] leading-none">
                   ${format(p.stats.min)}
                 </span>
                 <span 

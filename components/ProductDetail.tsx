@@ -158,7 +158,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm md:p-4">
       <div 
         ref={modalRef}
-        className="w-full max-w-lg h-full md:h-auto md:max-h-[95vh] bg-white dark:bg-neutral-950 md:rounded-[1.2rem] overflow-y-auto no-scrollbar shadow-2xl relative"
+        className="w-full max-w-lg h-full md:h-auto md:max-h-[95vh] bg-white dark:bg-neutral-950 md:rounded-[1.2rem] overflow-y-auto shadow-2xl relative"
       >
         {/* Header */}
         <div className="sticky top-0 z-20 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-neutral-100 dark:border-neutral-900">
