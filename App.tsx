@@ -34,33 +34,34 @@ const App: React.FC = () => {
   );
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-      document.documentElement.classList.add('dark');
-      setTheme('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      setTheme('light');
+  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
+
+  if (savedTheme === 'dark') {
+    document.documentElement.classList.add('dark');
+    setTheme('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+    setTheme('light');
+  }
+
+  const handleHash = () => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash.startsWith('product/')) {
+      const id = parseInt(hash.split('/')[1]);
+      if (!isNaN(id)) setSelectedProductId(id);
+    } else if (['about', 'terms', 'contact', 'home', 'carnes', 'verdu', 'varios', 'favs'].includes(hash)) {
+      setCurrentTab(hash as TabType);
+      setSelectedProductId(null);
+    } else if (!hash) {
+      window.location.hash = 'home';
     }
+  };
 
-    const handleHash = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash.startsWith('product/')) {
-        const id = parseInt(hash.split('/')[1]);
-        if (!isNaN(id)) setSelectedProductId(id);
-      } else if (['about', 'terms', 'contact', 'home', 'carnes', 'verdu', 'varios', 'favs'].includes(hash)) {
-        setCurrentTab(hash as TabType);
-        setSelectedProductId(null);
-      } else if (!hash) {
-        window.location.hash = 'home';
-      }
-    };
+  window.addEventListener('hashchange', handleHash);
+  handleHash();
+  return () => window.removeEventListener('hashchange', handleHash);
+}, []);
 
-    window.addEventListener('hashchange', handleHash);
-    handleHash();
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: any) => {
