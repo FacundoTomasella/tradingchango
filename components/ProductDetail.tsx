@@ -219,7 +219,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
               <button 
                 key={d} 
                 onClick={() => setDays(d)}
-                className={`min-w-[48px] py-2 px-2 text-[10px] font-black rounded-md transition-all border ${days === d ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-500'}`}
+                className={`min-w-[48px] py-2 px-2 text-[10px] font-black rounded-md transition-all ${
+    days === d
+      ? 'bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white'
+      : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-500 dark:text-white'
+}`}
               >
                 {d < 30 ? `${d}D` : d < 365 ? `${Math.floor(d / 30)}M` : '1Y'}
               </button>
