@@ -110,7 +110,7 @@ const ProductList: React.FC<ProductListProps> = ({
             <div className="flex-1 flex items-center justify-between pr-2 min-w-0 ml-3">
               <div className="flex flex-col gap-0 min-w-0">
                 <div className="flex items-center flex-wrap gap-1">
-                  <span className={`font-[800] text-black dark:text-white text-[16px] tracking-tight uppercase font-mono leading-none ${purchased ? 'line-through' : ''}`}>
+                  <span className={`font-[800] text-black dark:text-white text-[14px] tracking-tight uppercase font-mono leading-none ${purchased ? 'line-through' : ''}`}>
                     {p.ticker || p.nombre.substring(0, 5).toUpperCase()}
                   </span>
                   {badges && !purchased && badges.map((b, idx) => (
@@ -119,7 +119,7 @@ const ProductList: React.FC<ProductListProps> = ({
                     </span>
                   ))}
                 </div>
-                <span className={`text-[16px] font-medium text-neutral-700 dark:text-neutral-400 line-clamp-1 font-sans mt-0.5 ${purchased ? 'line-through' : ''}`}>
+                <span className={`text-[14px] font-medium text-neutral-700 dark:text-neutral-400 line-clamp-1 font-sans mt-0.5 ${purchased ? 'line-through' : ''}`}>
                   {p.nombre}
                 </span>
               </div>
