@@ -157,8 +157,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-      <div ref={modalRef} className="bg-white dark:bg-black w-full max-w-sm rounded-[1.5rem] p-6 relative shadow-2xl border border-neutral-200 dark:border-neutral-800 max-h-[85vh] overflow-y-auto no-scrollbar">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-primary/80 backdrop-blur-sm animate-in fade-in">
+      <div ref={modalRef} className="bg-white dark:bg-primary w-full max-w-sm rounded-[1.5rem] p-6 relative shadow-2xl border border-neutral-200 dark:border-neutral-800 max-h-[85vh] overflow-y-auto no-scrollbar">
         <button onClick={onClose} className="absolute top-5 right-5 text-neutral-400 text-xl">&times;</button>
         
         {success && <div className="mb-4 p-3 bg-green-500/10 text-green-500 text-[11px] font-bold rounded-xl text-center">{success}</div>}
@@ -168,7 +168,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           <div className="text-center py-4">
             <h2 className="text-2xl font-black mb-1 dark:text-white tracking-tighter">TradingChango</h2>
             <p className="text-neutral-400 text-[10px] font-black uppercase tracking-widest mb-8">Unite al ahorro inteligente</p>
-            <button onClick={() => { setMode('register'); setView('form'); }} className="w-full bg-black dark:bg-white dark:text-black text-white py-3.5 rounded-xl font-bold mb-3 shadow-lg">Crear Cuenta</button>
+            <button onClick={() => { setMode('register'); setView('form'); }} className="w-full bg-primary dark:bg-white dark:text-black text-white py-3.5 rounded-xl font-bold mb-3 shadow-lg">Crear Cuenta</button>
             <button onClick={() => { setMode('login'); setView('form'); }} className="w-full border border-neutral-200 dark:border-neutral-800 py-3.5 rounded-xl font-bold dark:text-white">Iniciar Sesión</button>
           </div>
         )}
@@ -239,7 +239,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                       <p className="text-[9px] text-neutral-400 font-bold uppercase">{Object.keys(cart.items).length} productos</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => { onLoadCart?.(idx); onClose(); }} className="w-8 h-8 rounded-lg bg-black dark:bg-white text-white dark:text-black flex items-center justify-center text-[11px] hover:scale-110 transition-transform">
+                      <button onClick={() => { onLoadCart?.(idx); onClose(); }} className="w-8 h-8 rounded-lg bbg-primary dark:bg-white text-white dark:text-black flex items-center justify-center text-[11px] hover:scale-110 transition-transform">
                         <i className="fa-solid fa-upload"></i>
                       </button>
                       <button onClick={() => onDeleteCart?.(idx)} className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center text-[11px] hover:scale-110 transition-transform">
@@ -297,7 +297,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               ))}
             </div>
-            <button onClick={() => setView('profile')} className="w-full bg-black dark:bg-white dark:text-black text-white py-3.5 rounded-xl font-black mt-6 uppercase text-[10px] tracking-widest shadow-xl">Guardar Selección</button>
+            <button onClick={() => setView('profile')} className="w-full bg-primary dark:bg-white dark:text-black text-white py-3.5 rounded-xl font-black mt-6 uppercase text-[10px] tracking-widest shadow-xl">Guardar Selección</button>
           </div>
         )}
       </div>

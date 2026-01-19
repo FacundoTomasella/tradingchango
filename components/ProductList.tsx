@@ -91,7 +91,7 @@ const ProductList: React.FC<ProductListProps> = ({
           <div 
             key={p.id} 
             onClick={() => onProductClick(p.id)}
-            className={`flex items-center justify-between px-3 py-2 bg-white dark:bg-black hover:bg-neutral-50 dark:hover:bg-neutral-900/30 cursor-pointer transition-all ${purchased ? 'opacity-30 grayscale' : ''}`}
+            className={`flex items-center justify-between px-3 py-2 bg-white dark:bg-primary hover:bg-neutral-50 dark:hover:bg-neutral-900/30 cursor-pointer transition-all ${purchased ? 'opacity-30 grayscale' : ''}`}
           >
             <div className="flex items-center gap-3 shrink-0">
                {isCartView && (

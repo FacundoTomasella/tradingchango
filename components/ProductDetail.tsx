@@ -155,22 +155,23 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm md:p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm md:p-4">
       <div 
       ref={modalRef}
-      className="w-full max-w-lg h-auto max-h-full md:max-h-[95vh] bg-white dark:bg-neutral-950 md:rounded-[1.2rem] overflow-y-auto shadow-2xl relative"
+      /* CAMBIO: Fondo principal a dark:bg-primary (#0b141a) */
+      className="w-full max-w-lg h-auto max-h-full md:max-h-[95vh] bg-white dark:bg-primary md:rounded-[1.2rem] overflow-y-auto shadow-2xl relative"
          >
-        {/* Header */}
-        <div className="sticky top-0 z-20 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-neutral-100 dark:border-neutral-900">
-          <button onClick={onClose} className="text-black dark:text-white p-2">
+        {/* Header Modal */}
+        <div className="sticky top-0 z-20 bg-white/95 dark:bg-primary/95 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-neutral-100 dark:border-[#233138]">
+          <button onClick={onClose} className="text-black dark:text-[#e9edef] p-2">
             <i className="fa-solid fa-arrow-left text-xl"></i>
           </button>
-          <span className="text-xs font-black tracking-widest text-black dark:text-white uppercase">{ticker}</span>
+          <span className="text-xs font-black tracking-widest text-black dark:text-[#e9edef] uppercase">{ticker}</span>
           <div className="flex items-center gap-2">
-            <button onClick={handleShare} className="text-black dark:text-white p-2">
+            <button onClick={handleShare} className="text-black dark:text-[#e9edef] p-2">
               <i className="fa-solid fa-share-nodes text-lg"></i>
             </button>
-            <button onClick={() => onFavoriteToggle(product.id)} className={`text-xl ${isFavorite ? 'text-star-gold' : 'text-black dark:text-white'}`}>
+            <button onClick={() => onFavoriteToggle(product.id)} className={`text-xl ${isFavorite ? 'text-star-gold' : 'text-black dark:text-[#e9edef]'}`}>
               <i className="fa-solid fa-cart-shopping"></i>
             </button>
           </div>
@@ -183,12 +184,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
               <img src={product.imagen_url || ''} alt={product.nombre} className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col flex-1">
-              <h1 className="text-xl md:text-2xl font-black text-black dark:text-white leading-tight mb-1 tracking-tighter">
+              <h1 className="text-xl md:text-2xl font-black text-black dark:text-[#e9edef] leading-tight mb-1 tracking-tighter">
                 {product.nombre}
               </h1>
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-2 mb-0.5">
-                  <span className="text-xs font-black text-black dark:text-white uppercase tracking-widest">
+                  <span className="text-xs font-black text-black dark:text-[#e9edef] uppercase tracking-widest">
                     Mejor precio hoy en {minStore}
                   </span>
                   <a href={minStoreUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500">
@@ -197,21 +198,22 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                 </div>
                 <div className="flex items-end gap-2">
                   <div className="flex items-baseline gap-0.5">
-                    <span className="text-base font-bold text-black dark:text-white">$</span>
-                    <span className="text-3xl md:text-5xl font-black text-black dark:text-white tracking-tighter font-mono leading-none">
+                    <span className="text-base font-bold text-black dark:text-[#e9edef]">$</span>
+                    <span className="text-3xl md:text-5xl font-black text-black dark:text-[#e9edef] tracking-tighter font-mono leading-none">
                       {formatCurrency(minPrice)}
                     </span>
                   </div>
-                  <div className="flex items-baseline gap-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 py-1 rounded-md mb-0.5">
-                    <span className="text-[9px] font-bold text-neutral-600 dark:text-neutral-300 uppercase">Promedio:</span>
-                    <span className="text-[13px] font-black text-black dark:text-white font-mono">$ {formatCurrency(Math.round(avgPrice))}</span>
+                  {/* Promedio con fondo de "burbuja" */}
+                  <div className="flex items-baseline gap-1 bg-neutral-100 dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] px-2 py-1 rounded-md mb-0.5">
+                    <span className="text-[9px] font-bold text-neutral-600 dark:text-neutral-400 uppercase">Promedio:</span>
+                    <span className="text-[13px] font-black text-black dark:text-[#e9edef] font-mono">$ {formatCurrency(Math.round(avgPrice))}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <hr className="w-full border-neutral-100 dark:border-neutral-900 mb-3" />
+          <hr className="w-full border-neutral-100 dark:border-[#233138] mb-3" />
 
           {/* Selectores de dias */}
           <div className="w-full flex justify-center gap-1 mb-3 overflow-x-auto no-scrollbar pb-1">
@@ -221,8 +223,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                 onClick={() => setDays(d)}
                 className={`min-w-[48px] py-2 px-2 text-[10px] font-black rounded-md transition-all ${
     days === d
-      ? 'bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white'
-      : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-500 dark:text-white'
+      ? 'bg-primary text-white dark:bg-white dark:text-black border border-black dark:border-white'
+      : 'bg-neutral-50 dark:bg-[#1f2c34] text-neutral-500 dark:text-[#8696a0]'
 }`}
               >
                 {d < 30 ? `${d}D` : d < 365 ? `${Math.floor(d / 30)}M` : '1Y'}
@@ -235,9 +237,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
             <div className="flex flex-col items-center text-center mb-2">
               <div className="flex items-center gap-1.5">
                  <span className={`text-xs font-black px-1.5 py-0.5 rounded-md ${isTrendUp ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
-                   {isTrendUp ? '▲' : '▼'} {Math.abs(percentageChange).toFixed(1)}%
+                    {isTrendUp ? '▲' : '▼'} {Math.abs(percentageChange).toFixed(1)}%
                  </span>
-                 <span className="text-[10px] font-bold text-neutral-600 dark:text-neutral-300 uppercase tracking-widest">
+                 <span className="text-[10px] font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-widest">
                   Variación en {days} días</span>
               </div>
             </div>
@@ -252,48 +254,42 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                         <stop offset="95%" stopColor={trendColor} stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGridComponent vertical={false} strokeDasharray="3 3" stroke={theme === 'dark' ? '#262626' : '#f0f0f0'} />
-                    <XAxisComponent dataKey="date" tickLine={false} axisLine={false} interval="preserveStartEnd" tick={{ fontSize: 8, fill: theme === 'dark' ? '#e5e5e5' : '#737373' }} tickFormatter={(value: string, index: number) => { const total = chartData.length; const middle = Math.floor(total / 2); if (index === 0 || index === middle || index === total - 1) { return value; } return ''; }} />
-                    <YAxisComponent orientation="right" width={36} axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: theme === 'dark' ? '#e5e5e5' : '#737373' }} domain={['auto', 'auto']} tickFormatter={(val: number) => `$${formatCurrency(val)}`} />
+                    <CartesianGridComponent vertical={false} strokeDasharray="3 3" stroke={theme === 'dark' ? '#233138' : '#f0f0f0'} />
+                    <XAxisComponent dataKey="date" tickLine={false} axisLine={false} interval="preserveStartEnd" tick={{ fontSize: 8, fill: theme === 'dark' ? '#8696a0' : '#737373' }} />
+                    <YAxisComponent orientation="right" width={36} axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: theme === 'dark' ? '#8696a0' : '#737373' }} domain={['auto', 'auto']} tickFormatter={(val: number) => `$${formatCurrency(val)}`} />
                     <TooltipComponent content={<CustomTooltip />} />
                     <AreaComponent type="monotone" dataKey="price" stroke={trendColor} strokeWidth={2} fill="url(#colorPrice)" />
                   </AreaChartComponent>
                 </ResponsiveContainerComponent>
               ) : (
-                <div className="h-full flex items-center justify-center text-[10px] text-neutral-400 font-bold uppercase border border-dashed rounded-xl">Sin datos suficientes</div>
+                <div className="h-full flex items-center justify-center text-[10px] text-neutral-400 font-bold uppercase border border-dashed border-[#233138] rounded-xl">Sin datos suficientes</div>
               )}
             </div>
           </div>
 
-          {/* Tabla Comparativa (Misma estructura que tu imagen 1) */}
-          <div className="w-full border border-neutral-100 dark:border-neutral-800 rounded-lg overflow-hidden mb-4">
-            <div className="w-full flex items-center justify-between p-2.5 bg-neutral-50 dark:bg-neutral-900/50">
-              <span className="text-[12px] font-black uppercase tracking-[0.1em] text-black dark:text-white">Comparativa por Mercado</span>
+          {/* Tabla Comparativa */}
+          <div className="w-full border border-neutral-100 dark:border-[#233138] rounded-lg overflow-hidden mb-4">
+            <div className="w-full flex items-center justify-between p-2.5 bg-neutral-50 dark:bg-[#1f2c34]/50">
+              <span className="text-[12px] font-black uppercase tracking-[0.1em] text-black dark:text-[#e9edef]">Comparativa por Mercado</span>
             </div>
-            <div className="px-3 py-2 space-y-2 bg-white dark:bg-neutral-950">
+            <div className="px-3 py-2 space-y-2 bg-white dark:bg-primary">
               {STORES.map((s) => {
                 const price = (product as any)[s.key];
                 const url = (product as any)[s.url];
-                const storeKey = s.key.substring(2);
-                const promo = (product as any).oferta_gondola?.[storeKey]?.etiqueta;
                 if (!price || price <= 0) return null;
                 
-                const storeColors: any = { COTO: 'bg-red-500', CARREFOUR: 'bg-blue-500', DIA: 'bg-red-500', JUMBO: 'bg-green-500', 'MAS ONLINE': 'bg-green-500' };
-
                 return (
-                  <div key={s.name} className="flex items-center justify-between py-1.5 border-b border-neutral-50 dark:border-neutral-900 last:border-0">
+                  <div key={s.name} className="flex items-center justify-between py-1.5 border-b border-neutral-50 dark:border-[#233138] last:border-0">
                     <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${storeColors[s.name]}`}></span>
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-[13px] font-black text-black dark:text-white uppercase">{s.name}</span>
-                        {promo && <span className="bg-green-600 text-white text-[9px] font-black px-1 py-0.5 rounded-[1px] uppercase leading-none">{promo}</span>}
+                        <span className="text-[13px] font-black text-black dark:text-[#e9edef] uppercase">{s.name}</span>
                       </div>
                     </div>
                       <a 
                       href={url || '#'} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className={`text-base font-mono font-black hover:underline cursor-pointer ${price === minPrice ? 'text-green-500' : 'text-black dark:text-white'}`}
+                      className={`text-base font-mono font-black hover:underline cursor-pointer ${price === minPrice ? 'text-green-500' : 'text-black dark:text-[#e9edef]'}`}
                     >
                       ${formatCurrency(price)}
                     </a>
@@ -304,10 +300,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
           </div>
 
           {/* Boton Fijo */}
-            <div className="w-full sticky bottom-0 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md pt-2 pb-6 md:pb-4 px-4">
+            <div className="w-full sticky bottom-0 bg-white/95 dark:bg-primary/95 backdrop-blur-md pt-2 pb-6 md:pb-4 px-4">
             <button 
               onClick={() => onFavoriteToggle(product.id)} 
-              className={`w-full py-3.5 rounded-lg font-black uppercase tracking-[0.1em] text-xs flex items-center justify-center gap-2 active:scale-95 transition-all ${isFavorite ? 'bg-star-gold text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}
+              className={`w-full py-3.5 rounded-lg font-black uppercase tracking-[0.1em] text-xs flex items-center justify-center gap-2 active:scale-95 transition-all ${isFavorite ? 'bg-star-gold text-white' : 'bg-primary dark:bg-[#e9edef] text-white dark:text-black border dark:border-[#e9edef]'}`}
             >
               <i className="fa-solid fa-cart-shopping"></i>
               {isFavorite ? 'En el Chango' : 'Añadir al Chango'}

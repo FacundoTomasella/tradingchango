@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({
   const isPro = profile?.subscription === 'pro' && profile.subscription_end && new Date(profile.subscription_end) > new Date();
 
   return (
-    <header className="sticky top-0 z-40 bg-white dark:bg-black p-4 border-b border-neutral-100 dark:border-neutral-900">
+    <header className="sticky top-0 z-40 bg-white dark:bg-primary p-4 border-b border-neutral-100 dark:border-[#233138]">
       <div className="flex justify-between items-center mb-4">
         <div className="logo-link" onClick={() => onNavigate('home')}>
           <div className="logo">
@@ -61,28 +61,28 @@ const Header: React.FC<HeaderProps> = ({
 
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-4 mr-2">
-            <button onClick={() => onNavigate('about')} className="text-[11px] font-bold uppercase tracking-widest text-black dark:text-white hover:opacity-70 transition-colors">Acerca de</button>
-            <button onClick={() => onNavigate('terms')} className="text-[11px] font-bold uppercase tracking-widest text-black dark:text-white hover:opacity-70 transition-colors">Términos</button>
-            <button onClick={() => onNavigate('contact')} className="text-[11px] font-bold uppercase tracking-widest text-black dark:text-white hover:opacity-70 transition-colors">Contacto</button>
+            <button onClick={() => onNavigate('about')} className="text-[11px] font-bold uppercase tracking-widest text-black dark:text-[#e9edef] hover:opacity-70 transition-colors">Acerca de</button>
+            <button onClick={() => onNavigate('terms')} className="text-[11px] font-bold uppercase tracking-widest text-black dark:text-[#e9edef] hover:opacity-70 transition-colors">Términos</button>
+            <button onClick={() => onNavigate('contact')} className="text-[11px] font-bold uppercase tracking-widest text-black dark:text-[#e9edef] hover:opacity-70 transition-colors">Contacto</button>
           </div>
 
           <div className="relative md:hidden" ref={menuRef}>
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="w-8 h-8 flex items-center justify-center text-black dark:text-white">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="w-8 h-8 flex items-center justify-center text-black dark:text-[#e9edef]">
               <i className="fa-solid fa-circle-info text-xl"></i>
             </button>
             {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xl p-1 z-50 animate-in fade-in zoom-in duration-200">
-                <button onClick={() => { onNavigate('about'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">Acerca de</button>
-                <button onClick={() => { onNavigate('terms'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">Términos</button>
-                <button onClick={() => { onNavigate('contact'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">Contacto</button>
+              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] rounded-xl shadow-xl p-1 z-50 animate-in fade-in zoom-in duration-200">
+                <button onClick={() => { onNavigate('about'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-[#e9edef] hover:bg-neutral-50 dark:hover:bg-[#233138] rounded-lg">Acerca de</button>
+                <button onClick={() => { onNavigate('terms'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-[#e9edef] hover:bg-neutral-50 dark:hover:bg-[#233138] rounded-lg">Términos</button>
+                <button onClick={() => { onNavigate('contact'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-[#e9edef] hover:bg-neutral-50 dark:hover:bg-[#233138] rounded-lg">Contacto</button>
               </div>
             )}
           </div>
 
-          <button onClick={onUserClick} className="w-8 h-8 flex items-center justify-center text-black dark:text-white">
+          <button onClick={onUserClick} className="w-8 h-8 flex items-center justify-center text-black dark:text-[#e9edef]">
             <i className={`fa-solid fa-circle-user text-xl ${isPro ? 'text-green-600' : ''}`}></i>
           </button>
-          <button onClick={toggleTheme} className="text-black dark:text-white hover:opacity-70 transition-opacity">
+          <button onClick={toggleTheme} className="text-black dark:text-[#e9edef] hover:opacity-70 transition-opacity">
             <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-xl`}></i>
           </button>
         </div>
@@ -95,7 +95,8 @@ const Header: React.FC<HeaderProps> = ({
           placeholder="BUSCAR PRODUCTO..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg py-3 pl-12 pr-10 text-sm font-medium focus:outline-none transition-all text-black dark:text-white placeholder:text-neutral-500"
+          /* CAMBIO: bg-neutral-900 por #1f2c34 y borde por #233138 */
+          className="w-full bg-neutral-50 dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] rounded-lg py-3 pl-12 pr-10 text-sm font-medium focus:outline-none transition-all text-black dark:text-[#e9edef] placeholder:text-neutral-500"
         />
         {searchTerm && (
           <button 
@@ -111,13 +112,14 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex gap-2">
           <button 
             onClick={() => setTrendFilter(trendFilter === 'down' ? null : 'down')} 
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-[11px] font-[800] uppercase border transition-all ${trendFilter === 'down' ? 'bg-green-600 text-white border-green-600 shadow-lg shadow-green-600/20' : 'bg-white dark:bg-black text-green-600 border-neutral-100 dark:border-neutral-900'}`}
+            /* CAMBIO: dark:bg-primary y dark:border-[#233138] */
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-[11px] font-[800] uppercase border transition-all ${trendFilter === 'down' ? 'bg-green-600 text-white border-green-600 shadow-lg shadow-green-600/20' : 'bg-white dark:bg-primary text-green-600 border-neutral-100 dark:border-[#233138]'}`}
           >
             <i className="fa-solid fa-arrow-trend-down"></i> Precios bajando
           </button>
           <button 
             onClick={() => setTrendFilter(trendFilter === 'up' ? null : 'up')} 
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-[11px] font-[800] uppercase border transition-all ${trendFilter === 'up' ? 'bg-red-600 text-white border-red-600 shadow-lg shadow-red-600/20' : 'bg-white dark:bg-black text-red-600 border-neutral-100 dark:border-neutral-900'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-[11px] font-[800] uppercase border transition-all ${trendFilter === 'up' ? 'bg-red-600 text-white border-red-600 shadow-lg shadow-red-600/20' : 'bg-white dark:bg-primary text-red-600 border-neutral-100 dark:border-[#233138]'}`}
           >
             <i className="fa-solid fa-arrow-trend-up"></i> Precios subiendo
           </button>

@@ -118,14 +118,15 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
 
   return (
     <div className="p-4 space-y-2 animate-in fade-in duration-700">
-      <div className="bg-white dark:bg-neutral-950 border-[3px] border-black dark:border-white rounded-2xl p-4 shadow-xl relative">
+      {/* Tarjeta Principal: Mejor Opción */}
+      <div className="bg-white dark:bg-primary border-[3px] border-black dark:border-[#e9edef] rounded-2xl p-4 shadow-xl relative">
         <div className="flex flex-col gap-3 relative z-10">
           
           <div className="flex flex-col items-center gap-2 text-center">
-            <span className="text-black dark:text-white text-xs font-black uppercase tracking-[0.15em]">Mejor opción:</span>
+            <span className="text-black dark:text-[#8696a0] text-xs font-black uppercase tracking-[0.15em]">Tu Mejor opción</span>
             
             <div className="flex items-baseline justify-center gap-6 w-full">
-              <h2 className="text-xl font-black text-black dark:text-white uppercase tracking-tighter leading-none flex items-center gap-2">
+              <h2 className="text-xl font-black text-black dark:text-[#e9edef] uppercase tracking-tighter leading-none flex items-center gap-2">
                 <i className="fa-solid fa-trophy text-star-gold text-lg animate-bounce"></i>
                 {best.name}
               </h2>
@@ -135,21 +136,22 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
               </div>
             </div>
 
-            <div className="border-t border-neutral-100 dark:border-neutral-800 pt-2 w-full mt-2">
-              <span className="text-[10px] font-black uppercase text-neutral-500 tracking-[0.15em] block mb-1">Total Estimado:*</span>
-              <div className="text-4xl font-black text-black dark:text-white tracking-tighter font-mono leading-none">
+            <div className="border-t border-neutral-100 dark:border-[#233138] pt-2 w-full mt-2">
+              <span className="text-[10px] font-black uppercase text-neutral-500 dark:text-[#8696a0] tracking-[0.15em] block mb-1">Total Estimado:*</span>
+              <div className="text-4xl font-black text-black dark:text-[#e9edef] tracking-tighter font-mono leading-none">
                 ${format(Math.round(best.totalChango))}
               </div>
             </div>
           </div>
 
-          <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-3 space-y-1.5">
+          {/* Desglose con fondo tipo burbuja de chat */}
+          <div className="bg-neutral-50 dark:bg-[#1f2c34] rounded-xl p-3 space-y-1.5 border dark:border-[#233138]">
             <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-tight">
-              <span className="text-black dark:text-white">Subtotal:</span>
-              <span className="text-black dark:text-white font-mono">${format(Math.round(best.subtotal))}</span>
+              <span className="text-black dark:text-[#e9edef]">Subtotal:</span>
+              <span className="text-black dark:text-[#e9edef] font-mono">${format(Math.round(best.subtotal))}</span>
             </div>
             <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-tight">
-              <span className="text-black dark:text-white">Descuentos:</span>
+              <span className="text-black dark:text-[#e9edef]">Descuentos:</span>
               <span className="text-green-500 font-mono">-$ {format(Math.round(best.gondolaDiscount))}</span>
             </div>
           </div>
@@ -157,9 +159,9 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
           <div className="space-y-2 pt-1">
             <div className="flex gap-2">
               {paymentAdvice?.owned && (
-                <div className="flex-1 flex items-center gap-2 text-left bg-green-500/5 dark:bg-green-500/10 p-2.5 rounded-lg border border-green-500/10">
+                <div className="flex-1 flex items-center gap-2 text-left bg-green-500/5 dark:bg-green-500/10 p-2.5 rounded-lg border border-green-500/10 dark:border-green-500/20">
                   <i className="fa-solid fa-circle-check text-green-500 text-xs"></i>
-                  <p className="text-[10px] font-black uppercase text-black dark:text-white leading-tight">
+                  <p className="text-[10px] font-black uppercase text-black dark:text-[#e9edef] leading-tight">
                     Con {paymentAdvice.owned.entidad_nombre} ahorrás hasta <span className="text-green-500">{paymentAdvice.owned.descuento}%</span>*
                   </p>
                 </div>
@@ -182,7 +184,7 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
                 </a>
               )}
             </div>
-            <p className="text-[8px] text-black dark:text-white text-center pt-2">
+            <p className="text-[9px] text-black dark:text-[#8696a0] text-center pt-2">
               *Valores estimados. La aplicación de beneficios y el precio final en caja dependen exclusivamente de las condiciones vigentes de cada comercio y entidad emisora.
             </p>
           </div>
@@ -190,11 +192,12 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
         </div>
       </div>
 
+      {/* Otros Mercados */}
       {others.length > 0 && (
         <div className="px-1">
           <button 
             onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full flex items-center justify-between text-xs text-black dark:text-white uppercase tracking-tight py-1.5"
+            className="w-full flex items-center justify-between text-xs text-black dark:text-[#e9edef] uppercase tracking-tight py-1.5"
           >
             <span>Otros mercados ({others.length})</span>
             <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} transition-transform text-xs`}></i>
@@ -203,11 +206,11 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
           {isExpanded && (
             <div className="mt-1 space-y-1 animate-in slide-in-from-top-1 duration-300">
               {others.map((store) => (
-                <div key={store.name} className="flex justify-between items-center py-2 px-4 bg-neutral-50/50 dark:bg-neutral-900/50 rounded-lg border border-neutral-100 dark:border-neutral-800">
-                  <span className="text-[10px] font-black text-neutral-600 dark:text-neutral-400 uppercase">{store.name}</span>
+                <div key={store.name} className="flex justify-between items-center py-2 px-4 bg-neutral-50/50 dark:bg-[#1f2c34] rounded-lg border border-neutral-100 dark:border-[#233138]">
+                  <span className="text-[12px] font-black text-neutral-600 dark:text-[#8696a0] uppercase">{store.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-bold text-red-500 font-mono">+${format(Math.round(store.totalChango - best.totalChango))}</span>
-                    <span className="font-mono text-[12px] font-black text-black dark:text-white">${format(Math.round(store.totalChango))}</span>
+                    <span className="text-[10px] font-bold text-red-500 font-mono">+${format(Math.round(store.totalChango - best.totalChango))}</span>
+                    <span className="font-mono text-[12px] font-black text-black dark:text-[#e9edef]">${format(Math.round(store.totalChango))}</span>
                   </div>
                 </div>
               ))}
@@ -216,58 +219,79 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
         </div>
       )}
 
-      <div className="px-1 mt-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <h4 className="text-xs text-black dark:text-white uppercase tracking-tight">
-              Mis Listas
-            </h4>
-            {canSave && !showSaveInput && (
-              <button
-                onClick={() => setShowSaveInput(true)}
-                className="w-5 h-5 bg-black dark:bg-white text-white dark:text-black rounded-md flex items-center justify-center"
-              >
-                <i className="fa-solid fa-plus text-[9px]"></i>
-              </button>
-            )}
-          </div>
-        </div>
-        {showSaveInput && onSaveCart && (
-          <div className="mt-2 flex gap-2">
-            <input
-              type="text"
-              placeholder="NOMBRE DE TU LISTA..."
-              value={newCartName}
-              onChange={(e) => setNewCartName(e.target.value.toUpperCase())}
-              className="flex-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-2.5 rounded-lg text-[10px] font-bold outline-none dark:text-white focus:ring-1 ring-black dark:ring-white"
-            />
-            <button
-              disabled={!newCartName}
-              onClick={() => {
-                onSaveCart(newCartName);
-                setNewCartName('');
-                setShowSaveInput(false);
-              }}
-              className="px-4 bg-black dark:bg-white text-white dark:text-black rounded-lg text-[10px] font-black uppercase disabled:opacity-30 transition-opacity"
-            >
-              Guardar
-            </button>
-          </div>
-        )}
-        <div className="mt-2 flex flex-wrap gap-2">
-          {savedCarts.map((cart, index) => (
-            <div key={index} className="flex justify-between items-center p-2 bg-neutral-50 dark:bg-neutral-900 rounded-lg">
-              <button onClick={() => onLoadCart(index)} className="text-sm font-bold">{cart.name}</button>
-              <button
-                onClick={() => onDeleteCart(cart.id)}
-                className="ml-2 text-red-500"
-              >
-                <i className="fa-solid fa-trash text-xs"></i>
-              </button>
-            </div>
-          ))}
-        </div>
+     {/* Mis Listas / Guardado */}
+<div className="px-1 mt-4">
+  {/* Título y Botón de Agregar en la misma línea */}
+  <div className="flex items-center gap-3 mb-3">
+    <h4 className="text-xs text-black dark:text-[#e9edef] uppercase tracking-tight font-black">
+      Mis Listas
+    </h4>
+    {canSave && !showSaveInput && (
+      <button
+        onClick={() => setShowSaveInput(true)}
+        className="w-5 h-5 bg-green-600 dark:bg-[#4ade80] text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all"
+      >
+        <i className="fa-solid fa-plus text-[10px]"></i>
+      </button>
+    )}
+  </div>
+
+  {/* Input de Guardado con su Botón */}
+  {showSaveInput && onSaveCart && (
+    <div className="mt-2 flex flex-col gap-2 animate-in slide-in-from-top-2 duration-300">
+      <div className="flex gap-2">
+        <input
+          type="text"
+          autoFocus
+          placeholder="NOMBRE DE TU LISTA..."
+          value={newCartName}
+          onChange={(e) => setNewCartName(e.target.value.toUpperCase())}
+          className="flex-1 bg-neutral-50 dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] p-2.5 rounded-lg text-[10px] font-bold outline-none text-black dark:text-[#e9edef] focus:ring-1 ring-green-500"
+        />
+        <button
+          disabled={!newCartName.trim()}
+          onClick={() => {
+            onSaveCart(newCartName.trim());
+            setNewCartName('');
+            setShowSaveInput(false);
+          }}
+          className="px-4 bg-green-600 dark:bg-[#00a884] text-white rounded-lg text-[10px] font-black uppercase disabled:opacity-30 transition-opacity"
+        >
+          Guardar
+        </button>
       </div>
+      <button 
+        onClick={() => setShowSaveInput(false)}
+        className="text-[9px] text-neutral-500 dark:text-[#8696a0] uppercase font-bold text-left pl-1"
+      >
+        Cancelar
+      </button>
+    </div>
+  )}
+
+  {/* Chips de Listas Guardadas */}
+  <div className="mt-2 flex flex-wrap gap-2">
+    {savedCarts.map((cart, index) => (
+      <div 
+        key={index} 
+        className="flex items-center gap-2 p-1 pl-3 bg-neutral-100 dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] rounded-full"
+      >
+        <button 
+          onClick={() => onLoadCart(index)} 
+          className="text-[11px] font-bold text-black dark:text-[#e9edef] uppercase"
+        >
+          {cart.name}
+        </button>
+        <button
+          onClick={() => onDeleteCart(cart.id || index)}
+          className="w-6 h-6 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+        >
+          <i className="fa-solid fa-xmark text-[10px]"></i>
+        </button>
+      </div>
+    ))}
+  </div>
+</div>
     </div>
   );
 };

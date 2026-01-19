@@ -6,7 +6,7 @@
 :root {
     --trading-green: #00a650;
     --text-main-light: #131722;
-    --text-main-dark: #ffffff;
+    --text-main-dark: #e9edef;
 }
 
 /* 2. Estructura del Logo (Referencia Imagen 88f946) */
@@ -61,5 +61,5 @@
 
 /* Ajuste de fondo de la flecha en Modo Oscuro */
 .dark .trend-icon-overlay {
-    background-color: #000000 !important;
+    background-color: #0b141a !important;
 }
