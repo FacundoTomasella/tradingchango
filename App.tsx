@@ -172,13 +172,12 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, [loadData]);
 
- // ASÍ ESTÁ AHORA:
-useEffect(() => {
-  if (user) {
-    const dataToSave = { active: favorites, saved: savedCarts };
-    saveCartData(user.id, dataToSave).catch(console.error);
-  }
-}, [favorites, savedCarts, user]);
+  useEffect(() => {
+    if (user) {
+      const dataToSave = { active: favorites, saved: savedCarts };
+      saveCartData(user.id, dataToSave).catch(console.error);
+    }
+  }, [favorites, savedCarts, user]);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
