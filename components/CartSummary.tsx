@@ -207,7 +207,7 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, favorites, benefits, u
             <div className="mt-1 space-y-1 animate-in slide-in-from-top-1 duration-300">
               {others.map((store) => (
                 <div key={store.name} className="flex justify-between items-center py-2 px-4 bg-neutral-50/50 dark:bg-[#1f2c34] rounded-lg border border-neutral-100 dark:border-[#233138]">
-                  <span className="text-[12px] font-black text-neutral-600 dark:text-[#8696a0] uppercase">{store.name}</span>
+                  <span className="text-[10px] font-black text-neutral-600 dark:text-[#8696a0] uppercase">{store.name}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-red-500 font-mono">+${format(Math.round(store.totalChango - best.totalChango))}</span>
                     <span className="font-mono text-[12px] font-black text-black dark:text-[#e9edef]">${format(Math.round(store.totalChango))}</span>
