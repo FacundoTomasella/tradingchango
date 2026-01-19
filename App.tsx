@@ -24,16 +24,25 @@ const App: React.FC = () => {
   const [trendFilter, setTrendFilter] = useState<'up' | 'down' | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [favorites, setFavorites] = useState<Record<number, number>>({});
+  
+  // MODIFICACIÓN: Carga inicial desde LocalStorage para evitar pérdida al minimizar/recargar
+  const [favorites, setFavorites] = useState<Record<number, number>>(() => {
+    const saved = localStorage.getItem('tc_favs');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [savedCarts, setSavedCarts] = useState<any[]>((() => {
+    const saved = localStorage.getItem('tc_saved_lists');
+    return saved ? JSON.parse(saved) : [];
+  }));
+
   const [purchasedItems, setPurchasedItems] = useState<Set<number>>(new Set());
-  const [savedCarts, setSavedCarts] = useState<any[]>([]);
   const [showPwaPill, setShowPwaPill] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(
     (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
   );
 
-  // Referencia para evitar que el useEffect de guardado se dispare al cargar la página
   const isInitialMount = useRef(true);
 
   useEffect(() => {
@@ -101,7 +110,9 @@ const App: React.FC = () => {
 
   const loadData = useCallback(async (sessionUser: User | null) => {
     try {
-      setLoading(true);
+      // MODIFICACIÓN: No poner loading(true) si ya hay productos (evita que se cierre el modal)
+      if (products.length === 0) setLoading(true);
+
       const [prodData, histData, configData] = await Promise.all([
         getProducts(),
         getPriceHistory(7),
@@ -113,7 +124,6 @@ const App: React.FC = () => {
 
       if (sessionUser) {
         let prof = await getProfile(sessionUser.id);
-
         if (prof && prof.subscription === 'pro' && prof.subscription_end) {
           const expiryDate = new Date(prof.subscription_end);
           if (expiryDate < new Date()) {
@@ -121,30 +131,28 @@ const App: React.FC = () => {
             prof = { ...prof, subscription: 'free' };
           }
         }
-
         setProfile(prof);
         
-        // REEMPLAZA POR ESTO:
         const cartData = await getSavedCartData(sessionUser.id);
         if (cartData) {
-          // Accedemos directamente a active y saved porque el objeto ya viene desempaquetado
           setFavorites(cartData.active || {});
           setSavedCarts(cartData.saved || []);
+          // Sincronizamos LocalStorage con lo que viene de la nube
+          localStorage.setItem('tc_favs', JSON.stringify(cartData.active || {}));
+          localStorage.setItem('tc_saved_lists', JSON.stringify(cartData.saved || []));
         }
       }
       
       const day = new Date().getDay();
       const benefitData = await getBenefits(day);
       setBenefits(benefitData);
-      
-      // Importante: Marcar que terminó la carga inicial
-      setLoading(false);
-      isInitialMount.current = true; // Reiniciamos el mount para el persist
     } catch (err: any) {
       console.error("Error loading app data:", err);
+    } finally {
       setLoading(false);
+      isInitialMount.current = false;
     }
-  }, []);
+  }, [products.length]);
 
   useEffect(() => {
     const auth = supabase.auth as any;
@@ -168,25 +176,23 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, [loadData]);
 
-  // --- PERSISTENCIA AUTOMÁTICA MEJORADA ---
+  // --- MODIFICACIÓN: PERSISTENCIA HÍBRIDA (LOCAL + NUBE) ---
   useEffect(() => {
-    // Si no hay usuario, o la app está en proceso de carga inicial, no guardamos nada
     if (!user || loading) return;
 
-    // Evitamos el primer guardado vacío justo después de montar
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
+    // 1. Guardado Instantáneo en LocalStorage (Evita pérdida al minimizar)
+    localStorage.setItem('tc_favs', JSON.stringify(favorites));
+    localStorage.setItem('tc_saved_lists', JSON.stringify(savedCarts));
 
+    // 2. Sincronización con Supabase con Debounce (1.5s)
     const timer = setTimeout(async () => {
       try {
         const dataToSave = { active: favorites, saved: savedCarts };
         await saveCartData(user.id, dataToSave);
       } catch (e) {
-        console.error("Error persistiendo datos:", e);
+        console.error("Error persistiendo datos en la nube:", e);
       }
-    }, 1500); // 1.5 seg de debounce para asegurar que se guarde al "minimizar" o dejar de tocar
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, [favorites, savedCarts, user, loading]);
@@ -299,8 +305,13 @@ const App: React.FC = () => {
   };
 
   const handleSignOut = async () => {
-    setLoading(true); // Bloqueamos el useEffect de guardado
+    setLoading(true);
     await (supabase.auth as any).signOut();
+    
+    // Limpieza de rastro en PC/Móvil
+    localStorage.removeItem('tc_favs');
+    localStorage.removeItem('tc_saved_lists');
+
     setUser(null);
     setProfile(null);
     setFavorites({});
