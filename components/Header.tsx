@@ -98,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({
       placeholder="BUSCAR PRODUCTO..." 
       value={searchTerm}
       onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full bg-neutral-50 dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] rounded-lg py-3 pl-12 pr-10 text-sm font-medium focus:outline-none transition-all text-black dark:text-[#e9edef] placeholder:text-neutral-500"
+      className="w-full bg-neutral-50 dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] rounded-lg py-2 pl-12 pr-10 text-sm font-medium focus:outline-none transition-all text-black dark:text-[#e9edef] placeholder:text-neutral-500"
     />
     {searchTerm && (
       <button 
