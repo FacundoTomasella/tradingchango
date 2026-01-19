@@ -49,7 +49,7 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white dark:bg-primary p-4 border-b border-neutral-100 dark:border-[#233138]">
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-4">
         <div className="logo-link cursor-pointer" onClick={() => onNavigate('home')}>
           <div className="logo">
             <div className="logo-icon-wrapper">
