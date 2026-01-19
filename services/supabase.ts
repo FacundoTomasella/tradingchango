@@ -85,14 +85,15 @@ export const updateMemberships = async (userId: string, memberships: UserMembers
 };
 
 // Guardamos un objeto que contiene el carrito activo y los changos guardados (máximo 2)
-export const saveCartData = async (userId: string, data: { active: Record<number, number>, saved: any[] }) => {
+export const saveCartData = async (userId: string, data: { active: any, saved: any }) => {
   const { error } = await supabase
     .from('carritos_guardados')
     .upsert({ 
       user_id: userId, 
-      items: data, 
+      items: data, // Aquí guardamos el objeto completo { active, saved } en la columna 'items'
       updated_at: new Date().toISOString() 
-    });
+    }, { onConflict: 'user_id' });
+
   if (error) throw error;
 };
 

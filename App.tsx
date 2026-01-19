@@ -124,11 +124,12 @@ const App: React.FC = () => {
 
         setProfile(prof);
         
-        // CARGA DE LISTAS GUARDADAS
+        // REEMPLAZA POR ESTO:
         const cartData = await getSavedCartData(sessionUser.id);
-        if (cartData && cartData.items) {
-          setFavorites(cartData.items.active || {});
-          setSavedCarts(cartData.items.saved || []);
+        if (cartData) {
+          // Accedemos directamente a active y saved porque el objeto ya viene desempaquetado
+          setFavorites(cartData.active || {});
+          setSavedCarts(cartData.saved || []);
         }
       }
       
