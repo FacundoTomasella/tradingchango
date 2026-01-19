@@ -173,11 +173,13 @@ const App: React.FC = () => {
   }, [loadData]);
 
   useEffect(() => {
-    if (user) {
-      const dataToSave = { active: favorites, saved: savedCarts };
-      saveCartData(user.id, dataToSave).catch(console.error);
-    }
-  }, [favorites, savedCarts, user]);
+  // Solo guardamos si hay un usuario logueado 
+  // Y si favorites tiene contenido (para evitar borrar la DB al limpiar el estado en el logout)
+  if (user && Object.keys(favorites).length > 0) {
+    const dataToSave = { active: favorites, saved: savedCarts };
+    saveCartData(user.id, dataToSave).catch(console.error);
+  }
+}, [favorites, savedCarts, user]);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
