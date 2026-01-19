@@ -339,49 +339,49 @@ const App: React.FC = () => {
   return (
   <div className="max-w-screen-md mx-auto min-h-screen bg-white dark:bg-primary shadow-2xl transition-colors font-sans pb-16">
     
-    {/* BOTÓN EMERGENTE MEJORADO */}
     {showPwaPill && (
-      <div className="fixed bottom-[90px] left-1/2 -translate-x-1/2 z-[1000] w-[92%] max-w-[360px] animate-in slide-in-from-bottom-10 duration-500">
-        <div className="bg-neutral-900 dark:bg-white text-white dark:text-black p-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-neutral-800 dark:border-neutral-200 flex items-center justify-between relative">
-          
-          {/* Botón X para cerrar (Esquina superior derecha o lateral) */}
-          <button 
-            onClick={(e) => {
-              e.stopPropagation(); // Evita que se dispare otros eventos
-              setShowPwaPill(false);
-            }}
-            className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"
-          >
-            <i className="fa-solid fa-xmark text-[12px]"></i>
-          </button>
+  /* El md:hidden asegura que en PC/Escritorio no se vea */
+  <div className="fixed bottom-[100px] left-1/2 -translate-x-1/2 z-[9999] w-[85%] max-w-[320px] md:hidden animate-in slide-in-from-bottom-5 duration-500">
+    <div className="bg-neutral-900 dark:bg-white text-white dark:text-black p-3.5 rounded-2xl shadow-[0_15px_45px_rgba(0,0,0,0.4)] flex items-center justify-between relative border border-neutral-800 dark:border-neutral-100">
+      
+      {/* BOTÓN X - Más pequeño */}
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowPwaPill(false);
+        }}
+        className="absolute -top-1.5 -right-1.5 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-neutral-900 active:scale-90 transition-transform"
+      >
+        <i className="fa-solid fa-xmark text-[10px]"></i>
+      </button>
 
-          <div className="flex items-center gap-3">
-            {/* Icono de la App */}
-            <div className="w-11 h-11 bg-green-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-green-500/20">
-              <i className="fa-solid fa-cart-shopping text-lg"></i>
-            </div>
-            
-            <div className="flex flex-col">
-              <span className="text-[12px] font-black uppercase tracking-tight leading-none mb-1">
-                TradingChango App
-              </span>
-              <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest leading-none">
-                Instalá y ahorrá más
-              </span>
-            </div>
-          </div>
-
-          {/* Botón de Acción Principal */}
-          <button 
-            onClick={handleInstallClick}
-            className="bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-green-500/20"
-          >
-            Instalar
-          </button>
-
+      <div className="flex items-center gap-3">
+        {/* Icono reducido */}
+        <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-green-500/30">
+          <i className="fa-solid fa-cart-arrow-down text-base"></i>
+        </div>
+        
+        <div className="flex flex-col">
+          <span className="text-[11px] font-black uppercase tracking-tight leading-none mb-0.5">
+            TradingChango
+          </span>
+          <span className="text-[8px] font-bold opacity-70 uppercase tracking-widest leading-none">
+            App Gratis
+          </span>
         </div>
       </div>
-    )}
+
+      {/* Botón Instalar reducido */}
+      <button 
+        onClick={handleInstallClick}
+        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-green-500/20"
+      >
+        Instalar
+      </button>
+
+    </div>
+  </div>
+)}
       <Header 
         searchTerm={searchTerm} setSearchTerm={setSearchTerm} 
         toggleTheme={toggleTheme} theme={theme}
