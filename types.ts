@@ -61,7 +61,7 @@ export interface Benefit {
   link_referido?: string;
 }
 
-export type TabType = 'home' | 'carnes' | 'verdu' | 'varios' | 'chango' | 'acerca-de' | 'terminos' | 'contacto';
+export type TabType = 'home' | 'carnes' | 'verdu' | 'varios' | 'chango' | 'about' | 'terms' | 'contact';
 
 export interface ProductStats {
   min: number;
