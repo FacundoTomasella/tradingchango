@@ -16,7 +16,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ cartCount }) => {
     { id: 'carnes', label: 'Carnes', icon: 'fa-drumstick-bite', path: '/carnes' },
     { id: 'verdu', label: 'Verdu', icon: 'fa-carrot', path: '/verdu' },
     { id: 'varios', label: 'Varios', icon: 'fa-layer-group', path: '/varios' },
-{ id: 'chango', label: 'Chango', icon: 'fa-cart-shopping', path: '/chango', badge: cartCount }
+    { id: 'chango', label: 'Chango', icon: 'fa-cart-shopping', path: '/chango', badge: cartCount }
   ];
 
   return (
