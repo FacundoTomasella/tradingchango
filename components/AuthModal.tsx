@@ -46,10 +46,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   // Esta función asegura que el modal no se quede "trabado" en una vista vieja al cerrar
   const resetAndClose = () => {
     const defaultView = user ? 'profile' : 'welcome';
-    // No borramos 'active_auth_view' si es para recuperar contraseña.
-    if (localStorage.getItem('active_auth_view') !== 'update_password') {
-      localStorage.removeItem('active_auth_view');
-    }
+    localStorage.removeItem('active_auth_view');
     setView(defaultView);
     setError(null);
     setSuccess(null);
@@ -62,34 +59,29 @@ const AuthModal: React.FC<AuthModalProps> = ({
     if (isOpen) {
       const savedView = localStorage.getItem('active_auth_view');
 
-      // PRIORIDAD 1: Recuperación de contraseña.
+      // PRIORIDAD 1: Si localStorage dice "update_password", esa es la vista.
       if (savedView === 'update_password') {
         setView('update_password');
-        return; // Fin del flujo, evita conflictos.
+        return;
       }
 
-      // PRIORIDAD 2: Usuario no logueado.
+      // PRIORIDAD 2: Si no hay usuario, mostramos la bienvenida.
       if (!user) {
-        // Si no estamos en un sub-flujo como 'olvidé contraseña' o 'registro',
-        // mandamos a la bienvenida.
         if (view !== 'forgot_password' && view !== 'form') {
           setView('welcome');
         }
       } 
-      // PRIORIDAD 3: Usuario logueado.
+      // PRIORIDAD 3: Si hay usuario, lo llevamos a su perfil.
       else {
-        // Si el usuario está logueado y la vista actual es una de las iniciales,
-        // lo llevamos a su perfil.
         if (['welcome', 'form', 'main'].includes(view)) {
           setView('profile');
         }
       }
     }
-  }, [isOpen, user, view]); // Se agrega 'view' para re-evaluar si cambia externamente.
+  }, [isOpen, user]); // Quitamos 'view' para evitar bucles indeseados.
 
   useEffect(() => {
-    // Guardamos la vista actual en localStorage para mantener el estado,
-    // solo si el modal está abierto.
+    // Guardamos la vista actual en localStorage para mantener el estado.
     if (isOpen) {
       localStorage.setItem('active_auth_view', view);
     }
