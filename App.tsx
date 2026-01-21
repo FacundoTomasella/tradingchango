@@ -189,14 +189,20 @@ const App: React.FC = () => {
   }, [products.length]);
 
   useEffect(() => {
-  // 1. Detección manual por URL (Fallback)
-  const checkRecoveryURL = () => {
-    const { hash, pathname } = window.location;
-    if (hash.includes('type=recovery') || pathname === '/update-password') {
-      localStorage.setItem('active_auth_view', 'update_password');
-      setIsAuthOpen(true);
-     }
-} []);
+      // 1. Definición de la función
+      const checkRecoveryURL = () => {
+        const { hash, pathname } = window.location;
+        
+        if (hash.includes('type=recovery') || pathname === '/update-password') {
+          localStorage.setItem('active_auth_view', 'update_password');
+          setIsAuthOpen(true);
+        }
+      };
+
+      // 2. ¡Ejecución de la función!
+      checkRecoveryURL();
+
+    }, []);
 
 // 1. Procesar recovery desde la URL
   useEffect(() => {
