@@ -210,18 +210,24 @@ const App: React.FC = () => {
     const hash = window.location.hash;
 
     if (hash.includes('type=recovery')) {
-      const { error } = await supabase.auth.exchangeCodeForSession();
-      
+      const params = new URLSearchParams(hash.replace('#', ''));
+      const code = params.get('code');
+
+      if (!code) {
+        console.error('Recovery sin code');
+        return;
+      }
+
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+
       if (error) {
         console.error('Error procesando recovery:', error);
       }
-    }
-  };
+     }
+    };
 
-  handleRecoverySession();
+      handleRecoverySession();
       }, []);
-
-
 
 // 2. Sesión inicial + auth listener
   useEffect(() => {
