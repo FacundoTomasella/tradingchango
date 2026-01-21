@@ -30,7 +30,6 @@
   - Hosting en **Vercel** con despliegue continuo desde GitHub.
  
  🔐 Seguridad y Persistencia
-El proyecto implementa medidas avanzadas para garantizar que no se pierdan datos:
 Resiliencia al minimizar: Uso del evento visibilitychange para asegurar el guardado de datos antes de que el navegador suspenda la pestaña.
 Protección Cloudflare: Escudo contra ataques y gestión de certificados SSL modo Full.
 Email Corporativo: Sistema de soporte y recuperación de contraseñas vía soporte@tradingchango.com.
