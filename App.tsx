@@ -196,7 +196,7 @@ const App: React.FC = () => {
       localStorage.setItem('active_auth_view', 'update_password');
       setIsAuthOpen(true);
      }
-}, []);
+} []);
 
 // 1. Procesar recovery desde la URL
   useEffect(() => {
