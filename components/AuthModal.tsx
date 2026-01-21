@@ -55,37 +55,34 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
   // --- EFECTOS ---
   useEffect(() => {
-    // Si la URL es de recuperación, NO permitimos que cambie la vista a 'welcome'
-    if (window.location.hash.includes('type=recovery')) {
-      setView('update_password');
-      return; // Detenemos el efecto aquí
-    }
-
-    if (!user) {
-      if (view !== 'forgot_password' && view !== 'update_password' && view !== 'form') {
-        setView('welcome');
+    // Lógica central para decidir la vista al abrir el modal
+    if (isOpen) {
+      // 1. MÁXIMA PRIORIDAD: Si es recuperación de contraseña, forzamos la vista.
+      if (window.location.hash.includes('type=recovery')) {
+        setView('update_password');
+        return; // Cortamos la ejecución para evitar conflictos
       }
-    } else {
-      if (view === 'welcome' || view === 'form') setView('profile');
+
+      // 2. Si no hay usuario, lo mandamos a la bienvenida (a menos que esté en otra vista manual)
+      if (!user) {
+        if (view !== 'forgot_password' && view !== 'form') {
+          setView('welcome');
+        }
+      } else {
+        // 3. Si hay usuario, lo mandamos al perfil si estaba en una vista de login/registro
+        if (view === 'welcome' || view === 'form') {
+          setView('profile');
+        }
+      }
     }
-  }, [user, isOpen]); // Agregamos isOpen para que chequee al abrir
+  }, [isOpen, user]); // Se ejecuta cada vez que el modal se abre o el usuario cambia
 
   useEffect(() => {
     // Guardamos la vista para persistencia al minimizar
-    localStorage.setItem('active_auth_view', view);
-  }, [view]);
-
-  useEffect(() => {
-    if (!user) {
-      if (view !== 'forgot_password' && view !== 'update_password' && view !== 'form') {
-        setView('welcome');
-      }
-    } else {
-      if (view === 'welcome' || view === 'form' || view === 'main') {
-        setView('profile');
-      }
+    if (isOpen) { // Solo guardamos si el modal está abierto
+      localStorage.setItem('active_auth_view', view);
     }
-  }, [user]);
+  }, [view, isOpen]);
 
   // Detector de click fuera del modal
   useEffect(() => {

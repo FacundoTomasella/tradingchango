@@ -84,11 +84,12 @@ const [config, setConfig] = useState<Record<string, string>>({});
 
   // --- EFECTO DE RECUPERACIÓN DE CONTRASEÑA ---
   useEffect(() => {
-    // Si entramos con un link de recuperación, abrimos el modal
-    if (window.location.hash.includes('type=recovery')) {
+    // Si entramos con un link de recuperación, abrimos el modal.
+    // Usamos location.hash para que se reactive si la URL cambia.
+    if (location.hash.includes('type=recovery')) {
       setIsAuthOpen(true);
     }
-  }, []);
+  }, [location.hash]);
 
 
   useEffect(() => {
@@ -386,7 +387,6 @@ const [config, setConfig] = useState<Record<string, string>>({});
 
   // 2. Ejecutar el cierre de sesión en el servidor
   await supabase.auth.signOut();
-
   // 3. Limpiar estado de la App
   setUser(null);
   setProfile(null);
