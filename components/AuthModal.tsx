@@ -163,7 +163,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     setTimeout(() => {
       setView('profile');
-      if (onProfileUpdate) onProfileUpdate();
+      // Ya no es necesario llamar a onProfileUpdate() aquí.
+      // El listener onAuthStateChange en App.tsx se encargará de recargar los datos.
     }, 2000);
 
   } catch (err: any) {

@@ -216,14 +216,17 @@ useEffect(() => {
     const sessionUser = session?.user ?? null;
     setUser(sessionUser);
     
-    // DETECTAR RECUPERACIÓN DE CONTRASEÑA
     if (event === 'PASSWORD_RECOVERY') {
       setIsAuthOpen(true);
-      // Opcional: puedes emitir un evento custom si el modal ya está abierto
-      window.dispatchEvent(new CustomEvent('forceUpdatePasswordView'));
+      localStorage.setItem('active_auth_view', 'update_password');
     }
 
-    if (event === 'SIGNED_IN') loadData(sessionUser);
+    // Si el usuario inicia sesión O sus datos se actualizan (como al cambiar contraseña),
+    // recargamos sus datos.
+    if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+      loadData(sessionUser);
+    }
+    
     if (event === 'SIGNED_OUT') { 
       setProfile(null); 
       setFavorites({}); 
