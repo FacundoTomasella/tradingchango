@@ -158,12 +158,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   password: newPassword
 });
 
-    // 2. Intentamos actualizar la contraseña
-    const { error: updateError } = await auth.updateUser({ 
-      password: newPassword 
-    });
-
-    if (updateError) throw updateError;
+if (updateError) throw updateError;
 
     // 3. ÉXITO
     setSuccess("¡Contraseña actualizada con éxito!");
