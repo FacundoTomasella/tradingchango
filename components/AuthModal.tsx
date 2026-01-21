@@ -42,85 +42,81 @@ const AuthModal: React.FC<AuthModalProps> = ({
   const [catalogo, setCatalogo] = useState<Membership[]>([]);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // --- FUNCIÓN DE CIERRE Y RESET ---
+  // Esta función asegura que el modal no se quede "trabado" en una vista vieja al cerrar
+  const resetAndClose = () => {
+    const defaultView = user ? 'profile' : 'welcome';
+    localStorage.removeItem('active_auth_view'); // Limpiamos para que no sea "sticky"
+    setView(defaultView);
+    setError(null);
+    setSuccess(null);
+    onClose();
+  };
+
   // --- EFECTOS ---
   useEffect(() => {
     if (view === 'membresias') getCatalogoMembresias().then(setCatalogo);
   }, [view]);
 
   useEffect(() => {
+    // Guardamos la vista para persistencia al minimizar
     localStorage.setItem('active_auth_view', view);
   }, [view]);
 
   useEffect(() => {
     if (!user) {
-      // Si no hay usuario y no estamos en recuperar pass o login, vamos a welcome
       if (view !== 'forgot_password' && view !== 'update_password' && view !== 'form') {
         setView('welcome');
       }
-      setSuccess(null);
     } else {
-      if (view === 'welcome' || view === 'form') setView('profile');
+      if (view === 'welcome' || view === 'form' || view === 'main') {
+        setView('profile');
+      }
     }
   }, [user]);
 
+  // Detector de click fuera del modal
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
+        resetAndClose(); // Usamos la función de reset
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
+  }, [isOpen, user]); // Dependencias corregidas
 
   useEffect(() => {
-    // Función para revisar si debemos forzar la vista de password
     const checkPasswordView = () => {
       const savedView = localStorage.getItem('active_auth_view');
       if (savedView === 'update_password') {
         setView('update_password');
       }
     };
-
-    // Escuchamos el evento personalizado de App.tsx
     window.addEventListener('forceUpdatePasswordView', checkPasswordView);
-    
-    // También revisamos cada vez que se abre el modal
     if (isOpen) checkPasswordView();
-
     return () => window.removeEventListener('forceUpdatePasswordView', checkPasswordView);
   }, [isOpen]);
 
 
-  // --- MANEJADORES DE AUTH ---
+  // --- MANEJADORES ---
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
+    setLoading(true); setError(null); setSuccess(null);
     try {
       const auth = supabase.auth as any;
       if (mode === 'register') {
         const { data, error: signUpError } = await auth.signUp({
-          email,
-          password,
-          options: { data: { nombre, apellido, fecha_nacimiento: fechaNacimiento } }
+          email, password, options: { data: { nombre, apellido, fecha_nacimiento: fechaNacimiento } }
         });
         if (signUpError) throw signUpError;
-
         if (data?.user) {
           await supabase.from('perfiles').upsert({
-            id: data.user.id,
-            email,
-            nombre,
-            apellido,
-            fecha_nacimiento: fechaNacimiento,
-            subscription: 'pro',
-            subscription_end: '2027-01-01'
+            id: data.user.id, email, nombre, apellido, fecha_nacimiento: fechaNacimiento,
+            subscription: 'pro', subscription_end: '2027-01-01'
           });
         }
-        setSuccess(`¡Bienvenido ${nombre}! Revisa tu email.`);
+        setSuccess(`¡Cuenta creada! Revisa tu email.`);
         setMode('login');
       } else {
         const { error: signInError } = await auth.signInWithPassword({ email, password });
@@ -128,84 +124,45 @@ const AuthModal: React.FC<AuthModalProps> = ({
         setSuccess(`¡Hola de nuevo!`);
         if (onProfileUpdate) onProfileUpdate();
       }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: any) { setError(err.message); } 
+    finally { setLoading(false); }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       const { error } = await (supabase.auth as any).resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/update-password`,
       });
       if (error) throw error;
       setSuccess("¡Mail enviado! Revisa tu bandeja de entrada.");
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: any) { setError(err.message); } 
+    finally { setLoading(false); }
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  if (newPassword.length < 6) {
-    setError("La contraseña debe tener al menos 6 caracteres.");
-    return;
-  }
-
-  setLoading(true);
-  setError(null);
-  setSuccess(null);
-
-  try {
-    const auth = supabase.auth as any;
-
-    // 1. Verificamos si hay una sesión activa antes de intentar
-    const { data: sessionData } = await auth.getSession();
-    
-    if (!sessionData.session) {
-      // Si no hay sesión, el token de la URL no fue procesado. 
-      // Intentamos procesarlo manualmente si sigue en el hash
-      if (window.location.hash) {
-        console.log("Intentando recuperar sesión del hash...");
-      } else {
-        throw new Error("La sesión de recuperación expiró o es inválida. Por favor, solicitá un nuevo link.");
+    e.preventDefault();
+    if (newPassword.length < 6) { setError("Mínimo 6 caracteres."); return; }
+    setLoading(true); setError(null); setSuccess(null);
+    try {
+      const auth = supabase.auth as any;
+      let { data: { session } } = await auth.getSession();
+      if (!session) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const retry = await auth.getSession();
+        session = retry.data.session;
       }
-    }
-
-    // 2. Intentamos actualizar la contraseña
-    const { error: updateError } = await auth.updateUser({ 
-      password: newPassword 
-    });
-
-    if (updateError) throw updateError;
-
-    // 3. ÉXITO
-    setSuccess("¡Contraseña actualizada! Entrando a tu perfil...");
-    
-    // Ahora sí, limpiamos todo
-    localStorage.removeItem('active_auth_view');
-    window.history.replaceState(null, '', '/'); // Limpiamos la URL ahora que terminó
-
-    setTimeout(() => {
-      setView('profile');
-      if (onProfileUpdate) onProfileUpdate();
-    }, 2000);
-
-  } catch (err: any) {
-    console.error("Error crítico al actualizar pass:", err);
-    setError(err.message || "Error al actualizar la contraseña.");
-  } finally {
-    setLoading(false);
-  }
-};
+      if (!session) throw new Error("Sesión no encontrada. Pide un nuevo link.");
+      const { error: updateError } = await auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+      setSuccess("Contraseña actualizada.");
+      localStorage.removeItem('active_auth_view');
+      window.history.replaceState(null, '', '/');
+      setTimeout(() => setView('profile'), 2000);
+    } catch (err: any) { setError(err.message); } 
+    finally { setLoading(false); }
+  };
 
   const handleSignOut = async () => {
     await (supabase.auth as any).signOut();
@@ -221,24 +178,16 @@ const AuthModal: React.FC<AuthModalProps> = ({
     const next = isSelected 
       ? current.filter(m => !(m.slug === slug && m.tipo === tipo))
       : [...current, { slug, tipo }];
-
     setLoading(true);
     try {
       await updateMemberships(user.id, next);
       if (onProfileUpdate) onProfileUpdate();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: any) { setError(err.message); } 
+    finally { setLoading(false); }
   };
 
   const categorizedMembresias = useMemo(() => {
-    const groups: Record<string, Membership[]> = {
-      "Bancos & Wallets": [],
-      "Prepagas & Otros": [],
-      "Programas de Super": []
-    };
+    const groups: Record<string, Membership[]> = { "Bancos & Wallets": [], "Prepagas & Otros": [], "Programas de Super": [] };
     catalogo.forEach(m => {
       const cat = (m as any).categoria?.toLowerCase() || '';
       if (cat.includes('banco') || cat.includes('wallet')) groups["Bancos & Wallets"].push(m);
@@ -258,7 +207,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-primary/80 backdrop-blur-sm animate-in fade-in">
       <div ref={modalRef} className="bg-white dark:bg-primary w-full max-w-sm rounded-[1.5rem] p-6 relative shadow-2xl border border-neutral-200 dark:border-neutral-800 max-h-[85vh] overflow-y-auto no-scrollbar">
-        <button onClick={onClose} className="absolute top-5 right-5 text-neutral-400 text-xl">&times;</button>
+        <button onClick={resetAndClose} className="absolute top-5 right-5 text-neutral-400 text-xl">&times;</button>
         
         {success && <div className="mb-4 p-3 bg-green-500/10 text-green-500 text-[11px] font-bold rounded-xl text-center">{success}</div>}
         {error && <div className="mb-4 p-3 bg-red-500/10 text-red-500 text-[11px] font-bold rounded-xl text-center">{error}</div>}
@@ -274,9 +223,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
         {view === 'form' && (
           <form onSubmit={handleAuth} className="space-y-4">
-            <h3 className="text-xl font-black dark:text-white mb-4 uppercase tracking-tighter">
-              {mode === 'login' ? 'Bienvenido' : 'Nueva Cuenta'}
-            </h3>
+            <h3 className="text-xl font-black dark:text-white mb-4 uppercase tracking-tighter">{mode === 'login' ? 'Bienvenido' : 'Nueva Cuenta'}</h3>
             {mode === 'register' && (
               <div className="grid grid-cols-2 gap-2">
                 <input type="text" value={nombre} onChange={e=>setNombre(e.target.value)} placeholder="NOMBRE" required className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-3 rounded-lg dark:text-white text-[11px] uppercase font-bold" />
@@ -285,15 +232,11 @@ const AuthModal: React.FC<AuthModalProps> = ({
             )}
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="EMAIL" required className="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-3 rounded-lg dark:text-white text-[11px] font-bold" />
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="CONTRASEÑA" required className="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-3 rounded-lg dark:text-white text-[11px] font-bold" />
-            
-            <button disabled={loading} className="w-full bg-green-500 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[11px] mt-2 shadow-lg shadow-green-500/20">
+            <button disabled={loading} className="w-full bg-green-500 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[11px] mt-2 shadow-lg">
               {loading ? 'Procesando...' : (mode === 'login' ? 'Entrar' : 'Registrar')}
             </button>
-
             {mode === 'login' && (
-              <button type="button" onClick={() => setView('forgot_password')} className="w-full text-[10px] font-black text-neutral-400 uppercase mt-2">
-                ¿Olvidaste tu contraseña?
-              </button>
+              <button type="button" onClick={() => setView('forgot_password')} className="w-full text-[10px] font-black text-neutral-400 uppercase mt-2">¿Olvidaste tu contraseña?</button>
             )}
             <button type="button" onClick={() => setView('welcome')} className="w-full text-[10px] font-black text-neutral-400 uppercase mt-4">Volver</button>
           </form>
@@ -302,13 +245,9 @@ const AuthModal: React.FC<AuthModalProps> = ({
         {view === 'forgot_password' && (
           <form onSubmit={handleResetPassword} className="space-y-4 animate-in fade-in slide-in-from-right-4">
             <h3 className="text-xl font-black dark:text-white mb-2 uppercase tracking-tighter">Recuperar Acceso</h3>
-            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium leading-relaxed mb-4">
-              Ingresá tu email y te enviaremos un link para restablecer tu contraseña.
-            </p>
+            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium leading-relaxed mb-4">Ingresá tu email para recibir el link de recuperación.</p>
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="EMAIL" required className="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-3 rounded-lg dark:text-white text-[11px] font-bold" />
-            <button disabled={loading} className="w-full bg-primary dark:bg-white dark:text-black text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[11px] shadow-lg">
-              {loading ? 'Enviando...' : 'Enviar Link'}
-            </button>
+            <button disabled={loading} className="w-full bg-primary dark:bg-white dark:text-black text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[11px] shadow-lg">{loading ? 'Enviando...' : 'Enviar Link'}</button>
             <button type="button" onClick={() => setView('form')} className="w-full text-[10px] font-black text-neutral-400 uppercase mt-4">Volver al login</button>
           </form>
         )}
@@ -316,54 +255,30 @@ const AuthModal: React.FC<AuthModalProps> = ({
         {view === 'update_password' && (
           <form onSubmit={handleUpdatePassword} className="space-y-4 animate-in fade-in slide-in-from-right-4">
             <h3 className="text-xl font-black dark:text-white mb-2 uppercase tracking-tighter">Nueva Contraseña</h3>
-            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium mb-4">
-              Ingresá tu nueva clave de acceso.
-            </p>
-            
-            <input 
-              type="password" 
-              value={newPassword} 
-              onChange={e => setNewPassword(e.target.value)} 
-              placeholder="MÍNIMO 6 CARACTERES" 
-              required 
-              className="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-3 rounded-lg dark:text-white text-[11px] font-bold" 
-            />
-            
+            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium mb-4">Ingresá tu nueva clave de acceso.</p>
+            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="MÍNIMO 6 CARACTERES" required className="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-3 rounded-lg dark:text-white text-[11px] font-bold" />
             <button disabled={loading} className="w-full bg-green-500 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[11px] shadow-lg">
               {loading ? 'Guardando...' : 'Actualizar Contraseña'}
             </button>
           </form>
         )}
 
-
         {view === 'profile' && user && (
           <div className="text-center animate-in fade-in duration-300">
             <div className="w-14 h-14 bg-neutral-100 dark:bg-neutral-900 rounded-xl flex items-center justify-center text-xl mx-auto mb-4 text-neutral-500 border border-neutral-200 dark:border-neutral-800">
               <i className="fa-solid fa-user-astronaut"></i>
             </div>
-            <h4 className="font-black dark:text-white text-xl mb-1 truncate tracking-tighter uppercase">
-              ¡Hola, {profile?.nombre || user.email.split('@')[0]}!
-            </h4>
-            <p className={`text-[9px] font-black uppercase tracking-widest mb-6 ${isProValid ? 'text-green-500' : 'text-neutral-400'}`}>
-              Nivel: {isProValid ? 'PRO' : 'FREE'}
-            </p>            
+            <h4 className="font-black dark:text-white text-xl mb-1 truncate tracking-tighter uppercase">¡Hola, {profile?.nombre || user.email.split('@')[0]}!</h4>
+            <p className={`text-[9px] font-black uppercase tracking-widest mb-6 ${isProValid ? 'text-green-500' : 'text-neutral-400'}`}>Nivel: {isProValid ? 'PRO' : 'FREE'}</p>            
             <div className="space-y-2.5">
               <button onClick={() => setView('mis_changos')} className="w-full bg-neutral-50 dark:bg-neutral-900 p-4 rounded-xl text-left flex items-center justify-between border border-neutral-100 dark:border-neutral-800 hover:border-black dark:hover:border-white transition-all">
-                <div className="flex items-center gap-3">
-                  <i className="fa-solid fa-cart-flatbed text-neutral-400"></i>
-                  <span className="text-[11px] font-bold dark:text-white uppercase">Mis Listas de Compra</span>
-                </div>
+                <div className="flex items-center gap-3"><i className="fa-solid fa-cart-flatbed text-neutral-400"></i><span className="text-[11px] font-bold dark:text-white uppercase">Mis Listas de Compra</span></div>
                 <span className="text-[10px] font-black text-neutral-400">{savedCarts.length}/2</span>
               </button>
-              
               <button onClick={() => setView('membresias')} className="w-full bg-neutral-50 dark:bg-neutral-900 p-4 rounded-xl text-left flex items-center justify-between border border-neutral-100 dark:border-neutral-800 hover:border-black dark:hover:border-white transition-all hidden">
-                <div className="flex items-center gap-3">
-                  <i className="fa-solid fa-id-card text-neutral-400"></i>
-                  <span className="text-[11px] font-bold dark:text-white uppercase">Bancos & Membresías</span>
-                </div>
+                <div className="flex items-center gap-3"><i className="fa-solid fa-id-card text-neutral-400"></i><span className="text-[11px] font-bold dark:text-white uppercase">Bancos & Membresías</span></div>
                 <i className="fa-solid fa-chevron-right text-neutral-300 text-[10px]"></i>
               </button>
-
               <button onClick={handleSignOut} className="w-full text-red-500 text-[9px] font-black uppercase tracking-widest py-3 mt-4">Cerrar Sesión</button>
             </div>
           </div>
@@ -385,12 +300,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
                       <p className="text-[9px] text-neutral-400 font-bold uppercase">{Object.keys(cart.items).length} productos</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => { onLoadCart?.(idx); onClose(); }} className="w-8 h-8 rounded-lg bg-primary dark:bg-white text-white dark:text-black flex items-center justify-center text-[11px] hover:scale-110 transition-transform">
-                        <i className="fa-solid fa-upload"></i>
-                      </button>
-                      <button onClick={() => onDeleteCart?.(idx)} className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center text-[11px] hover:scale-110 transition-transform">
-                        <i className="fa-solid fa-trash-can"></i>
-                      </button>
+                      <button onClick={() => { onLoadCart?.(idx); onClose(); }} className="w-8 h-8 rounded-lg bg-primary dark:bg-white text-white dark:text-black flex items-center justify-center text-[11px] hover:scale-110 transition-transform"><i className="fa-solid fa-upload"></i></button>
+                      <button onClick={() => onDeleteCart?.(idx)} className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center text-[11px] hover:scale-110 transition-transform"><i className="fa-solid fa-trash-can"></i></button>
                     </div>
                   </div>
                 ))
@@ -420,21 +331,10 @@ const AuthModal: React.FC<AuthModalProps> = ({
                           {m.opciones && m.opciones.length > 0 ? m.opciones.map(opt => {
                             const active = profile?.membresias?.some(um => um.slug === m.slug && um.tipo === opt);
                             return (
-                              <button 
-                                key={opt} 
-                                onClick={() => toggleMembership(m.slug, opt)} 
-                                className={`text-[9px] font-black px-3 py-1.5 rounded-lg border transition-all ${active ? 'bg-green-500 text-white border-green-500 shadow-md' : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-400 border-neutral-100 dark:border-neutral-800'}`}
-                              >
-                                {opt}
-                              </button>
+                              <button key={opt} onClick={() => toggleMembership(m.slug, opt)} className={`text-[9px] font-black px-3 py-1.5 rounded-lg border transition-all ${active ? 'bg-green-500 text-white border-green-500 shadow-md' : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-400 border-neutral-100 dark:border-neutral-800'}`}>{opt}</button>
                             );
                           }) : (
-                            <button 
-                              onClick={() => toggleMembership(m.slug)} 
-                              className={`text-[9px] font-black px-4 py-1.5 rounded-lg border transition-all ${profile?.membresias?.some(um => um.slug === m.slug) ? 'bg-green-500 text-white border-green-500 shadow-md' : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-400 border-neutral-100 dark:border-neutral-800'}`}
-                            >
-                              Activar {m.nombre}
-                            </button>
+                            <button onClick={() => toggleMembership(m.slug)} className={`text-[9px] font-black px-4 py-1.5 rounded-lg border transition-all ${profile?.membresias?.some(um => um.slug === m.slug) ? 'bg-green-500 text-white border-green-500 shadow-md' : 'bg-neutral-50 dark:bg-neutral-900 text-neutral-400 border-neutral-100 dark:border-neutral-800'}`}>Activar {m.nombre}</button>
                           )}
                         </div>
                       </div>

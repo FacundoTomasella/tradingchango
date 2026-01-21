@@ -201,12 +201,13 @@ const App: React.FC = () => {
   checkRecoveryURL();
 
   // 2. Obtener sesión inicial
+// BUSCÁ ESTO:
   supabase.auth.getSession().then(({ data: { session } }) => {
-    const sessionUser = session?.user ?? null;
-    setUser(sessionUser);
-    if (sessionUser) loadData(sessionUser);
-  });
-
+  const sessionUser = session?.user ?? null;
+  setUser(sessionUser);
+  // Llamamos a loadData SIEMPRE (tenga o no usuario) para que cargue los productos y quite el cartel
+  loadData(sessionUser); 
+});
   // 3. Suscripción a cambios de estado
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
     const sessionUser = session?.user ?? null;
@@ -218,11 +219,17 @@ const App: React.FC = () => {
         break;
         
       case 'PASSWORD_RECOVERY':
-        console.log("Sesión de recuperación detectada");
-        localStorage.setItem('active_auth_view', 'update_password');
-        setIsAuthOpen(true);
+      console.log("Sesión de recuperación detectada");
+      // 1. Seteamos la vista primero
+      localStorage.setItem('active_auth_view', 'update_password');
+      // 2. Abrimos el modal
+      setIsAuthOpen(true);
+      // 3. Emitimos ambos eventos para que el modal lo agarre sí o sí
+      setTimeout(() => {
+        window.dispatchEvent(new Event('storage'));
         window.dispatchEvent(new CustomEvent('forceUpdatePasswordView'));
-        break;
+      }, 200); // Damos 200ms para que el modal se termine de abrir
+      break;
 
       case 'USER_UPDATED':
         console.log("Usuario actualizado correctamente");
