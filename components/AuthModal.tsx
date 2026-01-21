@@ -74,17 +74,22 @@ const AuthModal: React.FC<AuthModalProps> = ({
   }, [onClose]);
 
   useEffect(() => {
-  // Escuchar si App.tsx nos cambia la vista desde afuera
-  const handleStorageChange = () => {
-    const forcedView = localStorage.getItem('active_auth_view');
-    if (forcedView === 'update_password') {
-      setView('update_password');
-    }
-  };
+    // Función para revisar si debemos forzar la vista de password
+    const checkPasswordView = () => {
+      const savedView = localStorage.getItem('active_auth_view');
+      if (savedView === 'update_password') {
+        setView('update_password');
+      }
+    };
 
-  window.addEventListener('storage', handleStorageChange);
-  return () => window.removeEventListener('storage', handleStorageChange);
-}, []);
+    // Escuchamos el evento personalizado de App.tsx
+    window.addEventListener('forceUpdatePasswordView', checkPasswordView);
+    
+    // También revisamos cada vez que se abre el modal
+    if (isOpen) checkPasswordView();
+
+    return () => window.removeEventListener('forceUpdatePasswordView', checkPasswordView);
+  }, [isOpen]);
 
 
   // --- MANEJADORES DE AUTH ---

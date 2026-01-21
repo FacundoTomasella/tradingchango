@@ -190,6 +190,17 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const auth = supabase.auth as any;
+    
+    // 1. Check inicial (Plan B): Detectar recuperación por URL si el evento falla
+    const checkRecoveryURL = () => {
+      const hash = window.location.hash;
+      if (hash.includes('type=recovery') || window.location.pathname === '/update-password') {
+        localStorage.setItem('active_auth_view', 'update_password');
+        setIsAuthOpen(true);
+      }
+    };
+    checkRecoveryURL();
+
     auth.getSession().then(({ data: { session } }: any) => {
       const sessionUser = session?.user ?? null;
       setUser(sessionUser);
@@ -202,16 +213,13 @@ const App: React.FC = () => {
       
       if (_event === 'SIGNED_IN') loadData(sessionUser);
       
+      // 2. Detección por Evento (Lo que ya tenías pero optimizado)
       if (_event === 'PASSWORD_RECOVERY') {
-      // 1. Forzamos que el modal se abra
-      setIsAuthOpen(true);
-      // 2. Le decimos al modal que muestre la vista de "Nueva Contraseña"
-      localStorage.setItem('active_auth_view', 'update_password');
-      // 3. Pequeño hack para asegurar que el modal se de cuenta del cambio
-      setTimeout(() => {
-      window.dispatchEvent(new Event('storage')); 
-      }, 100);
-    }
+        localStorage.setItem('active_auth_view', 'update_password');
+        setIsAuthOpen(true);
+        // Despachamos un evento personalizado que es más fiable que 'storage'
+        window.dispatchEvent(new CustomEvent('forceUpdatePasswordView'));
+      }
       else if (_event === 'SIGNED_OUT') { 
         setProfile(null); 
         setFavorites({}); 
