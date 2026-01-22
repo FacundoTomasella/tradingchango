@@ -190,7 +190,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
               </h1>
               
               <div className="flex items-center gap-1.5 mb-2">
-                <span className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                <span className="text-[11px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                   Mejor precio hoy en {minStore}
                 </span>
                 <a href={minStoreUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:scale-110 transition-transform">
@@ -201,7 +201,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
               {/* CONTENEDOR DE PRECIOS: LADO A LADO */}
               <div className="flex items-end gap-3 mt-1">
                 {/* Precio Principal */}
-                <div className="flex items-baseline gap-0.5 relative -top-[3px]">
+                <div className="flex items-baseline gap-0.5 relative -top-[6px]">
                   <span className="text-xl font-bold text-black dark:text-[#e9edef]">$</span>
                   <span className="text-4xl md:text-5xl font-black text-black dark:text-[#e9edef] tracking-tighter font-mono leading-none">
                     {formatCurrency(minPrice)}
