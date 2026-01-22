@@ -85,7 +85,7 @@ export const ContactView: React.FC<InfoViewProps & { email?: string }> = ({ onCl
           </div>
           <div>
             <h4 className="font-bold text-black dark:text-white">Email Soporte</h4>
-            <p className="text-[10px] font-mono text-neutral-400 uppercase">"soporte@tradingchango.com"</p>
+            <p className="text-[10px] font-mono text-neutral-400 uppercase">soporte@tradingchango.com</p>
           </div>
         </div>
         <i className="fa-solid fa-chevron-right text-neutral-300"></i>
