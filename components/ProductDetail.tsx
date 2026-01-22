@@ -189,7 +189,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                 {product.nombre}
               </h1>
               
-              <div className="flex items-center gap-1.5 mb-3">
+              <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                   Mejor precio en {minStore}
                 </span>
@@ -198,9 +198,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                 </a>
               </div>
 
-              {/* CONTENEDOR DE PRECIOS OPTIMIZADO */}
-              <div className="flex items-center gap-4">
-                {/* Precio Grande */}
+              {/* CONTENEDOR DE PRECIOS */}
+              <div className="flex flex-col gap-2">
                 <div className="flex items-baseline gap-0.5">
                   <span className="text-xl font-bold text-black dark:text-[#e9edef]">$</span>
                   <span className="text-4xl md:text-5xl font-black text-black dark:text-[#e9edef] tracking-tighter font-mono leading-none">
@@ -208,21 +207,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
                   </span>
                 </div>
 
-                {/* Columna de Badges (Promedio y Unidad) */}
-                <div className="flex flex-col gap-1.5 min-w-[100px]">
-                  <div className="flex flex-col bg-neutral-100 dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] px-2 py-1 rounded-md">
-                    <span className="text-[8px] font-black text-neutral-500 dark:text-neutral-400 uppercase leading-tight">Promedio</span>
-                    <span className="text-[12px] font-black text-black dark:text-[#e9edef] font-mono leading-tight">
+                {/* Tarjetas Promedio y Unidad */}
+                <div className="flex flex-col gap-1.5 w-full max-w-[180px]">
+                  <div className="flex items-center justify-between bg-neutral-100 dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] px-2.5 py-1.5 rounded-md">
+                    <span className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase">Promedio</span>
+                    <span className="text-[10px] font-black text-black dark:text-[#e9edef] font-mono">
                       ${formatCurrency(Math.round(avgPrice))}
                     </span>
                   </div>
 
                   {unitPrice > 0 && (
-                    <div className="flex flex-col bg-neutral-100 dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] px-2 py-1 rounded-md">
-                      <span className="text-[8px] font-black text-neutral-500 dark:text-neutral-400 uppercase leading-tight">
-                        x {unitMeasure || 'Unidad'}
+                    <div className="flex items-center justify-between bg-neutral-100 dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] px-2.5 py-1.5 rounded-md">
+                      <span className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase">
+                        x {unitMeasure || 'Unid'}
                       </span>
-                      <span className="text-[12px] font-black text-black dark:text-[#e9edef] font-mono leading-tight">
+                      <span className="text-[10px] font-black text-black dark:text-[#e9edef] font-mono">
                         ${formatCurrency(unitPrice)}
                       </span>
                     </div>
