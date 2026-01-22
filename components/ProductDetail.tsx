@@ -199,11 +199,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
               </div>
 
               {/* CONTENEDOR DE PRECIOS: LADO A LADO */}
-              <div className="flex items-end gap-3">
+              <div className="flex items-end gap-3 mt-1">
                 {/* Precio Principal */}
                 <div className="flex items-baseline gap-0.5">
                   <span className="text-xl font-bold text-black dark:text-[#e9edef]">$</span>
-                  <span className="text-5xl md:text-5xl font-black text-black dark:text-[#e9edef] tracking-tighter font-mono leading-[0.8]">
+                  <span className="text-4xl md:text-5xl font-black text-black dark:text-[#e9edef] tracking-tighter font-mono leading-none">
                     {formatCurrency(minPrice)}
                   </span>
                 </div>
