@@ -36,7 +36,7 @@ export const supabase = createClient(
 );
 
 export const getProducts = async (): Promise<Product[]> => {
-  const { data, error } = await supabase.from('productos').select('*');
+  const { data, error } = await supabase.from('productos').select('*').eq('visible_web', true);
   if (error) throw error;
   return data || [];
 };
