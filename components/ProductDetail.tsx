@@ -185,7 +185,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ productId, onClose, onFav
               <img src={product.imagen_url || ''} alt={product.nombre} className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col flex-1 pt-1">
-              <h1 className="text-xl md:text-2xl font-black text-black dark:text-[#e9edef] leading-tight mb-1 tracking-tighter uppercase break-words overflow-hidden">
+              <h1 className="text-xl md:text-2xl font-black text-black dark:text-[#e9edef] leading-[1.1] mb-1 tracking-tighter uppercase break-words [hyphens:auto]" lang="es">
                 {product.nombre}
               </h1>
               
