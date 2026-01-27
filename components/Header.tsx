@@ -128,8 +128,8 @@ const Header: React.FC<HeaderProps> = ({
 
       {showHero && (
         <div className="mt-8 text-center px-4 animate-in fade-in duration-500">
-          <h2 className="text-[22px] font-[800] text-black dark:text-white leading-none tracking-tight font-sans">El súper en tiempo real</h2>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-500 font-medium tracking-tight">Analizá los precios, tendencias, y compará antes de comprar.</p>
+          <h2 className="text-[22px] font-[800] text-black dark:text-white leading-none tracking-tight font-sans">Los precios del súper como nunca los viste</h2>
+          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-500 font-medium tracking-tight">Analizá tendencias y compará antes de comprar</p>
         </div>
       )}
     </header>
