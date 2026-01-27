@@ -128,9 +128,9 @@ const Header: React.FC<HeaderProps> = ({
 
       {showHero && (
        <div className="flex flex-col items-center mt-4 px-4">
-  <h2 className="text-[20px] leading-6 font-extrabold text-black dark:text-white tracking-tighter text-center text-balance">
-    Los precios del súper como nunca los viste
-  </h2>
+  <h2 className="text-[4.8vw] sm:text-[22px] font-[800] text-black dark:text-white leading-none tracking-tighter font-sans whitespace-nowrap">
+  Los precios del súper como nunca los viste
+</h2>
   <p className="mt-1 text-[13px] text-neutral-500 font-medium text-center">
     Analizá tendencias y compará antes de comprar
   </p>
