@@ -28,35 +28,45 @@ const CartSummary: React.FC<CartSummaryProps> = ({ items, benefits, userMembersh
   ];
 
   const results = useMemo(() => {
-    const storeResults = STORES.map((store) => {
-      const storeKey = store.key as keyof typeof store;
-      const total = calculateStoreTotal(items, store.key);
-      const regularTotal = items.reduce((sum, item) => {
-        const regularPrice = item[`pr_${store.key}` as keyof CartItem] as number;
-        return sum + (regularPrice || 0) * item.quantity;
-      }, 0);
+  const storeResults = STORES.map((store) => {
+    // 1. Calculamos el total REAL (considerando promos)
+    const total = calculateStoreTotal(items, store.key);
+    
+    // 2. Calculamos el total REGULAR (sin ninguna promo)
+    const regularTotal = items.reduce((sum, item) => {
+      const pRegular = item[`pr_${store.key}` as keyof CartItem] as number;
+      const pPromo = item[`p_${store.key}` as keyof CartItem] as number;
+      // Si no existe pr_, usamos p_ (precio base)
+      const priceToUse = pRegular || pPromo || 0;
+      return sum + (priceToUse * item.quantity);
+    }, 0);
 
-      const hasAllItems = items.every(item => {
-        const price = item[`p_${store.key}` as keyof CartItem] as number;
-        const url = item[`url_${store.key}` as keyof CartItem] as string;
-        const stock = item[`stock_${store.key}` as keyof CartItem] as boolean;
-        return price > 0 && url && url !== '#' && url.length > 5 && stock !== false;
-      });
+    // 3. Verificamos si la tienda es válida para comparar
+    const hasAllItems = items.every(item => {
+      const price = item[`p_${store.key}` as keyof CartItem] as number;
+      const regularPrice = item[`pr_${store.key}` as keyof CartItem] as number;
+      const url = item[`url_${store.key}` as keyof CartItem] as string;
+      const stock = item[`stock_${store.key}` as keyof CartItem] as boolean;
       
-      return { 
-        name: store.name,
-        total,
-        regularTotal,
-        savings: regularTotal - total,
-        storeBenefits: benefits.filter(b => b.supermercado.toUpperCase() === store.name.toUpperCase()),
-        hasAllItems
-      };
+      // IMPORTANTE: Un item es válido si tiene algún precio (p o pr) 
+      // y tiene stock y URL válida.
+      return (price > 0 || regularPrice > 0) && url && url.length > 5 && stock !== false;
     });
+    
+    return { 
+      name: store.name,
+      total, // Este es el que define quién gana
+      regularTotal,
+      savings: regularTotal - total,
+      storeBenefits: benefits.filter(b => b.supermercado.toUpperCase() === store.name.toUpperCase()),
+      hasAllItems
+    };
+  });
 
-    return storeResults
-      .filter(r => r.hasAllItems && items.length > 0)
-      .sort((a, b) => a.total - b.total);
-  }, [items, benefits]);
+  return storeResults
+    .filter(r => r.hasAllItems && items.length > 0)
+    .sort((a, b) => a.total - b.total); // El que tenga el total real más bajo, queda primero.
+}, [items, benefits]);
 
   if (items.length === 0) return null;
 
