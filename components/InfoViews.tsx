@@ -74,9 +74,10 @@ export const ContactView: React.FC<InfoViewProps & { email?: string }> = ({ onCl
       <i className="fa-solid fa-arrow-left"></i> Volver al Inicio
     </button>
     <h1 className="text-4xl font-black text-black dark:text-white mb-6 tracking-tighter">Contacto</h1>
-    <p className="text-neutral-500 dark:text-neutral-400 mb-8 font-medium">¿Tenés una sugerencia, detectaste un error o te interesa colaborar con TradingChango?
-Estamos abiertos a propuestas de publicidad, alianzas, integraciones y proyectos profesionales vinculados a datos, consumo y tecnología.
-Escribinos y conversemos.</p>
+    <p style="margin-bottom: 20px;">
+    ¿Tenés una sugerencia, detectaste un error o querés ponerte en contacto?
+    En <b>TradingChango</b> valoramos el feedback de los usuarios y también recibimos consultas relacionadas con colaboraciones, publicidad o proyectos profesionales afines.
+  </p>
     
     <div className="space-y-4">
       {/* Botón de Email Principal */}
