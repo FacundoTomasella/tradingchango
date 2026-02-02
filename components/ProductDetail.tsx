@@ -9,7 +9,7 @@ import {
   CartesianGrid,
   TooltipProps
 } from 'recharts';
-import { getProductHistory } from '../services/supabase';
+import { getProductHistory, supabase } from '../services/supabase';
 import { Product, PriceHistory } from '../types';
 
 // Tipos para el gráfico
@@ -73,6 +73,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       getProductHistory(product.nombre, 365)
         .then(data => setHistory(data || []))
         .catch(() => setHistory([]));
+
+      // Incrementar visita
+      if (product.eans && product.eans.length > 0) {
+        supabase.rpc('incrementar_visita', { producto_ean: product.eans[0] })
+          .then(({ error }) => {
+            if (error) {
+              console.error('Error incrementing visit:', error);
+            }
+          });
+      }
     }
   }, [product]);
 
