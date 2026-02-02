@@ -68,26 +68,35 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   const product = useMemo(() => products.find(p => p.id === productId), [products, productId]);
 
   useEffect(() => {
-    if (product) {
-      document.title = `${product.nombre} - TradingChango`;
+    const gestionarVisitaYHistorial = async () => {
+      if (product) {
+        document.title = `${product.nombre} - TradingChango`;
 
-      // Registro de visita para el sistema de prioridades del bot
-      if (product.ean) {
-        const eanStr = product.ean.toString().trim();
-        
-        // Llamada al RPC 'visitas' usando la importación de la línea 14
-        supabase.rpc('visitas', { 
-          producto_ean: eanStr 
-        })
-        .then(() => console.log("✅ Visita impactada:", eanStr))
-        .catch((err: any) => console.error("❌ Error RPC visitas:", err));
+        // 1. Registro de visita con try/catch (Solución al error TS2339)
+        if (product.ean) {
+          try {
+            const eanStr = product.ean.toString().trim();
+            await supabase.rpc('visitas', { 
+              producto_ean: eanStr 
+            });
+            console.log("✅ Visita registrada:", eanStr);
+          } catch (err) {
+            console.error("❌ Error en RPC visitas:", err);
+          }
+        }
+
+        // 2. Historial de precios (ya lo tenías)
+        try {
+          const data = await getProductHistory(product.nombre, 365);
+          setHistory(data || []);
+        } catch (err) {
+          console.error("❌ Error historial:", err);
+          setHistory([]);
+        }
       }
+    };
 
-      // Historial de precios (ya lo tenías)
-      getProductHistory(product.nombre, 365)
-        .then(data => setHistory(data || []))
-        .catch(() => setHistory([]));
-    }
+    gestionarVisitaYHistorial();
   }, [product]);
 
   useEffect(() => {
