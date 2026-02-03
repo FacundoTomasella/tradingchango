@@ -25,6 +25,15 @@ interface ProductListProps {
   onTogglePurchased?: (id: number) => void;
 }
 
+// Mapeo de tiendas para consistencia con ProductDetail
+const STORES = [
+  { name: "COTO", key: 'p_coto' },
+  { name: "CARREFOUR", key: 'p_carrefour' },
+  { name: "DIA", key: 'p_dia' },
+  { name: "JUMBO", key: 'p_jumbo' },
+  { name: "MAS ONLINE", key: 'p_masonline' }
+] as const;
+
 const ProductList: React.FC<ProductListProps> = ({ 
   products, 
   onProductClick, 
@@ -86,6 +95,34 @@ const ProductList: React.FC<ProductListProps> = ({
         const qty = quantities ? (quantities[p.id] || 1) : 1;
         const badges = getPromoBadges(p.oferta_gondola);
 
+        // ========== LÓGICA PARA FILTRAR PRECIO OUTLIER EN LA LISTA ==========
+        const displayMinPrice = (() => {
+          try {
+            // Parsear outliers del producto
+            const outlierData = typeof p.outliers === 'string' 
+              ? JSON.parse(p.outliers) 
+              : (p.outliers || {});
+
+            // Filtrar precios que no sean outliers y tengan stock
+            const validPrices = STORES.map(s => {
+              const storeKey = s.name.toLowerCase().replace(' ', '');
+              const isOutlier = outlierData[storeKey] === true;
+              const price = (p as any)[s.key];
+              const hasStock = (p as any)[`stock_${storeKey}`] !== false;
+
+              return { price, isOutlier, hasStock };
+            }).filter(item => item.price > 0 && item.hasStock && !item.isOutlier);
+
+            // Si hay precios válidos, devolvemos el menor. Si no, el de stats.min (fallback)
+            return validPrices.length > 0 
+              ? Math.min(...validPrices.map(v => v.price)) 
+              : p.stats.min;
+          } catch (e) {
+            return p.stats.min;
+          }
+        })();
+        // =====================================================================
+
         return (
           <div 
             key={p.id} 
@@ -125,7 +162,7 @@ const ProductList: React.FC<ProductListProps> = ({
 
               <div className="text-right flex flex-col items-end min-w-[80px]">
                 <span className="font-mono font-[800] text-black dark:text-white text-[15px] leading-none">
-                  ${format(p.stats.min)}
+                  ${format(displayMinPrice)}
                 </span>
                 <span className={`font-mono text-[12px] font-bold mt-0.5 ${p.stats.trendClass} leading-none`}>
                   {p.stats.icon} {p.stats.spread}%
@@ -134,7 +171,6 @@ const ProductList: React.FC<ProductListProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {/* SELECTOR DE CANTIDAD: Solo se muestra en la vista del Chango */}
               {isCartView && onUpdateQuantity && !purchased && (
                 <div 
                   className="flex items-center bg-neutral-100 dark:bg-neutral-900 px-1 rounded-md border border-neutral-200 dark:border-neutral-800"
@@ -146,7 +182,6 @@ const ProductList: React.FC<ProductListProps> = ({
                 </div>
               )}
               
-              {/* ICONO DE CARRITO: Solo se muestra en los listados de categorías */}
               {!isCartView && (
                 <button 
                   onClick={(e) => {
