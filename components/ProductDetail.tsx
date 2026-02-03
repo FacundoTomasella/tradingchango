@@ -67,7 +67,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
   const product = useMemo(() => products.find(p => p.id === productId), [products, productId]);
 
-  // ========== PARSEAR OUTLIERS UNA SOLA VEZ ==========
+  // ========== 1. PARSEAR OUTLIERS UNA SOLA VEZ ==========
   const outlierData = useMemo(() => {
     if (!product) return {};
     try {
@@ -84,20 +84,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       if (product) {
         document.title = `${product.nombre} - TradingChango`;
 
-        // Registro de visita
         if (product.ean) {
           try {
             const eanStr = product.ean.toString().trim();
             await supabase.rpc('visitas', { 
               producto_ean: eanStr 
             });
-            console.log("✅ Visita registrada:", eanStr);
           } catch (err) {
             console.error("❌ Error en RPC visitas:", err);
           }
         }
 
-        // Historial de precios
         try {
           const data = await getProductHistory(product.nombre, 365);
           setHistory(data || []);
@@ -125,7 +122,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     };
   }, [onClose]);
 
-  // ========== CÁLCULO DE PRECIOS EXCLUYENDO OUTLIERS ==========
+  // ========== 2. MEJOR PRECIO (FILTRANDO OUTLIERS TOTALMENTE) ==========
   const { minPrice, minStore, avgPrice, minStoreUrl, unitPrice, unitMeasure } = useMemo(() => {
     if (!product) return { minPrice: 0, minStore: '', avgPrice: 0, minStoreUrl: '#', unitPrice: 0, unitMeasure: '' };
     
@@ -134,8 +131,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
         const storeKey = s.name.toLowerCase().replace(' ', '');
         const stockKey = `stock_${storeKey}`;
         const hasStock = (product as any)[stockKey] !== false;
-        
-        // ⚠️ EXCLUIR OUTLIERS
         const isOutlier = outlierData[storeKey] === true;
         
         return {
@@ -146,7 +141,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
           isOutlier: isOutlier
         };
       })
-      .filter(p => p.val > 0 && p.stock && !p.isOutlier); // ✅ FILTRAR OUTLIERS
+      // Aquí está la clave: Filtramos el outlier antes de buscar el mínimo
+      .filter(p => p.val > 0 && p.stock && !p.isOutlier);
 
     if (prices.length === 0) return { minPrice: 0, minStore: '', avgPrice: 0, minStoreUrl: '#', unitPrice: 0, unitMeasure: '' };
     
@@ -164,7 +160,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     };
   }, [product, outlierData]);
 
-  // ========== GRÁFICO EXCLUYENDO OUTLIERS ==========
+  // ========== 3. GRÁFICO (FILTRANDO OUTLIERS DEL HISTORIAL) ==========
   const { chartData, percentageChange, isTrendUp } = useMemo(() => {
     if (!history.length) return { chartData: [], percentageChange: 0, isTrendUp: false };
     
@@ -176,10 +172,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       .filter(h => {
         if (!h.fecha) return false;
         
-        // ⚠️ EXCLUIR OUTLIERS DEL GRÁFICO
+        // Si la empresa detectada en el historial está marcada como outlier hoy, se borra del gráfico
         const storeKey = h.supermercado?.toLowerCase().replace(' ', '');
-        const isOutlier = outlierData[storeKey] === true;
-        if (isOutlier) return false;
+        if (outlierData[storeKey] === true) return false;
         
         const [y, m, d] = h.fecha.split('T')[0].split('-').map(Number);
         return new Date(y, m - 1, d) >= limitDate;
@@ -234,7 +229,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm md:p-4">
       <div ref={modalRef} className="w-full max-w-lg h-auto max-h-full md:max-h-[95vh] bg-white dark:bg-primary md:rounded-[1.2rem] overflow-y-auto shadow-2xl relative">
         
-        {/* Header Modal */}
         <div className="sticky top-0 z-20 bg-white/95 dark:bg-primary/95 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-neutral-100 dark:border-[#233138]">
           <button onClick={onClose} className="text-black dark:text-[#e9edef] p-2">
             <i className="fa-solid fa-arrow-left text-xl"></i>
@@ -251,7 +245,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
         </div>
 
         <div className="p-4 pb-0 md:p-5 md:pb-0 flex flex-col">
-          {/* Seccion Producto e Info */}
           <div className="flex gap-4 items-start mb-4">
             <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-xl border border-neutral-100 shadow-sm flex items-center justify-center p-2 shrink-0">
               <img src={product.imagen_url || ''} alt={product.nombre} className="w-full h-full object-contain" />
@@ -261,7 +254,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 {product.nombre}
               </h1>
               
-              {/* ✅ SOLO MOSTRAR SI HAY PRECIO VÁLIDO (NO OUTLIER) */}
+              {/* ✅ NO mostrará la tienda si es outlier porque minStore viene filtrada */}
               {minPrice > 0 && minStore && (
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className="text-[11px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
@@ -308,7 +301,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
 
           <hr className="w-full border-neutral-100 dark:border-[#233138] mb-4" />
 
-          {/* Selectores de dias */}
           <div className="w-full flex justify-center gap-1 mb-3 overflow-x-auto no-scrollbar pb-1">
             {[7, 15, 30, 90, 180, 365].map((d) => (
               <button 
@@ -325,7 +317,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             ))}
           </div>
 
-          {/* Variación y Gráfico */}
           <div className="mb-1 w-full">
             <div className="flex flex-col items-center text-center mb-2">
               <div className="flex items-center gap-1.5">
@@ -360,7 +351,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             </div>
           </div>
 
-          {/* Tabla Comparativa - EXCLUYENDO OUTLIERS */}
           <div className="w-full border border-neutral-100 dark:border-[#233138] rounded-lg overflow-hidden mb-4">
             <div className="w-full flex items-center justify-between p-2.5 bg-neutral-50 dark:bg-[#1f2c34]/50">
               <span className="text-[12px] font-black uppercase tracking-[0.1em] text-black dark:text-[#e9edef]">Comparativa por Mercado</span>
@@ -369,17 +359,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
               {STORES.map((s) => {
                 const price = (product as any)[s.key];
                 const url = (product as any)[s.url];
-                
                 const storeKey = s.name.toLowerCase().replace(' ', '');
-                
-                // ⚠️ EXCLUIR OUTLIERS DE LA TABLA
                 const isOutlier = outlierData[storeKey] === true;
-                
                 const hasUrl = url && url !== '#' && url.length > 5;
                 const stockKey = `stock_${storeKey}`;
                 const hasStock = (product as any)[stockKey] !== false;
 
-                // ✅ NO RENDERIZAR SI ES OUTLIER
                 if (!price || price <= 0 || isOutlier || !hasUrl || !hasStock) {
                   return null;
                 }
@@ -392,7 +377,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   'MAS ONLINE': 'bg-green-500' 
                 };
                 
-                // Sacamos la promo de la góndola
                 let ofertaData: any = {};
                 try {
                   const rawOferta = (product as any).oferta_gondola;
@@ -419,11 +403,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             </div>
           </div>
 
-          {/* Botón Fijo con Selector de Cantidad Dinámico */}
           <div className="w-full sticky bottom-0 bg-white/95 dark:bg-primary/95 backdrop-blur-md pt-2 pb-6 md:pb-4 px-4">
             <div className="flex gap-2 h-12">
-              
-              {/* SELECTOR DE CANTIDAD */}
               {isFavorite && onUpdateQuantity && (
                 <div className="flex items-center bg-neutral-100 dark:bg-[#1f2c34] rounded-lg border border-neutral-200 dark:border-[#233138] overflow-hidden animate-in slide-in-from-left-2 duration-300">
                   <button 
@@ -432,11 +413,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   >
                     <i className="fa-solid fa-minus text-[10px]"></i>
                   </button>
-                  
                   <span className="w-8 text-center font-mono font-black text-sm text-black dark:text-white">
                     {quantities?.[product.id] || 1}
                   </span>
-                  
                   <button 
                     onClick={(e) => { e.stopPropagation(); onUpdateQuantity(product.id, 1); }}
                     className="w-10 h-full flex items-center justify-center text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-800 active:scale-90 transition-all"
@@ -445,8 +424,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   </button>
                 </div>
               )}
-
-              {/* BOTÓN PRINCIPAL */}
               <button 
                 onClick={() => onFavoriteToggle(product.id)} 
                 className={`flex-1 rounded-lg font-black uppercase tracking-[0.1em] text-xs flex items-center justify-center gap-2 active:scale-95 transition-all ${
