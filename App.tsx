@@ -582,7 +582,7 @@ useEffect(() => {
 };
   // Calculamos la cantidad de productos en el carrito que realmente son visibles
   const visibleCartCount = useMemo(() => {
-    return products.filter(p => favorites[p.id] && p.visible_web !== false).length;
+    return products.filter(p => favorites[p.id] && (p as any).visible_web !== false).length;
   }, [favorites, products]);
 
   if (loading && products.length === 0) return <div className="min-h-screen flex items-center justify-center dark:bg-primary dark:text-white font-mono text-[11px] uppercase tracking-[0.2em]">Conectando a Mercado...</div>;
