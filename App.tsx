@@ -479,7 +479,7 @@ const [config, setConfig] = useState<Record<string, string>>({});
     return baseFilteredProducts.filter(p => favorites[p.id]);
   }, [baseFilteredProducts, location.pathname, favorites]);
 
-  const toggleFavorite = (id: number) => {
+const toggleFavorite = useCallback((id: number) => {
     if (!user) {
       setIsAuthOpen(true);
       return;
@@ -501,7 +501,8 @@ const [config, setConfig] = useState<Record<string, string>>({});
       }
       return next;
     });
-  };
+  }, [user]);
+
 
   const handleFavoriteChangeInCart = (id: number, delta: number) => {
     setFavorites(prev => {
@@ -547,12 +548,12 @@ const [config, setConfig] = useState<Record<string, string>>({});
 
   const scrollPositionRef = useRef(0);
 
-  const handleProductClick = (product: Product) => {
-    scrollPositionRef.current = window.scrollY;
-    const categorySlug = slugify(product.categoria || 'general');
-    const productSlug = slugify(product.nombre);
-    navigate(`/${categorySlug}/${productSlug}`);
-  };
+  const handleProductClick = useCallback((product: Product) => {
+  scrollPositionRef.current = window.scrollY;
+  const categorySlug = slugify(product.categoria || 'general');
+  const productSlug = slugify(product.nombre);
+  navigate(`/${categorySlug}/${productSlug}`);
+}, [navigate]);
 
   useEffect(() => {
     const listPaths = ['/', '/chango', '/carnes', '/verdu', '/varios'];
