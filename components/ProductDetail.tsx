@@ -80,23 +80,27 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   }, [product]);
 
   useEffect(() => {
-    const gestionarVisitaYHistorial = async () => {
-      if (product) {
-        document.title = `${product.nombre} - TradingChango`;
-
-        if (product.ean) {
-          try {
-            const eanStr = product.ean.toString().trim();
-            await supabase.rpc('visitas', { 
-              producto_ean: eanStr 
-            });
-          } catch (err) {
-            console.error("❌ Error en RPC visitas:", err);
-          }
-        }
-
+    const gestionarVisita = async () => {
+      if (product && product.ean) {
         try {
-          const data = await getProductHistory(product.nombre, 365);
+          await supabase.rpc('visitas', { producto_ean: product.ean.toString().trim() });
+        } catch (err) {
+          console.error("❌ Error en RPC visitas:", err);
+        }
+      }
+    };
+
+    if (product) {
+      document.title = `${product.nombre} - TradingChango`;
+      gestionarVisita();
+    }
+  }, [product]);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (product) {
+        try {
+          const data = await getProductHistory(product.nombre, days);
           setHistory(data || []);
         } catch (err) {
           console.error("❌ Error historial:", err);
@@ -105,8 +109,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       }
     };
 
-    gestionarVisitaYHistorial();
-  }, [product]);
+    fetchHistory();
+  }, [product, days]);
 
   useEffect(() => {
     const handleEvents = (e: MouseEvent | KeyboardEvent) => {
