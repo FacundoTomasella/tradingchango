@@ -90,7 +90,7 @@ export const ContactView: React.FC<InfoViewProps & { email?: string }> = ({ onCl
 
 
     
-    <div className="space-y-4">
+    <div className="mt-8 space-y-4">
       {/* Botón de Email Principal */}
       <a href="mailto:soporte@tradingchango.com" className="flex items-center justify-between p-6 bg-neutral-50 dark:bg-neutral-900 rounded-3xl border border-neutral-100 dark:border-neutral-800 hover:scale-[1.02] transition-transform shadow-sm">
         <div className="flex items-center gap-4">

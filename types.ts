@@ -92,6 +92,7 @@ export interface ProductStats {
   icon: string;
   isUp: boolean;
   isDown: boolean;
+  variation: number; // <-- Añadido
 }
 
 export interface PriceHistory {

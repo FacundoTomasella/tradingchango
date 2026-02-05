@@ -168,7 +168,7 @@ const App: React.FC = () => {
   const isInitialMount = useRef(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const prevLocationRef = useRef(location.pathname);
+  const lastListPageRef = useRef(location.pathname);
 
 
   
@@ -392,16 +392,14 @@ const App: React.FC = () => {
 
   const getStats = (p: number[], h: number): ProductStats => {
     const v = p.filter(x => x > 0);
-    if (v.length === 0) return { min: 0, spread: '0.0', trendClass: '', icon: '-', isUp: false, isDown: false };
+    if (v.length === 0) return { min: 0, spread: '0.0', trendClass: '', icon: '-', isUp: false, isDown: false, variation: 0 };
     
     const min = Math.min(...v);
     let diff = 0, tc = 'text-neutral-500', icon = '-', isUp = false, isDown = false;
     
-    // h es el precio_minimo de hace 7 días que viene del array history
     if (h > 0) {
       diff = ((min - h) / h) * 100;
       
-      // Usamos un margen de 0.1% para evitar variaciones por centavos
       if (diff > 0.1) { 
         tc = 'text-red-600'; 
         icon = '▲'; 
@@ -415,11 +413,12 @@ const App: React.FC = () => {
     
     return { 
       min, 
-      spread: Math.abs(diff).toFixed(1), // Este es el numerito que se verá en la tarjeta
+      spread: Math.abs(diff).toFixed(1),
       trendClass: tc, 
       icon, 
       isUp, 
-      isDown 
+      isDown,
+      variation: diff // <-- Devolvemos la variación real
     };
   };
 
@@ -452,8 +451,32 @@ const App: React.FC = () => {
       });
 
       const productHistory = history.filter(h => h.nombre_producto === p.nombre);
-      const h7 = productHistory[productHistory.length - 1]; // El último es el más antiguo
-      return { ...p, stats: getStats(prices, h7?.precio_minimo || 0), prices };
+      let h7_price = 0;
+
+      // Si hay historial, lo procesamos para determinar la tendencia.
+      if (productHistory.length > 0) {
+        // Ordenamos por fecha para encontrar el más antiguo y el más reciente.
+        productHistory.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+        
+        const oldestRecord = productHistory[0];
+        const newestRecord = productHistory[productHistory.length - 1];
+
+        // Si solo hay un día de datos, o si el precio más antiguo y el más nuevo son iguales,
+        // la variación de tendencia es 0. Para lograrlo, pasamos el precio actual a getStats
+        // como precio histórico, forzando una diferencia de 0.
+        if (oldestRecord.fecha === newestRecord.fecha || oldestRecord.precio_minimo === newestRecord.precio_minimo) {
+          const currentPrices = prices.filter(x => x > 0);
+          // Si hay precios actuales, usamos el mínimo. Si no, no hay base para comparar (h7_price=0).
+          h7_price = currentPrices.length > 0 ? Math.min(...currentPrices) : 0;
+        } else {
+          // Si hay una variación real en el historial, usamos el precio más antiguo como base.
+          h7_price = oldestRecord.precio_minimo || 0;
+        }
+      }
+      // Si no hay historial (productHistory.length === 0), h7_price se queda en 0,
+      // lo que también resulta en una variación de tendencia 0 en getStats.
+      
+      return { ...p, stats: getStats(prices, h7_price), prices };
     })
     .filter(p => p.prices.filter((price: number) => price > 0).length >= 2);
 
@@ -484,6 +507,15 @@ const App: React.FC = () => {
     // --- FILTRO DE TENDENCIAS ---
     if (trendFilter && currentPath !== '/chango') {
       result = result.filter(p => trendFilter === 'up' ? p.stats.isUp : p.stats.isDown);
+      
+      // Ordenamos por la magnitud de la variación.
+      result.sort((a, b) => {
+        // Para 'down', queremos el más negativo primero (ej: -25% antes que -10%).
+        // Para 'up', queremos el más positivo primero (ej: 30% antes que 15%).
+        return trendFilter === 'down' 
+          ? a.stats.variation - b.stats.variation  // Orden ascendente (más negativo primero)
+          : b.stats.variation - a.stats.variation; // Orden descendente (más positivo primero)
+      });
     }
 
     return result;
@@ -585,29 +617,31 @@ const toggleFavorite = useCallback((id: number) => {
 
   useEffect(() => {
     const listPaths = ['/', '/chango', '/carnes', '/verdu', '/varios', '/bebidas', '/almacen'];
-    const isNavigatingToList = listPaths.includes(location.pathname);
-    const wasProductDetail = prevLocationRef.current.includes('/p/');
+    const currentPath = location.pathname;
+    const isCurrentPathList = listPaths.includes(currentPath);
 
-    // CASO A: Volvemos a una lista DESDE un producto.
-    if (isNavigatingToList && wasProductDetail) {
-      setTimeout(() => {
-        if (scrollPositionRef.current > 0) {
+    // Si la ruta actual es una página de lista
+    if (isCurrentPathList) {
+      // Y es diferente a la última página de lista guardada (cambio de categoría)
+      if (currentPath !== lastListPageRef.current) {
+        window.scrollTo(0, 0);
+        setSearchTerm('');
+        setTrendFilter(null);
+        setDisplayLimit(20);
+      }
+      // Si es la misma (ej. volviendo de un producto), restauramos el scroll
+      else if (scrollPositionRef.current > 0) {
+        setTimeout(() => {
           window.scrollTo(0, scrollPositionRef.current);
           scrollPositionRef.current = 0;
-        }
-      }, 0);
-      // NO reseteamos nada más para mantener la búsqueda y el scroll.
-    } 
-    // CASO B: Navegamos a una nueva categoría (o a una lista por primera vez).
-    else if (isNavigatingToList && !wasProductDetail) {
-      window.scrollTo(0, 0);
-      setDisplayLimit(20);
-      setSearchTerm('');
-      setTrendFilter(null);
+        }, 0);
+      }
+      
+      // Actualizamos la última página de lista visitada
+      lastListPageRef.current = currentPath;
     }
-    
-    // Actualizamos la ref para la próxima navegación.
-    prevLocationRef.current = location.pathname;
+    // Si no es una página de lista (ej. detalle de producto), no hacemos nada.
+    // `lastListPageRef` mantiene su valor, listo para la comparación cuando volvamos.
 
   }, [location.pathname]);
 
