@@ -72,13 +72,14 @@ const Header: React.FC<HeaderProps> = ({
             {isMenuOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-[#1f2c34] border border-neutral-200 dark:border-[#233138] rounded-xl shadow-xl p-1 z-50 animate-in fade-in zoom-in duration-200">
                 <Link to="/acerca-de" onClick={() => setIsMenuOpen(false)} className="block w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-[#e9edef] hover:bg-neutral-50 dark:hover:bg-[#233138] rounded-lg">Acerca de</Link>
+                <a href="https://x.com/tradingchango" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)} className="block w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-[#e9edef] hover:bg-neutral-50 dark:hover:bg-[#233138] rounded-lg">Seguinos en X</a>
                 <Link to="/terminos" onClick={() => setIsMenuOpen(false)} className="block w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-[#e9edef] hover:bg-neutral-50 dark:hover:bg-[#233138] rounded-lg">Términos</Link>
                 <Link to="/contacto" onClick={() => setIsMenuOpen(false)} className="block w-full text-left px-4 py-3 text-[11px] font-bold uppercase dark:text-[#e9edef] hover:bg-neutral-50 dark:hover:bg-[#233138] rounded-lg">Contacto</Link>
               </div>
             )}
           </div>
 
-          <a href="https://twitter.com/tradingchango" target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center text-black dark:text-[#e9edef] hover:opacity-70 transition-opacity">
+          <a href="https://twitter.com/tradingchango" target="_blank" rel="noopener noreferrer" className="hidden md:flex w-8 h-8 items-center justify-center text-black dark:text-[#e9edef] hover:opacity-70 transition-opacity">
             <svg viewBox="0 0 24 24" aria-hidden="true" className="w-5 h-5 fill-current">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
             </svg>
