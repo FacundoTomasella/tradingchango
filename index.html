@@ -120,6 +120,32 @@
             height: 280px !important;
           }
         }
+        .x-follow-btn { 
+          display: inline-flex; 
+          align-items: center; 
+          background-color: #000; 
+          color: #fff; 
+          padding: 4px 10px;       /* Mucho más pequeño */ 
+          border-radius: 9999px; 
+          font-family: sans-serif; /* O la fuente de tu web */ 
+          font-weight: 600; 
+          font-size: 11px;         /* Tamaño de letra reducido */ 
+          text-decoration: none; 
+          line-height: 1; 
+          white-space: nowrap;     /* Evita que el texto se amontone en dos filas */ 
+          transition: opacity 0.2s; 
+        } 
+        
+        .x-follow-btn:hover { 
+          opacity: 0.85; 
+        } 
+        
+        .x-logo-svg { 
+          width: 12px;             /* Logo pequeño */ 
+          height: 12px; 
+          fill: currentColor;      /* Esto hace que el logo sea blanco automáticamente */ 
+          margin-right: 6px;       /* Espacio justo */ 
+        }
     </style>
 <script type="importmap">
 {
@@ -141,9 +167,10 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
+          navigator.service-worker.register('/sw.js');
         });
       }
 </script>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 </body>
 </html>
