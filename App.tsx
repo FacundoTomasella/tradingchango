@@ -450,36 +450,25 @@ const App: React.FC = () => {
         return 0;
       });
 
+      // --- LÓGICA DE TENDENCIA CORREGIDA (7 DÍAS REALES) ---
       const productHistory = history.filter(h => h.nombre_producto === p.nombre);
       let h7_price = 0;
 
-      // Si hay historial, lo procesamos para determinar la tendencia.
       if (productHistory.length > 0) {
-        // Ordenamos por fecha para encontrar el más antiguo y el más reciente.
-        productHistory.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+        // Ordenamos estrictamente por fecha de la más vieja a la más nueva
+        const sortedHistory = [...productHistory].sort((a, b) => 
+          new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+        );
         
-        const oldestRecord = productHistory[0];
-        const newestRecord = productHistory[productHistory.length - 1];
-
-        // Si solo hay un día de datos, o si el precio más antiguo y el más nuevo son iguales,
-        // la variación de tendencia es 0. Para lograrlo, pasamos el precio actual a getStats
-        // como precio histórico, forzando una diferencia de 0.
-        if (oldestRecord.fecha === newestRecord.fecha || oldestRecord.precio_minimo === newestRecord.precio_minimo) {
-          const currentPrices = prices.filter(x => x > 0);
-          // Si hay precios actuales, usamos el mínimo. Si no, no hay base para comparar (h7_price=0).
-          h7_price = currentPrices.length > 0 ? Math.min(...currentPrices) : 0;
-        } else {
-          // Si hay una variación real en el historial, usamos el precio más antiguo como base.
-          h7_price = oldestRecord.precio_minimo || 0;
-        }
+        // El precio base para el cálculo será SIEMPRE el más antiguo de la lista
+        h7_price = sortedHistory[0].precio_minimo || 0;
       }
-      // Si no hay historial (productHistory.length === 0), h7_price se queda en 0,
-      // lo que también resulta en una variación de tendencia 0 en getStats.
       
       return { ...p, stats: getStats(prices, h7_price), prices };
     })
     .filter(p => p.prices.filter((price: number) => price > 0).length >= 2);
 
+    // --- FILTROS DE CATEGORÍA ---
     if (currentPath === '/carnes') result = result.filter(p => p.categoria?.toLowerCase().includes('carne'));
     else if (currentPath === '/verdu') result = result.filter(p => p.categoria?.toLowerCase().includes('verdu') || p.categoria?.toLowerCase().includes('fruta'));
     else if (currentPath === '/bebidas') result = result.filter(p => p.categoria?.toLowerCase().includes('bebida'));
