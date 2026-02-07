@@ -146,6 +146,10 @@ const ProductDetailWrapper = ({ products, favorites, toggleFavorite, theme, onUp
   );
 };
 
+const normalizeText = (text: string) => {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+};
+
 const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [history, setHistory] = useState<PriceHistory[]>([]);
@@ -492,13 +496,18 @@ const App: React.FC = () => {
     })
     .filter(p => p.prices.filter((price: number) => price > 0).length >= 2);
 
-    if (currentPath === '/carnes') result = result.filter(p => p.categoria?.toLowerCase().includes('carne'));
-    else if (currentPath === '/verdu') result = result.filter(p => p.categoria?.toLowerCase().includes('verdu') || p.categoria?.toLowerCase().includes('fruta'));
-    else if (currentPath === '/bebidas') result = result.filter(p => p.categoria?.toLowerCase().includes('bebida'));
+    if (currentPath === '/carnes') result = result.filter(p => normalizeText(p.categoria || '').includes('carne'));
+    else if (currentPath === '/verdu') result = result.filter(p => normalizeText(p.categoria || '').includes('verdu') || normalizeText(p.categoria || '').includes('fruta'));
+    else if (currentPath === '/bebidas') result = result.filter(p => normalizeText(p.categoria || '').includes('bebida'));
+    else if (currentPath === '/lacteos') result = result.filter(p => normalizeText(p.categoria || '').includes('lacteo'));
+    else if (currentPath === '/almacen') result = result.filter(p => normalizeText(p.categoria || '').includes('almacen'));
+    else if (currentPath === '/limpieza') result = result.filter(p => normalizeText(p.categoria || '').includes('limpieza'));
+    else if (currentPath === '/perfumeria') result = result.filter(p => normalizeText(p.categoria || '').includes('perfumeria'));
+    else if (currentPath === '/mascotas') result = result.filter(p => normalizeText(p.categoria || '').includes('mascota'));
     else if (currentPath === '/varios') {
-      const excludedCategories = ['carne', 'verdu', 'fruta', 'bebida'];
+      const excludedCategories = ['carne', 'verdu', 'fruta', 'bebida', 'lacteo', 'almacen', 'limpieza', 'perfumeria', 'mascota'];
       result = result.filter(p => {
-        const cat = p.categoria?.toLowerCase() || '';
+        const cat = normalizeText(p.categoria || '');
         return !excludedCategories.some(excluded => cat.includes(excluded));
       });
     }
@@ -763,6 +772,12 @@ const toggleFavorite = useCallback((id: number) => {
           <Route path="/" element={listPageElement} />
           <Route path="/carnes" element={listPageElement} />
           <Route path="/verdu" element={listPageElement} />
+          <Route path="/bebidas" element={listPageElement} />
+          <Route path="/lacteos" element={listPageElement} />
+          <Route path="/almacen" element={listPageElement} />
+          <Route path="/limpieza" element={listPageElement} />
+          <Route path="/perfumeria" element={listPageElement} />
+          <Route path="/mascotas" element={listPageElement} />
           <Route path="/varios" element={listPageElement} />
   <Route path="/chango" element={
     <>
